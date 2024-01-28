@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.util.Size
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -42,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -156,13 +156,13 @@ fun TopControlButtons(
     }
 }
 
-
 @Composable
 fun Grid(
     gameViewModel: GameViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
     val uiState by gameViewModel.uiState.collectAsState()
+    var gridSize = 0f
 
     Box(
         modifier = Modifier
@@ -176,8 +176,6 @@ fun Grid(
             .background(Color.Gray),
         contentAlignment = Alignment.Center
     ) {
-        val gridRects = ArrayList<Rect>()
-
         Canvas(
             modifier = modifier
                 .fillMaxSize()
@@ -185,38 +183,14 @@ fun Grid(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = { tapOffset ->
-                            var index = 0
-
-                            for (rect in gridRects) {
-                                if (rect.contains(tapOffset)) {
-                                    val row = index / Constants.MaxColSize
-                                    val col = index % Constants.MaxColSize
-
-                                    Log.i(
-                                        Constants.debugPrefix,
-                                        "Adding a position : row = $row, col = $col"
-                                    )
-
-                                    Log.i(
-                                        Constants.debugPrefix,
-                                        "Before adding : Ball count is ${gameViewModel.count()}"
-                                    )
-
-                                    val pos = pos(
-                                        row = row,
-                                        col = col
-                                    )
-                                    gameViewModel.toggleBallPosition(pos)
-
-                                    // Handle the click here and do some action based on the index
-                                    break // Don't need to check other points, so break
-                                }
-                                index++
-                            }
+                            val pos = pos(
+                                row = (tapOffset.y / gridSize).toInt(),
+                                col = (tapOffset.x / gridSize).toInt()
+                            )
+                            gameViewModel.toggleBallPosition(pos)
                         }
                     )
                 }
-
         ) {
             Log.i(Constants.debugPrefix, "Recompose has been triggered")
             val canvasWidth = size.width
@@ -225,7 +199,7 @@ fun Grid(
             val gridSizeWidth = (canvasWidth / (Constants.MaxColSize))
             val gridSizeHeight = (canvasHeight / (Constants.MaxRowSize))
 
-            val gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
+            gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
             // Draw horizontal lines
             var currentY = 0F
@@ -253,25 +227,6 @@ fun Grid(
                 )
                 currentX += gridSize
             }
-
-            gridRects.clear()
-            var top = 0f
-            var left = 0f
-            var bottom = 0f
-            var right = 0f
-
-            var index = 1
-            repeat(Constants.MaxRowSize) { curRow ->
-                left = gridSize * curRow
-                repeat(Constants.MaxColSize) { curCol ->
-                    top = gridSize * curCol
-                    bottom = top + gridSize
-                    right = left + gridSize
-                    gridRects.add(Rect(top, left, bottom, right))
-                    index++
-                }
-            }
-            Log.i(Constants.debugPrefix, "The balls count is ${gameViewModel.count()}")
 
             // Draw all the balls
             gameViewModel.ballPositionList.forEach{ pos->
