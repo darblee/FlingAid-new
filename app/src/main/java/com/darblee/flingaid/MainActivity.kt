@@ -7,7 +7,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.util.Size
+import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -46,6 +46,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -114,6 +116,7 @@ fun TopControlButtons(
 )
 {
     val contextForToast = LocalContext.current.applicationContext
+    val view = LocalView.current
 
     Row(modifier = Modifier
         .fillMaxWidth()
@@ -121,11 +124,12 @@ fun TopControlButtons(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
+        val haptic = LocalHapticFeedback.current
         Button(
             onClick = {
                 Toast.makeText(contextForToast, "Next Move", Toast.LENGTH_SHORT).show()
-                     gameViewModel.findWinningMove()
-                      },
+                gameViewModel.findWinningMove()
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
@@ -140,7 +144,9 @@ fun TopControlButtons(
         }
 
         Button(
-            onClick = { Toast.makeText(contextForToast, "Prev Move", Toast.LENGTH_SHORT).show()},
+            onClick = {
+                Toast.makeText(contextForToast, "Prev Move", Toast.LENGTH_SHORT).show()
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
@@ -163,6 +169,7 @@ fun Grid(
 ) {
     val uiState by gameViewModel.uiState.collectAsState()
     var gridSize = 0f
+    val view = LocalView.current
 
     Box(
         modifier = Modifier
@@ -187,6 +194,7 @@ fun Grid(
                                 row = (tapOffset.y / gridSize).toInt(),
                                 col = (tapOffset.x / gridSize).toInt()
                             )
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                             gameViewModel.toggleBallPosition(pos)
                         }
                     )
@@ -247,6 +255,8 @@ fun ResetGameButton(
     modifier: Modifier = Modifier
 )
 {
+    val view = LocalView.current
+
     Row(modifier = Modifier
         .fillMaxWidth()
         .wrapContentHeight(),
@@ -257,6 +267,7 @@ fun ResetGameButton(
 
         Button(
             onClick = {
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                 gameViewModel.reset()
             },
             shape = RoundedCornerShape(5.dp),
