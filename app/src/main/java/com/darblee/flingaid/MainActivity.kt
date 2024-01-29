@@ -276,6 +276,9 @@ fun Grid(
                     Direction.DOWN -> downArrowBitmap
                     Direction.LEFT -> leftArrowBitmap
                     Direction.RIGHT -> rightArrowBitmap
+
+                    //NOTE: bitmap configuration describes how pixels are stored. This affects the quality (color depth) as well as the ability to display transparent/translucent colors.
+                    // "Bitmap.Config.ARGB_8888" indicates the maximum flexibility
                     else -> Bitmap.createBitmap(gridSize.toInt(), gridSize.toInt(), Bitmap.Config.ARGB_8888)
                 }
 
