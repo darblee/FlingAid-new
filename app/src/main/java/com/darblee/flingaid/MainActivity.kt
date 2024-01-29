@@ -67,6 +67,12 @@ import com.darblee.flingaid.ui.pos
 import com.darblee.flingaid.ui.theme.FlingAidTheme
 
 
+// Declare these bitmaps once as it will be reused on every recompose
+private lateinit var upArrowBitmap : Bitmap
+private lateinit var downArrowBitmap : Bitmap
+private lateinit var leftArrowBitmap : Bitmap
+private lateinit var rightArrowBitmap : Bitmap
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         var keepSplashOnScreen = true
@@ -99,6 +105,7 @@ fun MainViewImplementation(
         modifier: Modifier = Modifier
 ) {
     val uiState by gameViewModel.uiState.collectAsState()
+    Log.i(Constants.debugPrefix, "MainViewImplementation invoke")
 
     // Force to be in portrait mode all the time
     val activity = LocalContext.current as Activity
@@ -176,16 +183,18 @@ fun Grid(
     modifier: Modifier = Modifier,
     uiState: GameUiState
 ) {
+    Log.i(Constants.debugPrefix, "Grid Recompose has been triggered")
+
     var gridSize = 0f
     val view = LocalView.current
 
     val matrix = Matrix()
     matrix.postRotate(90F)
 
-    val upArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
-    val rightArrowBitmap = Bitmap.createBitmap(upArrowBitmap, 0, 0, upArrowBitmap.width, upArrowBitmap.height, matrix, true )
-    val downArrowBitmap = Bitmap.createBitmap(rightArrowBitmap, 0, 0, rightArrowBitmap.width, rightArrowBitmap.height, matrix, true )
-    val leftArrowBitmap = Bitmap.createBitmap(downArrowBitmap, 0, 0, downArrowBitmap.width, downArrowBitmap.height, matrix, true )
+    upArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
+    rightArrowBitmap = Bitmap.createBitmap(upArrowBitmap, 0, 0, upArrowBitmap.width, upArrowBitmap.height, matrix, true )
+    downArrowBitmap = Bitmap.createBitmap(rightArrowBitmap, 0, 0, rightArrowBitmap.width, rightArrowBitmap.height, matrix, true )
+    leftArrowBitmap = Bitmap.createBitmap(downArrowBitmap, 0, 0, downArrowBitmap.width, downArrowBitmap.height, matrix, true )
 
     Box(
         modifier = Modifier
@@ -216,7 +225,7 @@ fun Grid(
                     )
                 }
         ) {
-            Log.i(Constants.debugPrefix, "Recompose has been triggered")
+            Log.i(Constants.debugPrefix, "Canvas Recompose has been triggered")
             val canvasWidth = size.width
             val canvasHeight = size.height
 
