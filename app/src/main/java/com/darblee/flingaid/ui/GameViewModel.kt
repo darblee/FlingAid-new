@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -29,7 +28,7 @@ class GameViewModel : ViewModel() {
      "internal" means any client inside this module- who see this class will see this member
 
      SnapshotList:
-        - The composables will automatically update when that state changes
+        - The composable will automatically update when that state changes
         - Values can change
         - Other functions will be notified of the changes
         Ref: https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn
@@ -52,6 +51,7 @@ class GameViewModel : ViewModel() {
             )
         }
         _ballPositionList.clear()
+        uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
     }
 
     fun count():Int
@@ -76,19 +76,18 @@ class GameViewModel : ViewModel() {
     fun findWinningMove() {
         viewModelScope.launch {
 
-            val winningMove = pos(
-                row = 3,
-                col = 5
+            val winningPos = pos (3,4)
+            val winningDir = Direction.DOWN
+
+            Log.i(Constants.debugPrefix, "Found a winning move. row = ${winningPos.row}, col = ${winningPos.col} at direction = ${winningDir.name}")
+            val updatedGameState = GameUiState(
+                state = GameState.not_thinking,
+                winningPosition = winningPos,
+                winningDirection = winningDir
             )
 
-            Log.i(Constants.debugPrefix, "FOund a winning move. Set winning to true")
-
-            _uiState.update { currentState ->
-                currentState.copy(
-                    winningDirection = Direction.DOWN,
-                    winningPosition = winningMove
-                )
-            }
+            // Need to trigger a recompose
+            _uiState.emit(updatedGameState)
         }
     }
 

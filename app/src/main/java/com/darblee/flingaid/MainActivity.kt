@@ -3,6 +3,8 @@ package com.darblee.flingaid
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
+import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -44,16 +46,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.imageResource
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.darblee.flingaid.ui.Direction
+import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.pos
 import com.darblee.flingaid.ui.theme.FlingAidTheme
@@ -104,7 +112,7 @@ fun MainViewImplementation(
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
         TopControlButtons(gameViewModel)
-        Grid(gameViewModel)
+        Grid(gameViewModel, modifier, uiState)
         ResetGameButton(gameViewModel)
     } // Column
 }
@@ -165,11 +173,19 @@ fun TopControlButtons(
 @Composable
 fun Grid(
     gameViewModel: GameViewModel = viewModel(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    uiState: GameUiState
 ) {
-    val uiState by gameViewModel.uiState.collectAsState()
     var gridSize = 0f
     val view = LocalView.current
+
+    val matrix = Matrix()
+    matrix.postRotate(90F)
+
+    val upArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
+    val rightArrowBitmap = Bitmap.createBitmap(upArrowBitmap, 0, 0, upArrowBitmap.width, upArrowBitmap.height, matrix, true )
+    val downArrowBitmap = Bitmap.createBitmap(rightArrowBitmap, 0, 0, rightArrowBitmap.width, rightArrowBitmap.height, matrix, true )
+    val leftArrowBitmap = Bitmap.createBitmap(downArrowBitmap, 0, 0, downArrowBitmap.width, downArrowBitmap.height, matrix, true )
 
     Box(
         modifier = Modifier
@@ -241,9 +257,23 @@ fun Grid(
                 drawCircle(Color.Red, radius = (gridSize / 2) - 10f, center = Offset((pos.col * gridSize) + (gridSize / 2f), (pos.row * gridSize) + (gridSize / 2f)))
             }
 
+            // Draw the winning arrow if there is a winning move identified
             if (gameViewModel.winningMoveExist()) {
                 Log.i(Constants.debugPrefix, "Winning Move exist with winning direction:  ${uiState.winningDirection}")
                 Log.i(Constants.debugPrefix, "Winning Move position is :  row = ${uiState.winningPosition.row}, col = ${uiState.winningPosition.col}")
+
+                val displayArrowBitMap = when (uiState.winningDirection) {
+                    Direction.UP -> upArrowBitmap
+                    Direction.DOWN -> downArrowBitmap
+                    Direction.LEFT -> leftArrowBitmap
+                    Direction.RIGHT -> rightArrowBitmap
+                    else -> Bitmap.createBitmap(gridSize.toInt(), gridSize.toInt(), Bitmap.Config.ARGB_8888)
+                }
+
+                // Reduce size of arrow to fit inside the grid
+                val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt()-10, gridSize.toInt()-10, false).asImageBitmap()
+
+                drawImage(displayArrow, topLeft = Offset(x = ((uiState.winningPosition.row) * gridSize) + 5f, y = ((uiState.winningPosition.col * gridSize) + 5f)))
             }
         }
     }
