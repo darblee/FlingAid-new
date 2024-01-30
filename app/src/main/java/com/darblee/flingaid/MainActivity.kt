@@ -40,6 +40,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -118,8 +121,12 @@ fun MainViewImplementation(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
-        TopControlButtons(gameViewModel)
+        var FindWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
+        FindWinnableMoveButtonEnabled = ((gameViewModel.count() > 1) && (!gameViewModel.winningMoveExist()))
+
+        TopControlButtons(gameViewModel, FindWinnableMoveButtonEnabled)
         Grid(gameViewModel, modifier, uiState)
+
         ResetGameButton(gameViewModel)
     } // Column
 }
@@ -127,7 +134,7 @@ fun MainViewImplementation(
 @Composable
 fun TopControlButtons(
     gameViewModel: GameViewModel = viewModel(),
-    modifier: Modifier = Modifier
+    FindWinnableMoveButtonEnabled : Boolean,
 )
 {
     val contextForToast = LocalContext.current.applicationContext
@@ -139,10 +146,8 @@ fun TopControlButtons(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        val haptic = LocalHapticFeedback.current
         Button(
             onClick = {
-                Toast.makeText(contextForToast, "Next Move", Toast.LENGTH_SHORT).show()
                 gameViewModel.findWinningMove()
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
             shape = RoundedCornerShape(5.dp),
@@ -150,7 +155,8 @@ fun TopControlButtons(
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Green,
                 contentColor = Color.Black
-            )
+            ),
+            enabled = FindWinnableMoveButtonEnabled
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
@@ -181,8 +187,8 @@ fun TopControlButtons(
 fun Grid(
     gameViewModel: GameViewModel = viewModel(),
     modifier: Modifier = Modifier,
-    uiState: GameUiState
-) {
+    uiState: GameUiState,
+    ) {
     Log.i(Constants.debugPrefix, "Grid Recompose has been triggered")
 
     var gridSize = 0f
@@ -307,7 +313,7 @@ fun drawGrid(DrawScope: DrawScope, gridSize: Float, ) {
         // Draw vertical lines
         var currentX = 0F
         val gridHeight = gridSize * Constants.MaxRowSize
-        repeat(Constants.MaxColSize + 1) { index ->
+        repeat(Constants.MaxColSize + 1) {
             drawLine(
                 start = Offset(x = currentX, y = 0.dp.toPx()),
                 end = Offset(x = currentX, y = gridHeight),
@@ -321,8 +327,7 @@ fun drawGrid(DrawScope: DrawScope, gridSize: Float, ) {
 
 @Composable
 fun ResetGameButton(
-    gameViewModel: GameViewModel = viewModel(),
-    modifier: Modifier = Modifier
+    gameViewModel: GameViewModel = viewModel()
 )
 {
     val view = LocalView.current
