@@ -55,7 +55,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 
@@ -104,8 +103,8 @@ class MainActivity : ComponentActivity() {
 @SuppressLint("SourceLockedOrientationActivity")
 @Composable
 fun MainViewImplementation(
-        gameViewModel: GameViewModel = viewModel(),
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        gameViewModel: GameViewModel = viewModel()
 ) {
     val uiState by gameViewModel.uiState.collectAsState()
     Log.i(Constants.debugPrefix, "MainViewImplementation invoke")
@@ -125,7 +124,7 @@ fun MainViewImplementation(
         FindWinnableMoveButtonEnabled = ((gameViewModel.count() > 1) && (!gameViewModel.winningMoveExist()))
 
         TopControlButtons(gameViewModel, FindWinnableMoveButtonEnabled)
-        Grid(gameViewModel, modifier, uiState)
+        Grid(uiState, gameViewModel, modifier, )
 
         ResetGameButton(gameViewModel)
     } // Column
@@ -185,9 +184,9 @@ fun TopControlButtons(
 
 @Composable
 fun Grid(
+    uiState: GameUiState,
     gameViewModel: GameViewModel = viewModel(),
     modifier: Modifier = Modifier,
-    uiState: GameUiState,
     ) {
     Log.i(Constants.debugPrefix, "Grid Recompose has been triggered")
 
