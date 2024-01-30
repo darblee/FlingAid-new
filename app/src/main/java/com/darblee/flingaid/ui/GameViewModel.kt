@@ -76,8 +76,8 @@ class GameViewModel : ViewModel() {
     fun findWinningMove() {
         viewModelScope.launch {
 
-            val winningPos = pos (1,1)
-            val winningDir = Direction.RIGHT
+            val winningPos = pos (3,4)
+            val winningDir = Direction.DOWN
 
             Log.i(Constants.debugPrefix, "Found a winning move. row = ${winningPos.row}, col = ${winningPos.col} at direction = ${winningDir.name}")
             val updatedGameState = GameUiState(
