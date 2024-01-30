@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -65,7 +66,6 @@ import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.pos
 import com.darblee.flingaid.ui.theme.FlingAidTheme
-
 
 // Declare these bitmaps once as it will be reused on every recompose
 private lateinit var upArrowBitmap : Bitmap
@@ -234,63 +234,87 @@ fun Grid(
 
             gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
-            // Draw horizontal lines
-            var currentY = 0F
-            val gridWidth = gridSize * Constants.MaxColSize
-            repeat(Constants.MaxRowSize + 1) { index ->
-                val lineWidth = if (index == 4) 5 else 2
-                drawLine(
-                    start = Offset(x = 0.dp.toPx(), y = currentY),
-                    end = Offset(x = gridWidth, y = currentY),
-                    color = Color.Black,
-                    strokeWidth = lineWidth.dp.toPx() // instead of 5.dp.toPx() , you can also pass 5f
-                )
-                currentY += gridSize
-            }
-
-            // Draw vertical lines
-            var currentX = 0F
-            val gridHeight = gridSize * Constants.MaxRowSize
-            repeat(Constants.MaxColSize + 1) { index ->
-                drawLine(
-                    start = Offset(x = currentX, y = 0.dp.toPx()),
-                    end = Offset(x = currentX, y = gridHeight),
-                    color = Color.Black,
-                    strokeWidth = 2.dp.toPx() // instead of 5.dp.toPx() , you can also pass 5f
-                )
-                currentX += gridSize
-            }
-
-            // Draw all the balls
-            gameViewModel.ballPositionList.forEach{ pos->
-                drawCircle(Color.Red, radius = (gridSize / 2) - 10f, center = Offset((pos.col * gridSize) + (gridSize / 2f), (pos.row * gridSize) + (gridSize / 2f)))
-            }
+            drawGrid(this, gridSize)
+            drawBalls(this, gameViewModel, gridSize)
 
             // Draw the winning arrow if there is a winning move identified
             if (gameViewModel.winningMoveExist()) {
-                Log.i(Constants.debugPrefix, "Winning Move exist with winning direction:  ${uiState.winningDirection}")
-                Log.i(Constants.debugPrefix, "Winning Move position is :  row = ${uiState.winningPosition.row}, col = ${uiState.winningPosition.col}")
-
-                val displayArrowBitMap = when (uiState.winningDirection) {
-                    Direction.UP -> upArrowBitmap
-                    Direction.DOWN -> downArrowBitmap
-                    Direction.LEFT -> leftArrowBitmap
-                    Direction.RIGHT -> rightArrowBitmap
-
-                    //NOTE: bitmap configuration describes how pixels are stored. This affects the quality (color depth) as well as the ability to display transparent/translucent colors.
-                    // "Bitmap.Config.ARGB_8888" indicates the maximum flexibility
-                    else -> {
-                        Log.e(Constants.debugPrefix, "Got unexpected Direction value")
-                        assert(true)
-                        Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-                    }
-                }
-
-                // Reduce size of arrow to fit inside the grid
-                val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt()-10, gridSize.toInt()-10, false).asImageBitmap()
-
-                drawImage(displayArrow, topLeft = Offset(x = ((uiState.winningPosition.row) * gridSize) + 5f, y = ((uiState.winningPosition.col * gridSize) + 5f)))
+                drawWinningMoveArrow(this, gridSize, uiState)
             }
+        }
+    }
+}
+
+fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiState, ) {
+    with (drawScope) {
+        Log.i(Constants.debugPrefix, "Winning Move exist with winning direction:  ${uiState.winningDirection}")
+        Log.i(Constants.debugPrefix, "Winning Move position is :  row = ${uiState.winningPosition.row}, col = ${uiState.winningPosition.col}")
+
+        val displayArrowBitMap = when (uiState.winningDirection) {
+            Direction.UP -> upArrowBitmap
+            Direction.DOWN -> downArrowBitmap
+            Direction.LEFT -> leftArrowBitmap
+            Direction.RIGHT -> rightArrowBitmap
+
+            //NOTE: bitmap configuration describes how pixels are stored. This affects the quality (color depth) as well as the ability to display transparent/translucent colors.
+            // "Bitmap.Config.ARGB_8888" indicates the maximum flexibility
+            else -> {
+                Log.e(Constants.debugPrefix, "Got unexpected Direction value")
+                assert(true)
+                Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+            }
+        }
+
+        // Reduce size of arrow to fit inside the grid
+        val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt()-10, gridSize.toInt()-10, false).asImageBitmap()
+
+        drawImage(displayArrow, topLeft = Offset(x = ((uiState.winningPosition.row) * gridSize) + 5f, y = ((uiState.winningPosition.col * gridSize) + 5f)))
+    }
+}
+
+fun drawBalls(drawScope: DrawScope, gameViewModel: GameViewModel, gridSize: Float) {
+    // Draw all the balls
+    with (drawScope) {
+        gameViewModel.ballPositionList.forEach { pos ->
+            drawCircle(
+                Color.Red,
+                radius = (gridSize / 2) - 10f,
+                center = Offset(
+                    (pos.col * gridSize) + (gridSize / 2f),
+                    (pos.row * gridSize) + (gridSize / 2f)
+                )
+            )
+        }
+    }
+}
+
+fun drawGrid(DrawScope: DrawScope, gridSize: Float, ) {
+    with (DrawScope) {
+        // Draw horizontal lines
+        var currentY = 0F
+        val gridWidth = gridSize * Constants.MaxColSize
+        repeat(Constants.MaxRowSize + 1) { index ->
+            val lineWidth = if (index == 4) 5 else 2
+            drawLine(
+                start = Offset(x = 0.dp.toPx(), y = currentY),
+                end = Offset(x = gridWidth, y = currentY),
+                color = Color.Black,
+                strokeWidth = lineWidth.dp.toPx() // instead of 5.dp.toPx() , you can also pass 5f
+            )
+            currentY += gridSize
+        }
+
+        // Draw vertical lines
+        var currentX = 0F
+        val gridHeight = gridSize * Constants.MaxRowSize
+        repeat(Constants.MaxColSize + 1) { index ->
+            drawLine(
+                start = Offset(x = currentX, y = 0.dp.toPx()),
+                end = Offset(x = currentX, y = gridHeight),
+                color = Color.Black,
+                strokeWidth = 2.dp.toPx() // instead of 5.dp.toPx() , you can also pass 5f
+            )
+            currentX += gridSize
         }
     }
 }
