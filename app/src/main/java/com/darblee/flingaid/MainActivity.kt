@@ -120,10 +120,10 @@ fun MainViewImplementation(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
-        var FindWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
-        FindWinnableMoveButtonEnabled = ((gameViewModel.count() > 1) && (!gameViewModel.winningMoveExist()))
+        var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
+        findWinnableMoveButtonEnabled = ((gameViewModel.count() > 1) && (!gameViewModel.winningMoveExist()))
 
-        TopControlButtons(gameViewModel, FindWinnableMoveButtonEnabled)
+        TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled)
         Grid(uiState, gameViewModel, modifier, )
 
         ResetGameButton(gameViewModel)
@@ -133,7 +133,7 @@ fun MainViewImplementation(
 @Composable
 fun TopControlButtons(
     gameViewModel: GameViewModel = viewModel(),
-    FindWinnableMoveButtonEnabled : Boolean,
+    findWinnableMoveButtonEnabled : Boolean,
 )
 {
     val contextForToast = LocalContext.current.applicationContext
@@ -155,7 +155,7 @@ fun TopControlButtons(
                 containerColor = Color.Green,
                 contentColor = Color.Black
             ),
-            enabled = FindWinnableMoveButtonEnabled
+            enabled = findWinnableMoveButtonEnabled
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
