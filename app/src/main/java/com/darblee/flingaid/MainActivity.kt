@@ -123,8 +123,11 @@ fun MainViewImplementation(
         var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
         findWinnableMoveButtonEnabled = ((gameViewModel.count() > 1) && (!gameViewModel.winningMoveExist()))
 
-        TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled)
-        Grid(uiState, gameViewModel, modifier, )
+        var showWinnableMoveToUser by remember { mutableStateOf(false) }
+        showWinnableMoveToUser = (uiState.winningDirection != Direction.NO_WINNING_DIRECTION)
+
+        TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser)
+        Grid(uiState, modifier, gameViewModel)
 
         ResetGameButton(gameViewModel)
     } // Column
@@ -133,7 +136,8 @@ fun MainViewImplementation(
 @Composable
 fun TopControlButtons(
     gameViewModel: GameViewModel = viewModel(),
-    findWinnableMoveButtonEnabled : Boolean,
+    findWinnableMoveButtonEnabled: Boolean,
+    showWinnableMoveToUser: Boolean,
 )
 {
     val contextForToast = LocalContext.current.applicationContext
@@ -160,7 +164,10 @@ fun TopControlButtons(
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
                 modifier = Modifier.size(iconWidth))
-            Text("Find winning move")
+            if (showWinnableMoveToUser)
+                Text("Move and find next")
+            else
+                Text("Find next")
         }
 
         Button(
@@ -172,7 +179,8 @@ fun TopControlButtons(
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Cyan,
                 contentColor = Color.Black
-            )
+            ),
+            enabled = false
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Undo last move",
@@ -185,8 +193,8 @@ fun TopControlButtons(
 @Composable
 fun Grid(
     uiState: GameUiState,
-    gameViewModel: GameViewModel = viewModel(),
     modifier: Modifier = Modifier,
+    gameViewModel: GameViewModel = viewModel(),
     ) {
     Log.i(Constants.debugPrefix, "Grid Recompose has been triggered")
 

@@ -6,7 +6,7 @@ enum class GameState {
     not_thinking,
 }
 
-enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
+enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT }
 
 data class GameUiState (
     val state: GameState = GameState.not_thinking,
