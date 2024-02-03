@@ -14,14 +14,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class pos(
-    val row: Int,
-    val col: Int,
-)
-
 class GameViewModel : ViewModel() {
 
-    private val _ballPositionList = mutableStateListOf<pos>()
+    private var _ballPositionList = mutableStateListOf<pos>()
 
     /*
     Developer's notes
@@ -33,7 +28,7 @@ class GameViewModel : ViewModel() {
         - Other functions will be notified of the changes
         Ref: https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn
      */
-    internal val ballPositionList: SnapshotStateList<pos> = _ballPositionList
+    internal var ballPositionList: SnapshotStateList<pos> = _ballPositionList
 
     // Game UI state
     private val _uiState = MutableStateFlow(GameUiState())
@@ -44,6 +39,10 @@ class GameViewModel : ViewModel() {
 
     internal var foundWinningMove : MutableState<Boolean> = _foundWinningMove
 
+    init {
+        reset()
+    }
+    
     fun reset() {
         _uiState.update {currentState ->
             currentState.copy(
@@ -51,10 +50,11 @@ class GameViewModel : ViewModel() {
             )
         }
         _ballPositionList.clear()
+        
         uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
     }
 
-    fun count():Int
+    fun ballCount():Int
     {
         return _ballPositionList.count()
     }
@@ -73,11 +73,16 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun findWinningMove() {
+    fun findWinningMove(gameViewModel: GameViewModel) {
         viewModelScope.launch {
+            val game = GameEngine()
 
-            val winningPos = pos (3,4)
-            val winningDir = Direction.DOWN
+            game.populateGrid(_ballPositionList)
+
+            val (direction, winningRow, winningCol) = game.foundWinningMove(gameViewModel.ballCount(), 1, 1)
+
+            val winningPos = pos (winningRow,winningCol)
+            val winningDir = direction
 
             Log.i(Constants.debugPrefix, "Found a winning move. row = ${winningPos.row}, col = ${winningPos.col} at direction = ${winningDir.name}")
             val updatedGameState = GameUiState(
@@ -86,11 +91,15 @@ class GameViewModel : ViewModel() {
                 winningDirection = winningDir
             )
 
+            Log.i(Constants.debugPrefix, "P1: ${_ballPositionList.count()} P2: ${ballPositionList.count()}")
             // Need to trigger a recompose
             _uiState.emit(updatedGameState)
         }
     }
 
+    fun ballPositionList() {
+
+    }
     fun winningMoveExist() : Boolean
     {
         return (_uiState.value.winningDirection != Direction.NO_WINNING_DIRECTION)
@@ -102,4 +111,46 @@ class GameViewModel : ViewModel() {
             Log.i(Constants.debugPrefix, "$currentPos")
         }
     }
+
+    fun makeWinningMove(uiState: GameUiState) {
+        val game = GameEngine()
+        game.populateGrid(_ballPositionList)
+
+        var targetRow: Int
+        var targetCol: Int
+
+        if (uiState.winningDirection == Direction.UP) {
+            targetRow = game.findTargetRowOnMoveUp(uiState.winningPosition.row, uiState.winningPosition.col)
+            game.moveUp(uiState.winningPosition.row, targetRow, uiState.winningPosition.col)
+            _ballPositionList.clear()
+            _ballPositionList = game.updateBallList()
+        }
+
+        if (uiState.winningDirection == Direction.DOWN) {
+            targetRow = game.findTargetRowOnMoveDown(uiState.winningPosition.row, uiState.winningPosition.col)
+            game.moveDown(uiState.winningPosition.row, targetRow, uiState.winningPosition.col)
+            _ballPositionList.clear()
+            _ballPositionList = game.updateBallList()
+        }
+
+        if (uiState.winningDirection == Direction.RIGHT) {
+            targetCol = game.findTargetColOnMoveRight(uiState.winningPosition.row, uiState.winningPosition.col)
+            game.moveRight(uiState.winningPosition.col, targetCol, uiState.winningPosition.row)
+            _ballPositionList.clear()
+            _ballPositionList = game.updateBallList()
+        }
+
+        if (uiState.winningDirection == Direction.LEFT) {
+            targetCol = game.findTargetColOnMoveLeft(uiState.winningPosition.row, uiState.winningPosition.col)
+            game.moveLeft(uiState.winningPosition.col, targetCol, uiState.winningPosition.row)
+            _ballPositionList.clear()
+            _ballPositionList = game.updateBallList()
+        }
+
+        ballPositionList = _ballPositionList
+
+        // Erase the arrow
+        _uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
+    }
+
 }

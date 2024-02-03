@@ -78,7 +78,7 @@ private lateinit var rightArrowBitmap : Bitmap
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         var keepSplashOnScreen = true
-        val delay = 2000L
+        val delay = 1000L
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
@@ -121,12 +121,12 @@ fun MainViewImplementation(
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
         var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
-        findWinnableMoveButtonEnabled = ((gameViewModel.count() > 1) && (!gameViewModel.winningMoveExist()))
+        findWinnableMoveButtonEnabled = ((gameViewModel.ballCount() > 1) && (!gameViewModel.winningMoveExist()))
 
         var showWinnableMoveToUser by remember { mutableStateOf(false) }
         showWinnableMoveToUser = (uiState.winningDirection != Direction.NO_WINNING_DIRECTION)
 
-        TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser)
+        TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser, uiState)
         Grid(uiState, modifier, gameViewModel)
 
         ResetGameButton(gameViewModel)
@@ -138,6 +138,7 @@ fun TopControlButtons(
     gameViewModel: GameViewModel = viewModel(),
     findWinnableMoveButtonEnabled: Boolean,
     showWinnableMoveToUser: Boolean,
+    uiState: GameUiState,
 )
 {
     val contextForToast = LocalContext.current.applicationContext
@@ -151,7 +152,16 @@ fun TopControlButtons(
     ) {
         Button(
             onClick = {
-                gameViewModel.findWinningMove()
+                if (showWinnableMoveToUser) {
+                    // Make the actual move before find the next winnable move
+                    gameViewModel.makeWinningMove(uiState)
+                }
+
+                if (gameViewModel.ballCount() == 1) {
+                    Log.i(Constants.debugPrefix, "You have won!")
+                } else {
+                    gameViewModel.findWinningMove(gameViewModel)
+                }
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -159,7 +169,7 @@ fun TopControlButtons(
                 containerColor = Color.Green,
                 contentColor = Color.Black
             ),
-            enabled = findWinnableMoveButtonEnabled
+            enabled = (findWinnableMoveButtonEnabled || showWinnableMoveToUser)
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
@@ -281,7 +291,7 @@ fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiS
         // Reduce size of arrow to fit inside the grid
         val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt()-10, gridSize.toInt()-10, false).asImageBitmap()
 
-        drawImage(displayArrow, topLeft = Offset(x = ((uiState.winningPosition.row) * gridSize) + 5f, y = ((uiState.winningPosition.col * gridSize) + 5f)))
+        drawImage(displayArrow, topLeft = Offset(x = ((uiState.winningPosition.col) * gridSize) + 5f, y = ((uiState.winningPosition.row * gridSize) + 5f)))
     }
 }
 
