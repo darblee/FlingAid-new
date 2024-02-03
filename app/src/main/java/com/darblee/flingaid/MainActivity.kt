@@ -161,6 +161,10 @@ fun TopControlButtons(
                     Toast.makeText(context, "You won!", Toast.LENGTH_SHORT).show()
                 } else {
                     gameViewModel.findWinningMove(gameViewModel)
+
+                    if (uiState.winningDirection == Direction.NO_WINNING_DIRECTION) {
+                        Toast.makeText(context, "No winnable solution", Toast.LENGTH_SHORT).show()
+                    }
                 }
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
             shape = RoundedCornerShape(5.dp),
