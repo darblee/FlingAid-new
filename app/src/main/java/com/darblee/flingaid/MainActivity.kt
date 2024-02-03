@@ -60,7 +60,6 @@ import androidx.compose.ui.res.imageResource
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.darblee.flingaid.ui.Direction
@@ -150,6 +149,7 @@ fun TopControlButtons(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
+        val context = LocalContext.current
         Button(
             onClick = {
                 if (showWinnableMoveToUser) {
@@ -158,7 +158,7 @@ fun TopControlButtons(
                 }
 
                 if (gameViewModel.ballCount() == 1) {
-                    Log.i(Constants.debugPrefix, "You have won!")
+                    Toast.makeText(context, "You won!", Toast.LENGTH_SHORT).show()
                 } else {
                     gameViewModel.findWinningMove(gameViewModel)
                 }
@@ -268,7 +268,7 @@ fun Grid(
     }
 }
 
-fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiState, ) {
+fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiState ) {
     with (drawScope) {
         Log.i(Constants.debugPrefix, "Winning Move exist with winning direction:  ${uiState.winningDirection}")
         Log.i(Constants.debugPrefix, "Winning Move position is :  row = ${uiState.winningPosition.row}, col = ${uiState.winningPosition.col}")
@@ -298,7 +298,7 @@ fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiS
 fun drawBalls(drawScope: DrawScope, gameViewModel: GameViewModel, gridSize: Float) {
     // Draw all the balls
     with (drawScope) {
-        gameViewModel.ballPositionList.forEach { pos ->
+        gameViewModel.ballPositionList().forEach { pos ->
             drawCircle(
                 Color.Red,
                 radius = (gridSize / 2) - 10f,
@@ -311,8 +311,8 @@ fun drawBalls(drawScope: DrawScope, gameViewModel: GameViewModel, gridSize: Floa
     }
 }
 
-fun drawGrid(DrawScope: DrawScope, gridSize: Float, ) {
-    with (DrawScope) {
+fun drawGrid(drawScope: DrawScope, gridSize: Float) {
+    with (drawScope) {
         // Draw horizontal lines
         var currentY = 0F
         val gridWidth = gridSize * Constants.MaxColSize
@@ -355,7 +355,6 @@ fun ResetGameButton(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        Text("Welcome", fontSize = 24.sp)
 
         Button(
             onClick = {

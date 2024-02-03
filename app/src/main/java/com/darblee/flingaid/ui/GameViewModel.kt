@@ -28,16 +28,12 @@ class GameViewModel : ViewModel() {
         - Other functions will be notified of the changes
         Ref: https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn
      */
-    internal var ballPositionList: SnapshotStateList<pos> = _ballPositionList
+   // internal var ballPositionList: SnapshotStateList<pos> = _ballPositionList
 
     // Game UI state
     private val _uiState = MutableStateFlow(GameUiState())
     internal var uiState : StateFlow<GameUiState> = _uiState.asStateFlow()
         private set
-
-    private val _foundWinningMove = mutableStateOf<Boolean>(false)
-
-    internal var foundWinningMove : MutableState<Boolean> = _foundWinningMove
 
     init {
         reset()
@@ -91,15 +87,15 @@ class GameViewModel : ViewModel() {
                 winningDirection = winningDir
             )
 
-            Log.i(Constants.debugPrefix, "P1: ${_ballPositionList.count()} P2: ${ballPositionList.count()}")
             // Need to trigger a recompose
             _uiState.emit(updatedGameState)
         }
     }
 
-    fun ballPositionList() {
-
+    fun ballPositionList() : SnapshotStateList<pos> {
+        return (_ballPositionList)
     }
+
     fun winningMoveExist() : Boolean
     {
         return (_uiState.value.winningDirection != Direction.NO_WINNING_DIRECTION)
@@ -146,8 +142,6 @@ class GameViewModel : ViewModel() {
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
-
-        ballPositionList = _ballPositionList
 
         // Erase the arrow
         _uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
