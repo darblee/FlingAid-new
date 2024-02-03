@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -127,8 +126,6 @@ fun MainViewImplementation(
 
         TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser, uiState)
         Grid(uiState, modifier, gameViewModel)
-
-        ResetGameButton(gameViewModel)
     } // Column
 }
 
@@ -140,7 +137,6 @@ fun TopControlButtons(
     uiState: GameUiState,
 )
 {
-    val contextForToast = LocalContext.current.applicationContext
     val view = LocalView.current
 
     Row(modifier = Modifier
@@ -149,7 +145,7 @@ fun TopControlButtons(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        val context = LocalContext.current
+        val contextForToast = LocalContext.current
         Button(
             onClick = {
                 if (showWinnableMoveToUser) {
@@ -158,13 +154,9 @@ fun TopControlButtons(
                 }
 
                 if (gameViewModel.ballCount() == 1) {
-                    Toast.makeText(context, "You won!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(contextForToast, "You won!", Toast.LENGTH_SHORT).show()
                 } else {
                     gameViewModel.findWinningMove(gameViewModel)
-
-                    if (uiState.winningDirection == Direction.NO_WINNING_DIRECTION) {
-                        Toast.makeText(context, "No winnable solution", Toast.LENGTH_SHORT).show()
-                    }
                 }
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
             shape = RoundedCornerShape(5.dp),
@@ -186,21 +178,22 @@ fun TopControlButtons(
 
         Button(
             onClick = {
-                Toast.makeText(contextForToast, "Prev Move", Toast.LENGTH_SHORT).show()
-                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                gameViewModel.reset()
+            },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Cyan,
-                contentColor = Color.Black
-            ),
-            enabled = false
+                containerColor = Color.Red,
+                contentColor = Color.White
+            )
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
-            Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Undo last move",
+            Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Reset",
                 modifier = Modifier.size(iconWidth))
-            Text("Undo")
+            Text("Reset Board")
         }
+
     }
 }
 
@@ -211,6 +204,7 @@ fun Grid(
     gameViewModel: GameViewModel = viewModel(),
     ) {
     Log.i(Constants.debugPrefix, "Grid Recompose has been triggered")
+    val contextforToast = LocalContext.current
 
     var gridSize = 0f
     val view = LocalView.current
@@ -252,6 +246,8 @@ fun Grid(
                     )
                 }
         ) {
+
+
             Log.i(Constants.debugPrefix, "Canvas Recompose has been triggered")
             val canvasWidth = size.width
             val canvasHeight = size.height
@@ -267,6 +263,8 @@ fun Grid(
             // Draw the winning arrow if there is a winning move identified
             if (gameViewModel.winningMoveExist()) {
                 drawWinningMoveArrow(this, gridSize, uiState)
+            } else {
+              //   Toast.makeText(contextforToast, "There is no winnable move", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -342,40 +340,6 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
                 strokeWidth = 2.dp.toPx() // instead of 5.dp.toPx() , you can also pass 5f
             )
             currentX += gridSize
-        }
-    }
-}
-
-@Composable
-fun ResetGameButton(
-    gameViewModel: GameViewModel = viewModel()
-)
-{
-    val view = LocalView.current
-
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .wrapContentHeight(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-
-        Button(
-            onClick = {
-                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                gameViewModel.reset()
-            },
-            shape = RoundedCornerShape(5.dp),
-            elevation = ButtonDefaults.buttonElevation(5.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Red,
-                contentColor = Color.White
-            )
-        ) {
-            val iconWidth = Icons.Filled.Refresh.defaultWidth
-            Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Reset",
-                modifier = Modifier.size(iconWidth))
-            Text("Reset Board")
         }
     }
 }
