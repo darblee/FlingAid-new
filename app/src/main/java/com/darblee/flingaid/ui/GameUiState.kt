@@ -15,5 +15,5 @@ data class pos(
 data class GameUiState (
     val state: GameState = GameState.not_thinking,
     var winningPosition: pos =  pos(0, 0),
-    var winningDirection : Direction = Direction.NO_WINNING_DIRECTION
+    var foundWinningDirection : Direction = Direction.NO_WINNING_DIRECTION
 )

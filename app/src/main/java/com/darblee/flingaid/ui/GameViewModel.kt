@@ -1,9 +1,7 @@
 package com.darblee.flingaid.ui
 
 import android.util.Log
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,7 +26,6 @@ class GameViewModel : ViewModel() {
         - Other functions will be notified of the changes
         Ref: https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn
      */
-   // internal var ballPositionList: SnapshotStateList<pos> = _ballPositionList
 
     // Game UI state
     private val _uiState = MutableStateFlow(GameUiState())
@@ -47,7 +44,7 @@ class GameViewModel : ViewModel() {
         }
         _ballPositionList.clear()
         
-        uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
+        uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
     }
 
     fun ballCount():Int
@@ -84,7 +81,7 @@ class GameViewModel : ViewModel() {
             val updatedGameState = GameUiState(
                 state = GameState.not_thinking,
                 winningPosition = winningPos,
-                winningDirection = winningDir
+                foundWinningDirection = winningDir
             )
 
             // Need to trigger a recompose
@@ -96,9 +93,9 @@ class GameViewModel : ViewModel() {
         return (_ballPositionList)
     }
 
-    fun winningMoveExist() : Boolean
+    fun foundWinnableMove() : Boolean
     {
-        return (_uiState.value.winningDirection != Direction.NO_WINNING_DIRECTION)
+        return (_uiState.value.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
     }
 
     fun printGrid()
@@ -115,28 +112,28 @@ class GameViewModel : ViewModel() {
         var targetRow: Int
         var targetCol: Int
 
-        if (uiState.winningDirection == Direction.UP) {
+        if (uiState.foundWinningDirection == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(uiState.winningPosition.row, uiState.winningPosition.col)
             game.moveUp(uiState.winningPosition.row, targetRow, uiState.winningPosition.col)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
 
-        if (uiState.winningDirection == Direction.DOWN) {
+        if (uiState.foundWinningDirection == Direction.DOWN) {
             targetRow = game.findTargetRowOnMoveDown(uiState.winningPosition.row, uiState.winningPosition.col)
             game.moveDown(uiState.winningPosition.row, targetRow, uiState.winningPosition.col)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
 
-        if (uiState.winningDirection == Direction.RIGHT) {
+        if (uiState.foundWinningDirection == Direction.RIGHT) {
             targetCol = game.findTargetColOnMoveRight(uiState.winningPosition.row, uiState.winningPosition.col)
             game.moveRight(uiState.winningPosition.col, targetCol, uiState.winningPosition.row)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
 
-        if (uiState.winningDirection == Direction.LEFT) {
+        if (uiState.foundWinningDirection == Direction.LEFT) {
             targetCol = game.findTargetColOnMoveLeft(uiState.winningPosition.row, uiState.winningPosition.col)
             game.moveLeft(uiState.winningPosition.col, targetCol, uiState.winningPosition.row)
             _ballPositionList.clear()
@@ -144,7 +141,7 @@ class GameViewModel : ViewModel() {
         }
 
         // Erase the arrow
-        _uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
+        _uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
     }
 
 }

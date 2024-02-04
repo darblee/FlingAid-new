@@ -119,10 +119,10 @@ fun MainViewImplementation(
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
         var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
-        findWinnableMoveButtonEnabled = ((gameViewModel.ballCount() > 1) && (!gameViewModel.winningMoveExist()))
+        findWinnableMoveButtonEnabled = ((gameViewModel.ballCount() > 1) && (!gameViewModel.foundWinnableMove()))
 
         var showWinnableMoveToUser by remember { mutableStateOf(false) }
-        showWinnableMoveToUser = (uiState.winningDirection != Direction.NO_WINNING_DIRECTION)
+        showWinnableMoveToUser = (uiState.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
 
         TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser, uiState)
         Grid(uiState, modifier, gameViewModel)
@@ -157,6 +157,10 @@ fun TopControlButtons(
                     Toast.makeText(contextForToast, "You won!", Toast.LENGTH_SHORT).show()
                 } else {
                     gameViewModel.findWinningMove(gameViewModel)
+
+                    if (!gameViewModel.foundWinnableMove()) {
+                        Toast.makeText(contextForToast, "There is no winnable move", Toast.LENGTH_SHORT).show()
+                    }
                 }
                 view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
             shape = RoundedCornerShape(5.dp),
@@ -204,7 +208,6 @@ fun Grid(
     gameViewModel: GameViewModel = viewModel(),
     ) {
     Log.i(Constants.debugPrefix, "Grid Recompose has been triggered")
-    val contextforToast = LocalContext.current
 
     var gridSize = 0f
     val view = LocalView.current
@@ -246,8 +249,6 @@ fun Grid(
                     )
                 }
         ) {
-
-
             Log.i(Constants.debugPrefix, "Canvas Recompose has been triggered")
             val canvasWidth = size.width
             val canvasHeight = size.height
@@ -260,11 +261,11 @@ fun Grid(
             drawGrid(this, gridSize)
             drawBalls(this, gameViewModel, gridSize)
 
-            // Draw the winning arrow if there is a winning move identified
-            if (gameViewModel.winningMoveExist()) {
-                drawWinningMoveArrow(this, gridSize, uiState)
-            } else {
-              //   Toast.makeText(contextforToast, "There is no winnable move", Toast.LENGTH_SHORT).show()
+            if (gameViewModel.ballCount() > 1) {
+                // Draw the winning arrow if there is a winning move identified
+                if (gameViewModel.foundWinnableMove()) {
+                    drawWinningMoveArrow(this, gridSize, uiState)
+                }
             }
         }
     }
@@ -272,10 +273,10 @@ fun Grid(
 
 fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiState ) {
     with (drawScope) {
-        Log.i(Constants.debugPrefix, "Winning Move exist with winning direction:  ${uiState.winningDirection}")
+        Log.i(Constants.debugPrefix, "Winning Move exist with winning direction:  ${uiState.foundWinningDirection}")
         Log.i(Constants.debugPrefix, "Winning Move position is :  row = ${uiState.winningPosition.row}, col = ${uiState.winningPosition.col}")
 
-        val displayArrowBitMap = when (uiState.winningDirection) {
+        val displayArrowBitMap = when (uiState.foundWinningDirection) {
             Direction.UP -> upArrowBitmap
             Direction.DOWN -> downArrowBitmap
             Direction.LEFT -> leftArrowBitmap
