@@ -89,6 +89,8 @@ class GameViewModel : ViewModel() {
         }
     }
 
+
+
     fun ballPositionList() : SnapshotStateList<pos> {
         return (_ballPositionList)
     }

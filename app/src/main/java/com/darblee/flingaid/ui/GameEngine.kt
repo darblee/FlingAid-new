@@ -38,7 +38,7 @@ class GameEngine {
         return (tempBoard)
     }
 
-    fun foundWinningMove(totalBallCnt : Int,  curSearchLevel : Int, thinkingDirection : Int): Triple<Direction, Int, Int> {
+    fun foundWinningMove(totalBallCnt : Int, curSearchLevel : Int, thinkingDirectionOffset : Int): Triple<Direction, Int, Int> {
 
         var direction = Direction.NO_WINNING_DIRECTION
         var winningRow = -1
@@ -54,7 +54,7 @@ class GameEngine {
         val startColumn: Int
         val exceededCol:Int
 
-        if (thinkingDirection == 1) {
+        if (thinkingDirectionOffset == 1) {
             startRow = 0
             exceededRow = Constants.MaxRowSize
 
@@ -113,10 +113,10 @@ class GameEngine {
                         }
                     }
 
-                    currentCol += thinkingDirection
+                    currentCol += thinkingDirectionOffset
                 } // Completed processing current Col
 
-                curRow += thinkingDirection
+                curRow += thinkingDirectionOffset
             }  // Completed processing current row
         }
 
