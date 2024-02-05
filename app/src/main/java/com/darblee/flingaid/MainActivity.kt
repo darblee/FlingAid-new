@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -126,7 +125,7 @@ fun MainViewImplementation(
         showWinnableMoveToUser = (uiState.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
 
         TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser, uiState)
-        Grid(uiState, modifier, gameViewModel)
+        DrawFlingBoard(uiState, modifier, gameViewModel)
     } // Column
 }
 
@@ -153,17 +152,15 @@ fun TopControlButtons(
                     // Make the actual move before find the next winnable move
                     gameViewModel.makeWinningMove(uiState)
                 }
-
                 if (gameViewModel.ballCount() == 1) {
                     Toast.makeText(contextForToast, "You won!", Toast.LENGTH_SHORT).show()
                 } else {
                     gameViewModel.findWinningMove(gameViewModel)
-
                     if (!gameViewModel.foundWinnableMove()) {
                         Toast.makeText(contextForToast, "There is no winnable move", Toast.LENGTH_SHORT).show()
                     }
                 }
-                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP) },
+            }, // OnClick
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
@@ -183,7 +180,6 @@ fun TopControlButtons(
 
         Button(
             onClick = {
-                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                 gameViewModel.reset()
             },
             shape = RoundedCornerShape(5.dp),
@@ -202,8 +198,14 @@ fun TopControlButtons(
     }
 }
 
+/*
+    Draw the Fling Game Board:
+        - Grid
+        - all the balls
+        - winning arrow (if there is solution after "find winnable movable" submission
+ */
 @Composable
-fun Grid(
+fun DrawFlingBoard(
     uiState: GameUiState,
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
@@ -240,12 +242,13 @@ fun Grid(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = { tapOffset ->
-                            val pos = pos(
-                                row = (tapOffset.y / gridSize).toInt(),
-                                col = (tapOffset.x / gridSize).toInt()
-                            )
-                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                            gameViewModel.toggleBallPosition(pos)
+                            val row = (tapOffset.y / gridSize).toInt()
+                            val col = (tapOffset.x / gridSize).toInt()
+                            Log.i(Constants.debugPrefix, "row = $row, col = $col")
+
+                            if ((row < Constants.MaxRowSize) && (col < Constants.MaxColSize)) {
+                                gameViewModel.toggleBallPosition(pos(row, col))
+                            }
                         }
                     )
                 }
@@ -347,7 +350,8 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
         // Draw the circle in the center of the grid
         val offsetX = (gridSize  * ((Constants.MaxColSize / 2) + 0.5)).toFloat()
         val offsetY = (gridSize  * ((Constants.MaxRowSize / 2)))
-        drawCircle(Color.Black, radius = gridSize, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
+        val radiusLength = (gridSize * 0.66).toFloat()
+        drawCircle(Color.Black, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
     }
 }
 
