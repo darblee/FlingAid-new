@@ -76,7 +76,12 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun findWinningMoveNew(gameViewModel: GameViewModel) {
+    fun findWinningMove(gameViewModel: GameViewModel) {
+        _uiState.update {currentState ->
+            currentState.copy(
+                state = GameState.thinking
+            )
+        }
         viewModelScope.launch {
             gProcessing = true
             gOverallProgress = 0
@@ -130,14 +135,12 @@ class GameViewModel : ViewModel() {
                             }
                         } else {
                             Log.i(Constants.debugPrefix, "Neither Task #1 nor Task #2 has winning result")
-                            if ((task1_Direction == Direction.NO_WINNING_DIRECTION) || (task2_Direction == Direction.NO_WINNING_DIRECTION)) {
-                                _uiState.update {currentState ->
-                                    currentState.copy(
-                                        state = GameState.not_thinking,
-                                        winningPosition = pos(0, 0),
-                                        foundWinningDirection = Direction.NO_WINNING_DIRECTION
-                                    )
-                                }
+                            _uiState.update {currentState ->
+                                currentState.copy(
+                                    state = GameState.not_thinking,
+                                    winningPosition = pos(-1, -1),
+                                    foundWinningDirection = Direction.NO_WINNING_DIRECTION
+                                )
                             }
                         }
                     }
@@ -146,12 +149,12 @@ class GameViewModel : ViewModel() {
 
             task1 = Thread {
                 processTask1(gTotalBallCount)
-                Log.i("GM: Task 1", "Task #1 is completed. Now waiting for all threads to complete.")
+                Log.i("${Constants.debugPrefix} Task 1", "Task #1 is completed. Now waiting for all threads to complete.")
                 cyclicBarrier.await()
             }
             task2 = Thread {
                 processTask2(gTotalBallCount)
-                Log.i("GM: Task 2", "Task #2 is completed. Now waiting for all threads to complete.")
+                Log.i("${Constants.debugPrefix}: Task 2", "Task #2 is completed. Now waiting for all threads to complete.")
                 cyclicBarrier.await()
             }
 
@@ -161,80 +164,6 @@ class GameViewModel : ViewModel() {
                 task2.start()
             }
         }
-    }
-
-
-    fun findWinningMove(gameViewModel: GameViewModel) {
-        viewModelScope.launch {
-            val game = GameEngine()
-
-            game.populateGrid(_ballPositionList)
-
-            val (direction, winningRow, winningCol) = game.foundWinningMove(gameViewModel.ballCount(), 1, 1)
-
-            val winningPos = pos (winningRow,winningCol)
-            val winningDir = direction
-
-            Log.i(Constants.debugPrefix, "Found a winning move. row = ${winningPos.row}, col = ${winningPos.col} at direction = ${winningDir.name}")
-            _uiState.update {currentState ->
-                currentState.copy(
-                    state = GameState.not_thinking,
-                    winningPosition = winningPos,
-                    foundWinningDirection = winningDir
-                )
-            }
-        }
-    }
-
-    private fun displayResult() {
-        gProcessing = false  // This will stop the "thinking" thread
-
-        if (gMultipleThread) {
-            Log.i(Constants.debugPrefix, "Display the result")
-            // Need to find out which thread has the winning move
-
-            if ((task1_Direction != Direction.NO_WINNING_DIRECTION) && (task1_Direction != Direction.INCOMPLETE)) {
-                // Task1 has the winning move
-                Log.i("GM:", "Task #1 has winning move")
-                val winningPos = pos (task1WinningRow, task1WinningCol)
-                val winningDir = task1_Direction
-                _uiState.update {currentState ->
-                    currentState.copy(
-                        state = GameState.not_thinking,
-                        winningPosition = winningPos,
-                        foundWinningDirection = winningDir
-                    )
-                }
-            } else {
-                Log.i(Constants.debugPrefix, "Task #1 does not have winning result. NOw check on task #2 outcome")
-                if ((task2_Direction != Direction.NO_WINNING_DIRECTION) && (task2_Direction != Direction.INCOMPLETE)) {
-                    Log.i("GM:", "Task #2 has winning move")
-                    // Task2 has the winning move
-                    val winningPos = pos (task2WinningRow, task2WinningCol)
-                    val winningDir = task2_Direction
-                    _uiState.update {currentState ->
-                        currentState.copy(
-                            state = GameState.not_thinking,
-                            winningPosition = winningPos,
-                            foundWinningDirection = winningDir
-                        )
-                    }
-                } else {
-                    Log.i(Constants.debugPrefix, "Neither Task #1 nor Task #2 has winning result")
-                    if ((task1_Direction == Direction.NO_WINNING_DIRECTION) || (task2_Direction == Direction.NO_WINNING_DIRECTION)) {
-                        _uiState.update {currentState ->
-                            currentState.copy(
-                                state = GameState.not_thinking,
-                                winningPosition = pos(0, 0),
-                                foundWinningDirection = Direction.NO_WINNING_DIRECTION
-                            )
-                        }
-                    }
-                }
-            }
-            return
-        }
-        return
     }
 
     lateinit var task1_Direction: Direction

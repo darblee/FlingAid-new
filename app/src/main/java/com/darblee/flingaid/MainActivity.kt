@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.darblee.flingaid.ui.Direction
+import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.pos
@@ -72,6 +73,8 @@ private lateinit var upArrowBitmap : Bitmap
 private lateinit var downArrowBitmap : Bitmap
 private lateinit var leftArrowBitmap : Bitmap
 private lateinit var rightArrowBitmap : Bitmap
+
+var gNeedClosureAfterFindMovePressed = false
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -137,8 +140,6 @@ fun TopControlButtons(
     uiState: GameUiState,
 )
 {
-    val view = LocalView.current
-
     Row(modifier = Modifier
         .fillMaxWidth()
         .wrapContentHeight(),
@@ -148,6 +149,7 @@ fun TopControlButtons(
         val contextForToast = LocalContext.current
         Button(
             onClick = {
+                Log.i(Constants.debugPrefix, ">>> Starting thinking : Button Pressed")
                 if (showWinnableMoveToUser) {
                     // Make the actual move before find the next winnable move
                     gameViewModel.makeWinningMove(uiState)
@@ -155,10 +157,9 @@ fun TopControlButtons(
                 if (gameViewModel.ballCount() == 1) {
                     Toast.makeText(contextForToast, "You won!", Toast.LENGTH_SHORT).show()
                 } else {
+                    Log.i(Constants.debugPrefix, ">>> Looking for winnable move")
                     gameViewModel.findWinningMove(gameViewModel)
-                    if (!gameViewModel.foundWinnableMove()) {
-                        Toast.makeText(contextForToast, "There is no winnable move", Toast.LENGTH_SHORT).show()
-                    }
+                    gNeedClosureAfterFindMovePressed = true
                 }
             }, // OnClick
             shape = RoundedCornerShape(5.dp),
@@ -213,7 +214,6 @@ fun DrawFlingBoard(
     Log.i(Constants.debugPrefix, "Grid Recompose has been triggered")
 
     var gridSize = 0f
-    val view = LocalView.current
 
     val matrix = Matrix()
     matrix.postRotate(90F)
@@ -235,6 +235,8 @@ fun DrawFlingBoard(
             .background(Color.Gray),
         contentAlignment = Alignment.Center
     ) {
+        val contextForToast = LocalContext.current
+
         Canvas(
             modifier = modifier
                 .fillMaxSize()
@@ -253,9 +255,25 @@ fun DrawFlingBoard(
                     )
                 }
         ) {
+
             Log.i(Constants.debugPrefix, "Canvas Recompose has been triggered")
             val canvasWidth = size.width
             val canvasHeight = size.height
+
+            Log.i(Constants.debugPrefix, ">>> Canvas Thinking status: ${uiState.state}")
+
+            if ((gNeedClosureAfterFindMovePressed) && (uiState.state == GameState.not_thinking)){
+                if (!gameViewModel.foundWinnableMove()) {
+                    Log.i(Constants.debugPrefix, ">>> Display Toast : Did not find winnable move")
+
+                    Toast.makeText(
+                        contextForToast,
+                        "There is no winnable move",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    gNeedClosureAfterFindMovePressed = false
+                }
+            }
 
             val gridSizeWidth = (canvasWidth / (Constants.MaxColSize))
             val gridSizeHeight = (canvasHeight / (Constants.MaxRowSize))
@@ -269,6 +287,7 @@ fun DrawFlingBoard(
                 // Draw the winning arrow if there is a winning move identified
                 if (gameViewModel.foundWinnableMove()) {
                     drawWinningMoveArrow(this, gridSize, uiState)
+                    gNeedClosureAfterFindMovePressed = false
                 }
             }
         }
