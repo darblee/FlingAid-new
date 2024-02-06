@@ -30,6 +30,19 @@ class GameViewModel : ViewModel() {
 
     // Game UI state
     private val _uiState = MutableStateFlow(GameUiState())
+
+    /*
+        Developer's note:
+        StateFlow is a data holder observable flow that emits the current and new state updates.
+        Its value property reflects the current state value. To update state and send it to the flow,
+        assign a new value to the value property of the MutableStateFlow class.
+
+        In Android, StateFlow works well with classes that must maintain an observable immutable state.
+        A StateFlow can be exposed from the GameUiState so that the composables can listen for UI state
+        updates and make the screen state survive configuration changes.
+
+        In the GameViewModel class, add the following _uiState property.
+     */
     internal var uiState : StateFlow<GameUiState> = _uiState.asStateFlow()
         private set
 
@@ -139,7 +152,8 @@ class GameViewModel : ViewModel() {
                                 currentState.copy(
                                     state = GameState.not_thinking,
                                     winningPosition = pos(-1, -1),
-                                    foundWinningDirection = Direction.NO_WINNING_DIRECTION
+                                    foundWinningDirection = Direction.NO_WINNING_DIRECTION,
+                                    NeedToDIsplayNoWinnableToastMessage = true
                                 )
                             }
                         }
@@ -163,6 +177,14 @@ class GameViewModel : ViewModel() {
             if (gMultipleThread) {
                 task2.start()
             }
+        }
+    }
+
+    fun NoNeedToDisplayNoWinnableToastMessage() {
+        _uiState.update {currentState ->
+            currentState.copy(
+                NeedToDIsplayNoWinnableToastMessage = false
+            )
         }
     }
 
