@@ -12,8 +12,11 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,14 +56,22 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.darblee.flingaid.ui.Direction
+import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.pos
@@ -134,6 +145,23 @@ fun MainViewImplementation(
            gameViewModel.NoNeedToDisplayNoWinnableToastMessage()
         }
 
+        Box() {
+            if (uiState.state == GameState.not_thinking) {
+                val imageModifier = Modifier
+                    .size(200.dp)
+                    .border(BorderStroke(1.dp, Color.Black))
+                    .background(Color.Yellow)
+                Image(
+                    painter = painterResource(id = R.drawable.fling),
+                    contentDescription = stringResource(id = R.string.app_name),
+                    contentScale = ContentScale.Fit,
+                    modifier = imageModifier
+                )
+            } else {
+                PlaySearchAnimation(modifier = Modifier.size(200.dp).align(Alignment.Center))
+            }
+        }
+
         TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser, uiState)
         DrawFlingBoard(uiState, modifier, gameViewModel)
     } // Column
@@ -175,7 +203,7 @@ fun TopControlButtons(
                 containerColor = Color.Green,
                 contentColor = Color.Black
             ),
-            enabled = (findWinnableMoveButtonEnabled || showWinnableMoveToUser)
+            enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) && (uiState.state == GameState.not_thinking))
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
@@ -364,6 +392,19 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
         drawCircle(Color.Black, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
     }
 }
+
+@Composable
+fun PlaySearchAnimation(modifier: Modifier) {
+
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.find_animation))
+
+    LottieAnimation(
+        modifier = modifier,
+        composition = composition,
+        iterations = LottieConstants.IterateForever
+    )
+}
+
 
 @Preview(showBackground = true)
 @Composable

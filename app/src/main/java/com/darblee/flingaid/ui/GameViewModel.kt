@@ -111,6 +111,12 @@ class GameViewModel : ViewModel() {
                 cyclicBarrier = CyclicBarrier(2) {
                     Log.i(Constants.debugPrefix, "Reached a converged point between 2 parallel tasks")
                     // TO DO
+
+                    _uiState.update {currentState ->
+                        currentState.copy(
+                            state = GameState.not_thinking,
+                        )
+                    }
                 }
             } else {
                 gMultipleThread = false
