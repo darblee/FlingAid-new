@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.darblee.flingaid.Constants
+import com.darblee.flingaid.Global
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -76,13 +76,13 @@ class GameViewModel : ViewModel() {
     fun toggleBallPosition(pos: pos)
     {
         if (_ballPositionList.contains(pos)) {
-            Log.i(Constants.debugPrefix, "Position $pos.x, $pos.y is already taken")
+            Log.i(Global.debugPrefix, "Position $pos.x, $pos.y is already taken")
             _ballPositionList.remove(pos)
         } else {
             _ballPositionList.add(pos)
         }
 
-        Log.i(Constants.debugPrefix, "Toggle ball. Need to reset the thinking")
+        Log.i(Global.debugPrefix, "Toggle ball. Need to reset the thinking")
 
         _uiState.update {currentState ->
             currentState.copy(
@@ -104,36 +104,33 @@ class GameViewModel : ViewModel() {
             gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
             val gTotalBallCount = gameViewModel.ballCount()
 
-            task1_Direction = Direction.INCOMPLETE
-            task2_Direction = Direction.INCOMPLETE
+            Global.task1_WinningDirection = Direction.INCOMPLETE
+            Global.task2_WinningDirection = Direction.INCOMPLETE
 
             lateinit var cyclicBarrier : CyclicBarrier
-
-            Constants.task1_WinningDirection = Direction.INCOMPLETE
-            Constants.task2_WinningDirection = Direction.INCOMPLETE
 
             if (gTotalBallCount > 11) {
                 gMultipleThread = true
                 cyclicBarrier = CyclicBarrier(2) {
-                    Log.i(Constants.debugPrefix, "Reached a converged point between 2 parallel tasks")
+                    Log.i(Global.debugPrefix, "Reached a converged point between 2 parallel tasks")
                     displayResult()
                 }
             } else {
                 gMultipleThread = false
                 cyclicBarrier = CyclicBarrier(1) {
-                    Log.i(Constants.debugPrefix, "Reached a converged point. One thread")
+                    Log.i(Global.debugPrefix, "Reached a converged point. One thread")
                     displayResult()
                 }
             }
 
             task1 = Thread {
                 processTask1(gTotalBallCount)
-                Log.i("${Constants.debugPrefix} Task 1", "Task #1 is completed. Now waiting for all threads to complete.")
+                Log.i("${Global.debugPrefix} Task 1", "Task #1 is completed. Now waiting for all threads to complete.")
                 cyclicBarrier.await()
             }
             task2 = Thread {
                 processTask2(gTotalBallCount)
-                Log.i("${Constants.debugPrefix}: Task 2", "Task #2 is completed. Now waiting for all threads to complete.")
+                Log.i("${Global.debugPrefix}: Task 2", "Task #2 is completed. Now waiting for all threads to complete.")
                 cyclicBarrier.await()
             }
 
@@ -145,14 +142,14 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun displayResult() {
-        if ((task1_Direction != Direction.NO_WINNING_DIRECTION) && (task1_Direction != Direction.INCOMPLETE)) {
+    private fun displayResult() {
+        if ((Global.task1_WinningDirection != Direction.NO_WINNING_DIRECTION) && (Global.task1_WinningDirection != Direction.INCOMPLETE)) {
             // Task1 has the winning move
-            Log.i(Constants.debugPrefix, "Task #1 has winning move")
+            Log.i(Global.debugPrefix, "Task #1 has winning move")
             val winningPos = pos(task1WinningRow, task1WinningCol)
-            val winningDir = task1_Direction
+            val winningDir = Global.task1_WinningDirection
 
-            gWINNING_DIRECTION_from_tasks = task1_Direction
+            gWINNING_DIRECTION_from_tasks = Global.task1_WinningDirection
 
             _uiState.update {currentState ->
                 currentState.copy(
@@ -163,15 +160,15 @@ class GameViewModel : ViewModel() {
             }
         } else {
             Log.i(
-                Constants.debugPrefix,
+                Global.debugPrefix,
                 "Task #1 does not have winning result. Now check on task #2 outcome"
             )
-            if ((task2_Direction != Direction.NO_WINNING_DIRECTION) && (task2_Direction != Direction.INCOMPLETE)) {
-                Log.i(Constants.debugPrefix, "Task #2 has winning move")
+            if ((Global.task2_WinningDirection != Direction.NO_WINNING_DIRECTION) && (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
+                Log.i(Global.debugPrefix, "Task #2 has winning move")
                 // Task2 has the winning move
                 val winningPos = pos(task2WinningRow, task2WinningCol)
-                val winningDir = task2_Direction
-                gWINNING_DIRECTION_from_tasks = task2_Direction
+                val winningDir = Global.task2_WinningDirection
+                gWINNING_DIRECTION_from_tasks = Global.task2_WinningDirection
                 _uiState.update {currentState ->
                     currentState.copy(
                         state = GameState.not_thinking,
@@ -180,7 +177,7 @@ class GameViewModel : ViewModel() {
                     )
                 }
             } else {
-                Log.i(Constants.debugPrefix, "Neither Task #1 nor Task #2 has winning result")
+                Log.i(Global.debugPrefix, "Neither Task #1 nor Task #2 has winning result")
                 gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
                 _uiState.update {currentState ->
                     currentState.copy(
@@ -194,16 +191,13 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun NoNeedToDisplayNoWinnableToastMessage() {
+    fun noNeedToDisplayNoWinnableToastMessage() {
         _uiState.update {currentState ->
             currentState.copy(
                 NeedToDIsplayNoWinnableToastMessage = false
             )
         }
     }
-
-    lateinit var task1_Direction: Direction
-    lateinit var task2_Direction: Direction
 
     // Volatile is used to ensure each thread is reading exact same value
     // (from memory instead of from cpu-cache)
@@ -221,82 +215,82 @@ class GameViewModel : ViewModel() {
     private fun processTask1(totalBallCnt :  Int) {
 
         try {
-            Log.i("${Constants.debugPrefix} Task 1", "Task 1 has started")
+            Log.i("${Global.debugPrefix} Task 1", "Task 1 has started")
             val game1 = GameEngine()
             game1.populateGrid(_ballPositionList)
 
             val (direction, finalRow, finalCol) = game1.foundWinningMove(
                 totalBallCnt, 1, 1)
 
-            Log.i("${Constants.debugPrefix} Finish Task #1", "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
+            Log.i("${Global.debugPrefix} Finish Task #1", "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
 
-            task1_Direction = direction
+            Global.task1_WinningDirection = direction
 
             when (direction) {
 
                 Direction.INCOMPLETE -> {
-                    Log.i(Constants.debugPrefix, "Task #1 got incomplete. It expect task2 has deterministic result")
+                    Log.i(Global.debugPrefix, "Task #1 got incomplete. It expect task2 has deterministic result")
                 }
 
                 Direction.NO_WINNING_DIRECTION -> {
-                    Log.i(Constants.debugPrefix, "Task #1 concluded there is no winning move")
+                    Log.i(Global.debugPrefix, "Task #1 concluded there is no winning move")
                     if (gMultipleThread) task2.interrupt()
                 }
 
                 else -> {
                     // Task #1 got winning move
-                    task1_Direction = direction
+                    Global.task1_WinningDirection = direction
                     task1WinningRow = finalRow
                     task1WinningCol = finalCol
-                    Constants.task1_WinningDirection = direction
+                    Global.task1_WinningDirection = direction
 
-                    Log.i(Constants.debugPrefix, "Attempting to interrupt task #2")
+                    Log.i(Global.debugPrefix, "Attempting to interrupt task #2")
                     if (gMultipleThread) task2.interrupt()
                 }
             }
         } catch (e: InterruptedException) {
-            Log.i("${Constants.debugPrefix} 1", "Interruption detected")
+            Log.i("${Global.debugPrefix} 1", "Interruption detected")
         }
     }
 
     private fun processTask2(totalBallCnt : Int) {
 
         try {
-            Log.i("${Constants.debugPrefix} Task 2", "Task 2 has started")
+            Log.i("${Global.debugPrefix} Task 2", "Task 2 has started")
             val game2 = GameEngine()
             game2.populateGrid(_ballPositionList)
-            task2_Direction = Direction.INCOMPLETE
+            Global.task2_WinningDirection = Direction.INCOMPLETE
             val (direction, finalRow, finalCol) = game2.foundWinningMove(
                 totalBallCnt, 1, -1)
 
-            Log.i("${Constants.debugPrefix} Finish Task #2", "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
+            Log.i("${Global.debugPrefix} Finish Task #2", "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
 
-            task2_Direction = direction
+            Global.task2_WinningDirection = direction
 
             when (direction) {
 
                 Direction.INCOMPLETE -> {
-                    Log.i(Constants.debugPrefix, "Task #2 got incomplete. It expect task2 has deterministic result")
+                    Log.i(Global.debugPrefix, "Task #2 got incomplete. It expect task2 has deterministic result")
                 }
 
                 Direction.NO_WINNING_DIRECTION -> {
-                    Log.i(Constants.debugPrefix, "Task #2 concluded there is no winning move")
+                    Log.i(Global.debugPrefix, "Task #2 concluded there is no winning move")
                     task1.interrupt()
                 }
 
                 else -> {
                     // Task #2 got the winning move
-                    task2_Direction = direction
+                    Global.task2_WinningDirection = direction
                     task2WinningRow = finalRow
                     task2WinningCol = finalCol
-                    Constants.task2_WinningDirection = direction
+                    Global.task2_WinningDirection = direction
 
-                    Log.i(Constants.debugPrefix, "Attempting to interrupt task #1")
+                    Log.i(Global.debugPrefix, "Attempting to interrupt task #1")
                     task1.interrupt()
                 }
             }
         } catch (e: InterruptedException) {
-            Log.i("${Constants.debugPrefix} Task 2", "Interruption detected")
+            Log.i("${Global.debugPrefix} Task 2", "Interruption detected")
         }
     }
 
@@ -312,7 +306,7 @@ class GameViewModel : ViewModel() {
     fun printGrid()
     {
         for (currentPos in _ballPositionList) {
-            Log.i(Constants.debugPrefix, "$currentPos")
+            Log.i(Global.debugPrefix, "$currentPos")
         }
     }
 

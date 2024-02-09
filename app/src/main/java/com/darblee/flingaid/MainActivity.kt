@@ -115,7 +115,7 @@ fun MainViewImplementation(
         gameViewModel: GameViewModel = viewModel()
 ) {
     val uiState by gameViewModel.uiState.collectAsState()
-    Log.i(Constants.debugPrefix, "MainViewImplementation invoke")
+    Log.i(Global.debugPrefix, "Recompose")
 
     // Force to be in portrait mode all the time
     val activity = LocalContext.current as Activity
@@ -142,7 +142,7 @@ fun MainViewImplementation(
                 "There is no winnable move",
                 Toast.LENGTH_SHORT
             ).show()
-           gameViewModel.NoNeedToDisplayNoWinnableToastMessage()
+           gameViewModel.noNeedToDisplayNoWinnableToastMessage()
         }
 
         Box() {
@@ -185,7 +185,7 @@ fun TopControlButtons(
         val contextForToast = LocalContext.current
         Button(
             onClick = {
-                Log.i(Constants.debugPrefix, ">>> Starting thinking : Button Pressed")
+                Log.i(Global.debugPrefix, ">>> Starting thinking : Button Pressed")
                 if (showWinnableMoveToUser) {
                     // Make the actual move before find the next winnable move
                     gameViewModel.makeWinningMove(uiState)
@@ -193,7 +193,7 @@ fun TopControlButtons(
                 if (gameViewModel.ballCount() == 1) {
                     Toast.makeText(contextForToast, "You won!", Toast.LENGTH_SHORT).show()
                 } else {
-                    Log.i(Constants.debugPrefix, ">>> Looking for winnable move")
+                    Log.i(Global.debugPrefix, ">>> Looking for winnable move")
                     gameViewModel.findWinningMove(gameViewModel)
                 }
             }, // OnClick
@@ -246,8 +246,6 @@ fun DrawFlingBoard(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
     ) {
-    Log.i(Constants.debugPrefix, "Grid Recompose has been triggered")
-
     var gridSize = 0f
 
     val matrix = Matrix()
@@ -261,7 +259,7 @@ fun DrawFlingBoard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(Constants.MaxColSize.toFloat() / Constants.MaxRowSize.toFloat())
+            .aspectRatio(Global.MaxColSize.toFloat() / Global.MaxRowSize.toFloat())
             .shadow(
                 elevation = 10.dp,
                 shape = RoundedCornerShape(20.dp)
@@ -279,24 +277,22 @@ fun DrawFlingBoard(
                         onTap = { tapOffset ->
                             val row = (tapOffset.y / gridSize).toInt()
                             val col = (tapOffset.x / gridSize).toInt()
-                            Log.i(Constants.debugPrefix, "row = $row, col = $col")
+                            Log.i(Global.debugPrefix, "row = $row, col = $col")
 
-                            if ((row < Constants.MaxRowSize) && (col < Constants.MaxColSize)) {
+                            if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
                                 gameViewModel.toggleBallPosition(pos(row, col))
                             }
                         }
                     )
                 }
         ) {
-
-            Log.i(Constants.debugPrefix, "Canvas Recompose has been triggered")
             val canvasWidth = size.width
             val canvasHeight = size.height
 
-            Log.i(Constants.debugPrefix, ">>> Canvas Thinking status: ${uiState.state}")
+            Log.i(Global.debugPrefix, ">>> Canvas Thinking status: ${uiState.state}")
 
-            val gridSizeWidth = (canvasWidth / (Constants.MaxColSize))
-            val gridSizeHeight = (canvasHeight / (Constants.MaxRowSize))
+            val gridSizeWidth = (canvasWidth / (Global.MaxColSize))
+            val gridSizeHeight = (canvasHeight / (Global.MaxRowSize))
 
             gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
@@ -315,8 +311,8 @@ fun DrawFlingBoard(
 
 fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiState ) {
     with (drawScope) {
-        Log.i(Constants.debugPrefix, "Winning Move exist with winning direction:  ${uiState.foundWinningDirection}")
-        Log.i(Constants.debugPrefix, "Winning Move position is :  row = ${uiState.winningPosition.row}, col = ${uiState.winningPosition.col}")
+        Log.i(Global.debugPrefix, "Winning Move exist with winning direction:  ${uiState.foundWinningDirection}")
+        Log.i(Global.debugPrefix, "Winning Move position is :  row = ${uiState.winningPosition.row}, col = ${uiState.winningPosition.col}")
 
         val displayArrowBitMap = when (uiState.foundWinningDirection) {
             Direction.UP -> upArrowBitmap
@@ -327,7 +323,7 @@ fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiS
             //NOTE: bitmap configuration describes how pixels are stored. This affects the quality (color depth) as well as the ability to display transparent/translucent colors.
             // "Bitmap.Config.ARGB_8888" indicates the maximum flexibility
             else -> {
-                Log.e(Constants.debugPrefix, "Got unexpected Direction value")
+                Log.e(Global.debugPrefix, "Got unexpected Direction value")
                 assert(true)
                 Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
             }
@@ -360,8 +356,8 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
     with (drawScope) {
         // Draw horizontal lines
         var currentY = 0F
-        val gridWidth = gridSize * Constants.MaxColSize
-        repeat(Constants.MaxRowSize + 1) { index ->
+        val gridWidth = gridSize * Global.MaxColSize
+        repeat(Global.MaxRowSize + 1) { index ->
             val lineWidth = if (index == 4) 5 else 2
             drawLine(
                 start = Offset(x = 0.dp.toPx(), y = currentY),
@@ -374,8 +370,8 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
 
         // Draw vertical lines
         var currentX = 0F
-        val gridHeight = gridSize * Constants.MaxRowSize
-        repeat(Constants.MaxColSize + 1) {
+        val gridHeight = gridSize * Global.MaxRowSize
+        repeat(Global.MaxColSize + 1) {
             drawLine(
                 start = Offset(x = currentX, y = 0.dp.toPx()),
                 end = Offset(x = currentX, y = gridHeight),
@@ -386,8 +382,8 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
         }
 
         // Draw the circle in the center of the grid
-        val offsetX = (gridSize  * ((Constants.MaxColSize / 2) + 0.5)).toFloat()
-        val offsetY = (gridSize  * ((Constants.MaxRowSize / 2)))
+        val offsetX = (gridSize  * ((Global.MaxColSize / 2) + 0.5)).toFloat()
+        val offsetY = (gridSize  * ((Global.MaxRowSize / 2)))
         val radiusLength = (gridSize * 0.66).toFloat()
         drawCircle(Color.Black, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
     }

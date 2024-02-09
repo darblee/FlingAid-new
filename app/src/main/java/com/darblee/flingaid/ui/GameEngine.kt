@@ -2,18 +2,18 @@ package com.darblee.flingaid.ui
 
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.darblee.flingaid.Constants
+import com.darblee.flingaid.Global
 
 class GameEngine {
-    private var flingGrid = Array(Constants.MaxRowSize) { BooleanArray(Constants.MaxColSize) }
+    private var flingGrid = Array(Global.MaxRowSize) { BooleanArray(Global.MaxColSize) }
 
     init {
         reset()
     }
 
     private fun reset() {
-        repeat (Constants.MaxRowSize) { row ->
-            repeat(Constants.MaxColSize) { col ->
+        repeat (Global.MaxRowSize) { row ->
+            repeat(Global.MaxColSize) { col ->
                 flingGrid[row][col] = false
             }
         }
@@ -29,8 +29,8 @@ class GameEngine {
         val tempBoard = GameEngine()
 
         // Clone the board
-        repeat (Constants.MaxRowSize) { curRow ->
-            repeat(Constants.MaxColSize) { curCol ->
+        repeat (Global.MaxRowSize) { curRow ->
+            repeat(Global.MaxColSize) { curCol ->
                 tempBoard.flingGrid[curRow][curCol] = flingGrid[curRow][curCol]
             }
         }
@@ -56,15 +56,15 @@ class GameEngine {
 
         if (thinkingDirectionOffset == 1) {
             startRow = 0
-            exceededRow = Constants.MaxRowSize
+            exceededRow = Global.MaxRowSize
 
             startColumn = 0
-            exceededCol = Constants.MaxColSize
+            exceededCol = Global.MaxColSize
         } else {
-            startRow = Constants.MaxRowSize - 1
+            startRow = Global.MaxRowSize - 1
             exceededRow = -1
 
-            startColumn = Constants.MaxColSize - 1
+            startColumn = Global.MaxColSize - 1
             exceededCol = -1
         }
         var curRow = startRow
@@ -73,8 +73,8 @@ class GameEngine {
         run repeatBlock@{
             while (curRow != exceededRow) {
 
-                if (Thread.interrupted() || (Constants.task1_WinningDirection != Direction.INCOMPLETE) || (Constants.task2_WinningDirection != Direction.INCOMPLETE)) {
-                    Log.d("${Constants.debugPrefix}:", "Short circuit on row processing. Current thread is interrupted")
+                if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
+                    Log.d("${Global.debugPrefix}:", "Short circuit on row processing. Current thread is interrupted")
                     direction = Direction.INCOMPLETE  // We should quit the current thread
                     return@repeatBlock
                 }
@@ -88,13 +88,13 @@ class GameEngine {
                     curCol = currentCol
 
                     if (flingGrid[curRow][curCol]) {
-                        if (curSearchLevel == 1) Log.i("${Constants.debugPrefix}: Top level", "Processing row=$curRow, col = $curCol")
+                        if (curSearchLevel == 1) Log.i("${Global.debugPrefix}: Top level", "Processing row=$curRow, col = $curCol")
 
                         if (winnableByMovingUp(totalBallCnt, curSearchLevel, curRow, curCol)) {
                             direction = Direction.UP
                             winningRow = curRow
                             winningCol = curCol
-                            Log.i("${Constants.debugPrefix}:", "Level #$curSearchLevel, Found winning move at direction $direction when processing at row: $curRow col: $curCol")
+                            Log.i("${Global.debugPrefix}:", "Level #$curSearchLevel, Found winning move at direction $direction when processing at row: $curRow col: $curCol")
                             return@repeatBlock
                         }
 
@@ -128,7 +128,7 @@ class GameEngine {
         }
 
         if (direction != Direction.NO_WINNING_DIRECTION)
-            Log.d("${Constants.debugPrefix}:", "Returning winning (or incomplete) result: Level #$curSearchLevel, Direction is $direction")
+            Log.d("${Global.debugPrefix}:", "Returning winning (or incomplete) result: Level #$curSearchLevel, Direction is $direction")
 
         return Triple(direction, winningRow, winningCol)
     }
@@ -186,7 +186,7 @@ class GameEngine {
         tempBoard.moveDown(srcRow, targetRow, col)
 
         if (totalBallCnt == (curSearchLevel + 1)) {
-            Log.i("${Constants.debugPrefix}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING DOWN")
+            Log.i("${Global.debugPrefix}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING DOWN")
             return true
         }
 
@@ -215,7 +215,7 @@ class GameEngine {
         tempBoard.moveRight(srcCol, targetCol, row)
 
         if (totalBallCnt == (curSearchLevel + 1)) {
-            Log.d("${Constants.debugPrefix}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING RIGHT")
+            Log.d("${Global.debugPrefix}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING RIGHT")
             return true
         }
 
@@ -293,7 +293,7 @@ class GameEngine {
     // return -1
     fun findTargetRowOnMoveDown(srcRow: Int, col: Int) : Int {
         // If you are near the bottom of the grid, then you do not have any room to move down
-        if (srcRow > (Constants.MaxRowSize - 3)) {
+        if (srcRow > (Global.MaxRowSize - 3)) {
             return -1
         }
 
@@ -307,12 +307,12 @@ class GameEngine {
         var targetRow = (srcRow + 2)
         // Log.d("GM: Details", "     ==> SrcRow is $srcRow Target $targetRow")
 
-        while ((!flingGrid[targetRow][col]) && (targetRow < (Constants.MaxRowSize - 1))) {
+        while ((!flingGrid[targetRow][col]) && (targetRow < (Global.MaxRowSize - 1))) {
             targetRow++
             // Log.d("GM: Details", "     ==> Exploring Target $targetRow")
         }
 
-        if ((targetRow == (Constants.MaxRowSize - 1)) && (!flingGrid[(Constants.MaxRowSize - 1)][col])) {
+        if ((targetRow == (Global.MaxRowSize - 1)) && (!flingGrid[(Global.MaxRowSize - 1)][col])) {
             // Log.d("GM: Details", "     ==> No lower ball to knock off the edge. REJECT")
             return -1
         }
@@ -327,7 +327,7 @@ class GameEngine {
     fun findTargetColOnMoveRight(row: Int, srcCol: Int) : Int {
 
         // If you are near the right of the grid, then you do not have any room to move right
-        if (srcCol > (Constants.MaxColSize - 3)) {
+        if (srcCol > (Global.MaxColSize - 3)) {
             // Log.d("GM: Details", "     ==> No right move as it is near the right edge already. REJECT")
             return -1
         }
@@ -342,12 +342,12 @@ class GameEngine {
         var targetCol = (srcCol + 2)
         // Log.d("GM: Details", "     ==> SrcCol is $srcCol Target $targetCol")
 
-        while ((!flingGrid[row][targetCol]) && (targetCol < (Constants.MaxColSize - 1))) {
+        while ((!flingGrid[row][targetCol]) && (targetCol < (Global.MaxColSize - 1))) {
             targetCol++
             // Log.d("GM: Details", "     ==> Exploring Target $targetCol")
         }
 
-        if ((targetCol == (Constants.MaxColSize - 1)) && (!flingGrid[row][(Constants.MaxColSize - 1)])) {
+        if ((targetCol == (Global.MaxColSize - 1)) && (!flingGrid[row][(Global.MaxColSize - 1)])) {
             // Log.d("GM: Details", "     ==> No ball at the right to knock off the edge. REJECT")
             return -1
         }
@@ -492,19 +492,19 @@ class GameEngine {
 
         // Handle the edge first
         // If the next row is already at the bottom, then just move it out of the grid and you're done
-        if (nextSrcRow == (Constants.MaxRowSize - 1)) {
-            flingGrid[(Constants.MaxRowSize - 1)][col] = false // Fell of the edge. One less ball
+        if (nextSrcRow == (Global.MaxRowSize - 1)) {
+            flingGrid[(Global.MaxRowSize - 1)][col] = false // Fell of the edge. One less ball
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             return
         }
 
         // If the next row is at 2nd last row (e.g. row = (Max Row - 2))), then handle it special since we are near the edge
-        if (nextSrcRow == (Constants.MaxRowSize - 2)) {
-            if (flingGrid[(Constants.MaxRowSize - 1)][col]) {
-                flingGrid[(Constants.MaxRowSize -1)][col] = false // Fell of the edge. One less ball
+        if (nextSrcRow == (Global.MaxRowSize - 2)) {
+            if (flingGrid[(Global.MaxRowSize - 1)][col]) {
+                flingGrid[(Global.MaxRowSize -1)][col] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             } else {
-                flingGrid[(Constants.MaxRowSize - 2)][col] = false // Fell of the edge. One less ball
+                flingGrid[(Global.MaxRowSize - 2)][col] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             }
             return
@@ -514,18 +514,18 @@ class GameEngine {
 
         var indexRow = nextSrcRow + 1
         // Move nextSrcRow pointer to the next one that has space to move the ball
-        while ((flingGrid[indexRow][col]) && (indexRow < (Constants.MaxRowSize - 1))){
+        while ((flingGrid[indexRow][col]) && (indexRow < (Global.MaxRowSize - 1))){
             // There is no space. Then move indexRow pointer until there is space
             indexRow++
         }
 
         // Check if we have continuous balls all the way to the edge
-        if (indexRow == (Constants.MaxRowSize - 1)) {
-            if (flingGrid[Constants.MaxRowSize - 1][col]) {
-                flingGrid[Constants.MaxRowSize - 1][col] = false // Fell of the edge. One less ball
+        if (indexRow == (Global.MaxRowSize - 1)) {
+            if (flingGrid[Global.MaxRowSize - 1][col]) {
+                flingGrid[Global.MaxRowSize - 1][col] = false // Fell of the edge. One less ball
             } else {
-                if (flingGrid[Constants.MaxRowSize - 2][col]) {
-                    flingGrid[Constants.MaxRowSize - 2][col] = false
+                if (flingGrid[Global.MaxRowSize - 2][col]) {
+                    flingGrid[Global.MaxRowSize - 2][col] = false
                 }
             }
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
@@ -539,7 +539,7 @@ class GameEngine {
         // Otherwise, we need re-iterate the process in the next chain
         var foundBallBeforeEdge = false
         indexRow = nextSrcRow + 1
-        while ((indexRow < (Constants.MaxRowSize - 1)) && (!foundBallBeforeEdge)) {
+        while ((indexRow < (Global.MaxRowSize - 1)) && (!foundBallBeforeEdge)) {
             if (flingGrid[indexRow][col])
                 foundBallBeforeEdge = true
             else
@@ -547,11 +547,11 @@ class GameEngine {
         }
 
         // Need to handle one more edge case
-        if ((!foundBallBeforeEdge) && (indexRow == (Constants.MaxRowSize-1))) {
-            if (flingGrid[Constants.MaxRowSize-1][col]) foundBallBeforeEdge = true
+        if ((!foundBallBeforeEdge) && (indexRow == (Global.MaxRowSize-1))) {
+            if (flingGrid[Global.MaxRowSize-1][col]) foundBallBeforeEdge = true
         }
 
-        if ((indexRow == (Constants.MaxRowSize - 1)) && (!foundBallBeforeEdge)) {
+        if ((indexRow == (Global.MaxRowSize - 1)) && (!foundBallBeforeEdge)) {
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             flingGrid[nextSrcRow][col] = false  // Fell of the edge. One less ball
             return
@@ -578,19 +578,19 @@ class GameEngine {
 
         // Handle the edge first
         // If the next column is already at the right, then just move it out of the grid and you're done
-        if (nextSrcCol == (Constants.MaxColSize - 1)) {
-            flingGrid[row][Constants.MaxColSize - 1] = false // Fell of the edge. One less ball
+        if (nextSrcCol == (Global.MaxColSize - 1)) {
+            flingGrid[row][Global.MaxColSize - 1] = false // Fell of the edge. One less ball
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             return
         }
 
         // If the next row is at 2nd last column (e.g. col = (Max Col - 2))), then handle it special since we are near the edge
-        if (nextSrcCol == (Constants.MaxColSize - 2)) {
-            if (flingGrid[row][(Constants.MaxColSize - 1)]) {
-                flingGrid[row][(Constants.MaxColSize - 1)] = false // Fell of the edge. One less ball
+        if (nextSrcCol == (Global.MaxColSize - 2)) {
+            if (flingGrid[row][(Global.MaxColSize - 1)]) {
+                flingGrid[row][(Global.MaxColSize - 1)] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             } else {
-                flingGrid[row][(Constants.MaxColSize - 2)] = false // Fell of the edge. One less ball
+                flingGrid[row][(Global.MaxColSize - 2)] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             }
             return
@@ -600,19 +600,19 @@ class GameEngine {
 
         var indexCol = nextSrcCol + 1
         // Move nextSrcCol pointer to the next one that has space to move the ball
-        while ((flingGrid[row][indexCol]) && (indexCol < (Constants.MaxColSize - 1))){
+        while ((flingGrid[row][indexCol]) && (indexCol < (Global.MaxColSize - 1))){
             // There is no space. Then move indexCol pointer until there is space
             indexCol++
         }
 
         // Check if we have continuous balls all the way to the edge
-        if (indexCol == (Constants.MaxColSize - 1)) {
+        if (indexCol == (Global.MaxColSize - 1)) {
 
-            if (flingGrid[row][Constants.MaxColSize - 1]) {
-                flingGrid[row][Constants.MaxColSize - 1] = false // Fell of the edge. One less ball
+            if (flingGrid[row][Global.MaxColSize - 1]) {
+                flingGrid[row][Global.MaxColSize - 1] = false // Fell of the edge. One less ball
             } else {
-                if (flingGrid[row][Constants.MaxColSize - 2]) {
-                    flingGrid[row][Constants.MaxColSize - 2] = false
+                if (flingGrid[row][Global.MaxColSize - 2]) {
+                    flingGrid[row][Global.MaxColSize - 2] = false
                 }
             }
 
@@ -629,7 +629,7 @@ class GameEngine {
         indexCol = nextSrcCol + 1
 
         // while ((indexCol < MaxColSize) && (!foundBallBeforeEdge)) {
-        while ((indexCol < (Constants.MaxColSize - 1)) && (!foundBallBeforeEdge)) {
+        while ((indexCol < (Global.MaxColSize - 1)) && (!foundBallBeforeEdge)) {
             if (flingGrid[row][indexCol])
                 foundBallBeforeEdge = true
             else
@@ -637,11 +637,11 @@ class GameEngine {
         }
 
         // Need to handle one more edge case
-        if ((!foundBallBeforeEdge) && (indexCol == (Constants.MaxColSize-1))) {
-            if (flingGrid[row][Constants.MaxColSize-1]) foundBallBeforeEdge = true
+        if ((!foundBallBeforeEdge) && (indexCol == (Global.MaxColSize-1))) {
+            if (flingGrid[row][Global.MaxColSize-1]) foundBallBeforeEdge = true
         }
 
-        if ((indexCol == (Constants.MaxColSize - 1)) && (!foundBallBeforeEdge)) {
+        if ((indexCol == (Global.MaxColSize - 1)) && (!foundBallBeforeEdge)) {
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             flingGrid[row][nextSrcCol] = false  // Fell of the edge. One less ball
             return
@@ -747,8 +747,8 @@ class GameEngine {
         val ballList: SnapshotStateList<pos> = SnapshotStateList<pos>().apply {
 
             // Clone the board
-            repeat (Constants.MaxRowSize) { curRow ->
-                repeat(Constants.MaxColSize) { curCol ->
+            repeat (Global.MaxRowSize) { curRow ->
+                repeat(Global.MaxColSize) { curCol ->
                     if (flingGrid[curRow][curCol]) {
                         val pos = pos(curRow,curCol)
                         add(pos)
