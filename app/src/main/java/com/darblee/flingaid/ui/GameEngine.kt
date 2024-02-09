@@ -73,6 +73,13 @@ class GameEngine {
         run repeatBlock@{
             while (curRow != exceededRow) {
 
+                if (Thread.interrupted() || (Constants.task1_WinningDirection != Direction.INCOMPLETE) || (Constants.task2_WinningDirection != Direction.INCOMPLETE)) {
+                    Log.d("${Constants.debugPrefix}:", "Short circuit on row processing. Current thread is interrupted")
+                    direction = Direction.INCOMPLETE  // We should quit the current thread
+                    return@repeatBlock
+                }
+
+
                 currentCol = startColumn
 
                 var curCol : Int
@@ -81,13 +88,13 @@ class GameEngine {
                     curCol = currentCol
 
                     if (flingGrid[curRow][curCol]) {
-                        if (curSearchLevel == 1) Log.d("GM: Top level", "Processing row=$curRow, col = $curCol")
+                        if (curSearchLevel == 1) Log.i("${Constants.debugPrefix}: Top level", "Processing row=$curRow, col = $curCol")
 
                         if (winnableByMovingUp(totalBallCnt, curSearchLevel, curRow, curCol)) {
                             direction = Direction.UP
                             winningRow = curRow
                             winningCol = curCol
-                            Log.d("GM:", "Level #$curSearchLevel, Found winning move at direction $direction when processing at row: $curRow col: $curCol")
+                            Log.i("${Constants.debugPrefix}:", "Level #$curSearchLevel, Found winning move at direction $direction when processing at row: $curRow col: $curCol")
                             return@repeatBlock
                         }
 
@@ -121,7 +128,7 @@ class GameEngine {
         }
 
         if (direction != Direction.NO_WINNING_DIRECTION)
-            Log.d("GM:", "Returning winning (or incomplete) result: Level #$curSearchLevel, Direction is $direction")
+            Log.d("${Constants.debugPrefix}:", "Returning winning (or incomplete) result: Level #$curSearchLevel, Direction is $direction")
 
         return Triple(direction, winningRow, winningCol)
     }
@@ -138,7 +145,6 @@ class GameEngine {
         val targetRow = findTargetRowOnMoveUp(srcRow, col)
 
         if (targetRow == -1) {
-            // Log.d("GM: $curSearchLevel", "$debugIndentation $methodName: Could not find winnable move. No Target Row.")
             return false
         }
 
@@ -169,7 +175,6 @@ class GameEngine {
         val targetRow = findTargetRowOnMoveDown(srcRow, col)
 
         if (targetRow == -1) {
-            // Log.d("GM: $curSearchLevel", "$debugIndentation $methodName: Could not find winnable move. No Target Row")
             return false
         }
 
@@ -181,14 +186,13 @@ class GameEngine {
         tempBoard.moveDown(srcRow, targetRow, col)
 
         if (totalBallCnt == (curSearchLevel + 1)) {
-            Log.d("GM: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING DOWN")
+            Log.i("${Constants.debugPrefix}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING DOWN")
             return true
         }
 
         val (direction, _, _) = tempBoard.foundWinningMove(totalBallCnt, (curSearchLevel + 1), 1)
 
         if ((direction == Direction.NO_WINNING_DIRECTION) || (direction == Direction.INCOMPLETE)) {
-            // Log.d("GM: $curSearchLevel", "$debugIndentation $methodName: Could not find winnable move")
             return (false)
         }
 
@@ -211,7 +215,7 @@ class GameEngine {
         tempBoard.moveRight(srcCol, targetCol, row)
 
         if (totalBallCnt == (curSearchLevel + 1)) {
-            Log.d("GM: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING RIGHT")
+            Log.d("${Constants.debugPrefix}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING RIGHT")
             return true
         }
 

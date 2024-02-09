@@ -150,7 +150,7 @@ fun MainViewImplementation(
                 val imageModifier = Modifier
                     .size(200.dp)
                     .border(BorderStroke(1.dp, Color.Black))
-                    .background(Color.Yellow)
+                    .background(Color.Black)
                 Image(
                     painter = painterResource(id = R.drawable.fling),
                     contentDescription = stringResource(id = R.string.app_name),

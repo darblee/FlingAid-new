@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.concurrent.CyclicBarrier
 
+
+var gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
+
 class GameViewModel : ViewModel() {
 
     private var _ballPositionList = mutableStateListOf<pos>()
@@ -38,7 +41,7 @@ class GameViewModel : ViewModel() {
         assign a new value to the value property of the MutableStateFlow class.
 
         In Android, StateFlow works well with classes that must maintain an observable immutable state.
-        A StateFlow can be exposed from the GameUiState so that the composables can listen for UI state
+        A StateFlow can be exposed from the GameUiState so that the composable can listen for UI state
         updates and make the screen state survive configuration changes.
 
         In the GameViewModel class, add the following _uiState property.
@@ -98,7 +101,7 @@ class GameViewModel : ViewModel() {
         viewModelScope.launch {
             gProcessing = true
             gOverallProgress = 0
-            val gWINNING_DIRECTION = Direction.NO_WINNING_DIRECTION
+            gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
             val gTotalBallCount = gameViewModel.ballCount()
 
             task1_Direction = Direction.INCOMPLETE
@@ -106,64 +109,20 @@ class GameViewModel : ViewModel() {
 
             lateinit var cyclicBarrier : CyclicBarrier
 
-            if (gTotalBallCount > 100) {
+            Constants.task1_WinningDirection = Direction.INCOMPLETE
+            Constants.task2_WinningDirection = Direction.INCOMPLETE
+
+            if (gTotalBallCount > 11) {
                 gMultipleThread = true
                 cyclicBarrier = CyclicBarrier(2) {
                     Log.i(Constants.debugPrefix, "Reached a converged point between 2 parallel tasks")
-                    // TO DO
-
-                    _uiState.update {currentState ->
-                        currentState.copy(
-                            state = GameState.not_thinking,
-                        )
-                    }
+                    displayResult()
                 }
             } else {
                 gMultipleThread = false
                 cyclicBarrier = CyclicBarrier(1) {
                     Log.i(Constants.debugPrefix, "Reached a converged point. One thread")
-
-                    if ((task1_Direction != Direction.NO_WINNING_DIRECTION) && (task1_Direction != Direction.INCOMPLETE)) {
-                        // Task1 has the winning move
-                        Log.i(Constants.debugPrefix, "Task #1 has winning move")
-                        val winningPos = pos(task1WinningRow, task1WinningCol)
-                        val winningDir = task1_Direction
-                        _uiState.update {currentState ->
-                            currentState.copy(
-                                state = GameState.not_thinking,
-                                winningPosition = winningPos,
-                                foundWinningDirection = winningDir
-                            )
-                        }
-                    } else {
-                        Log.i(
-                            Constants.debugPrefix,
-                            "Task #1 does not have winning result. Now check on task #2 outcome"
-                        )
-                        if ((task2_Direction != Direction.NO_WINNING_DIRECTION) && (task2_Direction != Direction.INCOMPLETE)) {
-                            Log.i(Constants.debugPrefix, "Task #2 has winning move")
-                            // Task2 has the winning move
-                            val winningPos = pos(task2WinningRow, task2WinningCol)
-                            val winningDir = task2_Direction
-                            _uiState.update {currentState ->
-                                currentState.copy(
-                                    state = GameState.not_thinking,
-                                    winningPosition = winningPos,
-                                    foundWinningDirection = winningDir
-                                )
-                            }
-                        } else {
-                            Log.i(Constants.debugPrefix, "Neither Task #1 nor Task #2 has winning result")
-                            _uiState.update {currentState ->
-                                currentState.copy(
-                                    state = GameState.not_thinking,
-                                    winningPosition = pos(-1, -1),
-                                    foundWinningDirection = Direction.NO_WINNING_DIRECTION,
-                                    NeedToDIsplayNoWinnableToastMessage = true
-                                )
-                            }
-                        }
-                    }
+                    displayResult()
                 }
             }
 
@@ -182,6 +141,55 @@ class GameViewModel : ViewModel() {
 
             if (gMultipleThread) {
                 task2.start()
+            }
+        }
+    }
+
+    fun displayResult() {
+        if ((task1_Direction != Direction.NO_WINNING_DIRECTION) && (task1_Direction != Direction.INCOMPLETE)) {
+            // Task1 has the winning move
+            Log.i(Constants.debugPrefix, "Task #1 has winning move")
+            val winningPos = pos(task1WinningRow, task1WinningCol)
+            val winningDir = task1_Direction
+
+            gWINNING_DIRECTION_from_tasks = task1_Direction
+
+            _uiState.update {currentState ->
+                currentState.copy(
+                    state = GameState.not_thinking,
+                    winningPosition = winningPos,
+                    foundWinningDirection = winningDir
+                )
+            }
+        } else {
+            Log.i(
+                Constants.debugPrefix,
+                "Task #1 does not have winning result. Now check on task #2 outcome"
+            )
+            if ((task2_Direction != Direction.NO_WINNING_DIRECTION) && (task2_Direction != Direction.INCOMPLETE)) {
+                Log.i(Constants.debugPrefix, "Task #2 has winning move")
+                // Task2 has the winning move
+                val winningPos = pos(task2WinningRow, task2WinningCol)
+                val winningDir = task2_Direction
+                gWINNING_DIRECTION_from_tasks = task2_Direction
+                _uiState.update {currentState ->
+                    currentState.copy(
+                        state = GameState.not_thinking,
+                        winningPosition = winningPos,
+                        foundWinningDirection = winningDir
+                    )
+                }
+            } else {
+                Log.i(Constants.debugPrefix, "Neither Task #1 nor Task #2 has winning result")
+                gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
+                _uiState.update {currentState ->
+                    currentState.copy(
+                        state = GameState.not_thinking,
+                        winningPosition = pos(-1, -1),
+                        foundWinningDirection = Direction.NO_WINNING_DIRECTION,
+                        NeedToDIsplayNoWinnableToastMessage = true
+                    )
+                }
             }
         }
     }
@@ -240,7 +248,9 @@ class GameViewModel : ViewModel() {
                     task1_Direction = direction
                     task1WinningRow = finalRow
                     task1WinningCol = finalCol
+                    Constants.task1_WinningDirection = direction
 
+                    Log.i(Constants.debugPrefix, "Attempting to interrupt task #2")
                     if (gMultipleThread) task2.interrupt()
                 }
             }
@@ -279,7 +289,9 @@ class GameViewModel : ViewModel() {
                     task2_Direction = direction
                     task2WinningRow = finalRow
                     task2WinningCol = finalCol
+                    Constants.task2_WinningDirection = direction
 
+                    Log.i(Constants.debugPrefix, "Attempting to interrupt task #1")
                     task1.interrupt()
                 }
             }
@@ -287,7 +299,6 @@ class GameViewModel : ViewModel() {
             Log.i("${Constants.debugPrefix} Task 2", "Interruption detected")
         }
     }
-
 
     fun ballPositionList() : SnapshotStateList<pos> {
         return (_ballPositionList)
