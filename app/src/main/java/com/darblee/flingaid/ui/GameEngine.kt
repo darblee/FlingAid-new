@@ -74,11 +74,11 @@ class GameEngine {
             while (curRow != exceededRow) {
 
                 if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
-                    Log.d("${Global.debugPrefix}:", "Short circuit on row processing. Current thread is interrupted")
+                    val thread_int = Thread.interrupted()
+                    Log.d("${Global.debugPrefix}:", "Short circuit on row processing. Thread interuptd: $thread_int  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
                     direction = Direction.INCOMPLETE  // We should quit the current thread
                     return@repeatBlock
                 }
-
 
                 currentCol = startColumn
 

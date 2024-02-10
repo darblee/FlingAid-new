@@ -76,13 +76,10 @@ class GameViewModel : ViewModel() {
     fun toggleBallPosition(pos: pos)
     {
         if (_ballPositionList.contains(pos)) {
-            Log.i(Global.debugPrefix, "Position $pos.x, $pos.y is already taken")
             _ballPositionList.remove(pos)
         } else {
             _ballPositionList.add(pos)
         }
-
-        Log.i(Global.debugPrefix, "Toggle ball. Need to reset the thinking")
 
         _uiState.update {currentState ->
             currentState.copy(
@@ -145,7 +142,7 @@ class GameViewModel : ViewModel() {
     private fun displayResult() {
         if ((Global.task1_WinningDirection != Direction.NO_WINNING_DIRECTION) && (Global.task1_WinningDirection != Direction.INCOMPLETE)) {
             // Task1 has the winning move
-            Log.i(Global.debugPrefix, "Task #1 has winning move")
+            Log.i(Global.debugPrefix, "Task #1 has winning move with direction : ${Global.task1_WinningDirection}")
             val winningPos = pos(task1WinningRow, task1WinningCol)
             val winningDir = Global.task1_WinningDirection
 
@@ -164,7 +161,7 @@ class GameViewModel : ViewModel() {
                 "Task #1 does not have winning result. Now check on task #2 outcome"
             )
             if ((Global.task2_WinningDirection != Direction.NO_WINNING_DIRECTION) && (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
-                Log.i(Global.debugPrefix, "Task #2 has winning move")
+                Log.i(Global.debugPrefix, "Task #2 has winning move with direction: ${Global.task2_WinningDirection}")
                 // Task2 has the winning move
                 val winningPos = pos(task2WinningRow, task2WinningCol)
                 val winningDir = Global.task2_WinningDirection
@@ -204,7 +201,6 @@ class GameViewModel : ViewModel() {
     @Volatile var gProcessing = false
     @Volatile var gOverallProgress = 0
     @Volatile var gMultipleThread = false
-
 
     private lateinit var task1 : Thread
     private lateinit var task2 : Thread
@@ -270,7 +266,7 @@ class GameViewModel : ViewModel() {
             when (direction) {
 
                 Direction.INCOMPLETE -> {
-                    Log.i(Global.debugPrefix, "Task #2 got incomplete. It expect task2 has deterministic result")
+                    Log.i(Global.debugPrefix, "Task #2 got incomplete. It expect task1 has deterministic result")
                 }
 
                 Direction.NO_WINNING_DIRECTION -> {

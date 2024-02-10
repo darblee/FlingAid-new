@@ -277,7 +277,6 @@ fun DrawFlingBoard(
                         onTap = { tapOffset ->
                             val row = (tapOffset.y / gridSize).toInt()
                             val col = (tapOffset.x / gridSize).toInt()
-                            Log.i(Global.debugPrefix, "row = $row, col = $col")
 
                             if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
                                 gameViewModel.toggleBallPosition(pos(row, col))
@@ -288,8 +287,6 @@ fun DrawFlingBoard(
         ) {
             val canvasWidth = size.width
             val canvasHeight = size.height
-
-            Log.i(Global.debugPrefix, ">>> Canvas Thinking status: ${uiState.state}")
 
             val gridSizeWidth = (canvasWidth / (Global.MaxColSize))
             val gridSizeHeight = (canvasHeight / (Global.MaxRowSize))
