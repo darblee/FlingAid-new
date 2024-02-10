@@ -52,7 +52,12 @@ class GameViewModel : ViewModel() {
     init {
         reset()
     }
-    
+
+    fun getThinkingStatus(): GameState
+    {
+        return (_uiState.value.state)
+    }
+
     fun reset() {
         _uiState.update {currentState ->
             currentState.copy(

@@ -115,7 +115,7 @@ fun MainViewImplementation(
         gameViewModel: GameViewModel = viewModel()
 ) {
     val uiState by gameViewModel.uiState.collectAsState()
-    Log.i(Global.debugPrefix, "Recompose")
+    Log.i(Global.debugPrefix, "Recompose Thinking status: ${uiState.state}")
 
     // Force to be in portrait mode all the time
     val activity = LocalContext.current as Activity
@@ -163,7 +163,7 @@ fun MainViewImplementation(
         }
 
         TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser, uiState)
-        DrawFlingBoard(uiState, modifier, gameViewModel)
+        DrawFlingBoard(modifier, gameViewModel, uiState)
     } // Column
 }
 
@@ -242,10 +242,11 @@ fun TopControlButtons(
  */
 @Composable
 fun DrawFlingBoard(
-    uiState: GameUiState,
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
+    uiState: GameUiState,
     ) {
+    val contextForToast = LocalContext.current
     var gridSize = 0f
 
     val matrix = Matrix()
@@ -255,6 +256,7 @@ fun DrawFlingBoard(
     rightArrowBitmap = Bitmap.createBitmap(upArrowBitmap, 0, 0, upArrowBitmap.width, upArrowBitmap.height, matrix, true )
     downArrowBitmap = Bitmap.createBitmap(rightArrowBitmap, 0, 0, rightArrowBitmap.width, rightArrowBitmap.height, matrix, true )
     leftArrowBitmap = Bitmap.createBitmap(downArrowBitmap, 0, 0, downArrowBitmap.width, downArrowBitmap.height, matrix, true )
+
 
     Box(
         modifier = Modifier
@@ -275,11 +277,15 @@ fun DrawFlingBoard(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = { tapOffset ->
-                            val row = (tapOffset.y / gridSize).toInt()
-                            val col = (tapOffset.x / gridSize).toInt()
-
-                            if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
-                                gameViewModel.toggleBallPosition(pos(row, col))
+                            val thinkingStatus = gameViewModel.getThinkingStatus()  // For unknown reason, we can not use uistate.state
+                            if (thinkingStatus == GameState.thinking) {
+                                Toast.makeText(contextForToast, "Unable to modify board while still thinking", Toast.LENGTH_SHORT).show()
+                            } else {
+                                val row = (tapOffset.y / gridSize).toInt()
+                                val col = (tapOffset.x / gridSize).toInt()
+                                if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
+                                    gameViewModel.toggleBallPosition(pos(row, col))
+                                }
                             }
                         }
                     )
