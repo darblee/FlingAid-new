@@ -162,14 +162,14 @@ fun MainViewImplementation(
             }
         }
 
-        TopControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser, uiState)
+        ControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser, uiState)
         DrawFlingBoard(modifier, gameViewModel, uiState)
     } // Column
 }
 
 
 @Composable
-fun TopControlButtons(
+fun ControlButtons(
     gameViewModel: GameViewModel = viewModel(),
     findWinnableMoveButtonEnabled: Boolean,
     showWinnableMoveToUser: Boolean,
@@ -326,16 +326,16 @@ fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiS
             //NOTE: bitmap configuration describes how pixels are stored. This affects the quality (color depth) as well as the ability to display transparent/translucent colors.
             // "Bitmap.Config.ARGB_8888" indicates the maximum flexibility
             else -> {
-                Log.e(Global.debugPrefix, "Got unexpected Direction value")
+                Log.e(Global.debugPrefix, "Got unexpected Direction value: ${uiState.foundWinningDirection}")
                 assert(true)
                 Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
             }
         }
 
         // Reduce size of arrow to fit inside the grid
-        val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt()-10, gridSize.toInt()-10, false).asImageBitmap()
+        val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt()-15, gridSize.toInt()-15, false).asImageBitmap()
 
-        drawImage(displayArrow, topLeft = Offset(x = ((uiState.winningPosition.col) * gridSize) + 5f, y = ((uiState.winningPosition.row * gridSize) + 5f)))
+        drawImage(displayArrow, topLeft = Offset(x = ((uiState.winningPosition.col) * gridSize) + 7f, y = ((uiState.winningPosition.row * gridSize) + 7f)))
     }
 }
 

@@ -15,6 +15,7 @@ import java.util.concurrent.CyclicBarrier
 
 
 var gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
+var gTotalBallInCurrentMove = 0
 
 class GameViewModel : ViewModel() {
 
@@ -101,18 +102,21 @@ class GameViewModel : ViewModel() {
             )
         }
         viewModelScope.launch {
-            gProcessing = true
-            gOverallProgress = 0
+            Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
             gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
             val gTotalBallCount = gameViewModel.ballCount()
 
             Global.task1_WinningDirection = Direction.INCOMPLETE
             Global.task2_WinningDirection = Direction.INCOMPLETE
 
+            Global.ThinkingProgress = 0
+            gTotalBallInCurrentMove = gameViewModel.ballCount()
+
             lateinit var cyclicBarrier : CyclicBarrier
 
             if (gTotalBallCount > 11) {
                 gMultipleThread = true
+                Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
                 cyclicBarrier = CyclicBarrier(2) {
                     Log.i(Global.debugPrefix, "Reached a converged point between 2 parallel tasks")
                     displayResult()
@@ -145,6 +149,10 @@ class GameViewModel : ViewModel() {
     }
 
     private fun displayResult() {
+        Log.i(Global.debugPrefix, "DisplayResult after processing....")
+        uiState.value.state = GameState.not_thinking
+
+        /* TODO : Need to handle case where both task threads could not find a winning move */
         if ((Global.task1_WinningDirection != Direction.NO_WINNING_DIRECTION) && (Global.task1_WinningDirection != Direction.INCOMPLETE)) {
             // Task1 has the winning move
             Log.i(Global.debugPrefix, "Task #1 has winning move with direction : ${Global.task1_WinningDirection}")
@@ -193,6 +201,26 @@ class GameViewModel : ViewModel() {
         }
     }
 
+    private fun showProcessingActivity() {
+        var i = 0
+        Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
+
+        while (_uiState.value.state == GameState.thinking) {
+
+            // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
+            val v = Global.ThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0
+            val percentComplete = String.format("%.1f%%", v)
+            Log.i(Global.debugPrefix, "Thinking progress: $percentComplete")
+
+            // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
+            // loop breakout when gProcessing becomes false
+            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
+            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
+            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
+            i++
+        }
+    }
+
     fun noNeedToDisplayNoWinnableToastMessage() {
         _uiState.update {currentState ->
             currentState.copy(
@@ -203,8 +231,6 @@ class GameViewModel : ViewModel() {
 
     // Volatile is used to ensure each thread is reading exact same value
     // (from memory instead of from cpu-cache)
-    @Volatile var gProcessing = false
-    @Volatile var gOverallProgress = 0
     @Volatile var gMultipleThread = false
 
     private lateinit var task1 : Thread

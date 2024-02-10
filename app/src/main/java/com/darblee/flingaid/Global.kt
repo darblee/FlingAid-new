@@ -7,5 +7,7 @@ object Global {
     var task1_WinningDirection = Direction.NO_WINNING_DIRECTION
     val MaxColSize = 7
     val MaxRowSize = 8
-    val debugPrefix = "David"
+    var ThinkingProgress = 0
+    var totalProcessCount : Float = 0.0F
+    val debugPrefix = "Flinfo:"
 }

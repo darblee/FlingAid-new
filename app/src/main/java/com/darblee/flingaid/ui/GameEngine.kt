@@ -98,10 +98,36 @@ class GameEngine {
                             return@repeatBlock
                         }
 
+                        if (curSearchLevel == 2) {
+                            Global.ThinkingProgress++
+                            val v = Global.ThinkingProgress / Global.totalProcessCount * 100.0
+                            val percentComplete = String.format("%.1f%%", v)
+                            Log.i(Global.debugPrefix, "Progress: $percentComplete")
+                        }
+                        if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
+                            val thread_int = Thread.interrupted()
+                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after up. Thread interuptd: $thread_int  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
+                            direction = Direction.INCOMPLETE  // We should quit the current thread
+                            return@repeatBlock
+                        }
+
                         if (winnableByMovingDown(totalBallCnt, curSearchLevel, curRow, curCol)) {
                             direction = Direction.DOWN
                             winningRow = curRow
                             winningCol = curCol
+                            return@repeatBlock
+                        }
+
+                        if (curSearchLevel == 2) {
+                            Global.ThinkingProgress++
+                            val v = Global.ThinkingProgress / Global.totalProcessCount * 100.0
+                            val percentComplete = String.format("%.1f%%", v)
+                            Log.i(Global.debugPrefix, "Progress: $percentComplete")
+                        }
+                        if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
+                            val thread_int = Thread.interrupted()
+                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after down. Thread interuptd: $thread_int  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
+                            direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
 
@@ -112,10 +138,36 @@ class GameEngine {
                             return@repeatBlock
                         }
 
+                        if (curSearchLevel == 2) {
+                            Global.ThinkingProgress++
+                            val v = Global.ThinkingProgress / Global.totalProcessCount * 100.0
+                            val percentComplete = String.format("%.1f%%", v)
+                            Log.i(Global.debugPrefix, "Progress: $percentComplete")
+                        }
+                        if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
+                            val thread_int = Thread.interrupted()
+                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after right. Thread interuptd: $thread_int  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
+                            direction = Direction.INCOMPLETE  // We should quit the current thread
+                            return@repeatBlock
+                        }
+
                         if (winnableByMovingLeft(totalBallCnt, curSearchLevel, curRow, curCol)) {
                             direction = Direction.LEFT
                             winningRow = curRow
                             winningCol = curCol
+                            return@repeatBlock
+                        }
+
+                        if (curSearchLevel == 2) {
+                            Global.ThinkingProgress++
+                            val v = Global.ThinkingProgress / Global.totalProcessCount * 100.0
+                            val percentComplete = String.format("%.1f%%", v)
+                            Log.i(Global.debugPrefix, "Progress: $percentComplete")
+                        }
+                        if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
+                            val thread_int = Thread.interrupted()
+                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after left. Thread interuptd: $thread_int  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
+                            direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
                     }
