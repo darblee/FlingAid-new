@@ -140,6 +140,11 @@ class GameViewModel : ViewModel() {
                 cyclicBarrier.await()
             }
 
+            task3 = Thread {
+                showProcessingActivity()
+            }
+
+            task3.start()
             task1.start()
 
             if (gMultipleThread) {
@@ -201,25 +206,7 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    private fun showProcessingActivity() {
-        var i = 0
-        Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
 
-        while (_uiState.value.state == GameState.thinking) {
-
-            // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-            val v = Global.ThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0
-            val percentComplete = String.format("%.1f%%", v)
-            Log.i(Global.debugPrefix, "Thinking progress: $percentComplete")
-
-            // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
-            // loop breakout when gProcessing becomes false
-            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
-            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
-            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
-            i++
-        }
-    }
 
     fun noNeedToDisplayNoWinnableToastMessage() {
         _uiState.update {currentState ->
@@ -235,10 +222,13 @@ class GameViewModel : ViewModel() {
 
     private lateinit var task1 : Thread
     private lateinit var task2 : Thread
+    private lateinit var task3 : Thread
+
     private  var task1WinningRow = -1
     private  var task1WinningCol = -1
     private  var task2WinningRow = -1
     private  var task2WinningCol = -1
+
     private fun processTask1(totalBallCnt :  Int) {
 
         try {
@@ -321,6 +311,35 @@ class GameViewModel : ViewModel() {
         }
     }
 
+
+    private fun showProcessingActivity() {
+        var i = 0
+        var currentValue = 0.0F
+        Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
+
+        while (_uiState.value.state == GameState.thinking) {
+
+            // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
+            val newValue : Float = (Global.ThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0).toFloat()
+
+            if (newValue > currentValue) {
+                currentValue = newValue
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        thinkingProgress = newValue
+                    )
+                }
+            }
+            // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
+            // loop breakout when it has finished thinking
+            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
+            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
+            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
+            i++
+        }
+        Log.i(Global.debugPrefix, "Finished thinking")
+    }
+    
     fun ballPositionList() : SnapshotStateList<pos> {
         return (_ballPositionList)
     }

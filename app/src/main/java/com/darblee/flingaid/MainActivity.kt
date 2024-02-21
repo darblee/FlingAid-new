@@ -159,6 +159,11 @@ fun MainViewImplementation(
                 )
             } else {
                 PlaySearchAnimation(modifier = Modifier.size(200.dp).align(Alignment.Center))
+
+                // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
+                val newValue : Float = (Global.ThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0).toFloat()
+                val percentComplete = String.format("%.1f%%", newValue)
+                Text("Searching $percentComplete")
             }
         }
 
