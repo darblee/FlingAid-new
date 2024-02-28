@@ -25,19 +25,30 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -61,9 +72,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.airbnb.lottie.compose.LottieAnimation
@@ -76,6 +90,7 @@ import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.pos
 import com.darblee.flingaid.ui.theme.FlingAidTheme
+import kotlin.system.exitProcess
 
 // Declare these bitmaps once as it will be reused on every recompose
 private lateinit var upArrowBitmap : Bitmap
@@ -121,7 +136,7 @@ fun MainViewImplementation(
     val activity = LocalContext.current as Activity
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-    Column (
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(10.dp),
@@ -130,48 +145,181 @@ fun MainViewImplementation(
     ) {
         val contextForToast = LocalContext.current
 
+
         var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
-        findWinnableMoveButtonEnabled = ((gameViewModel.ballCount() > 1) && (!gameViewModel.foundWinnableMove()))
+        findWinnableMoveButtonEnabled =
+            ((gameViewModel.ballCount() > 1) && (!gameViewModel.foundWinnableMove()))
 
         var showWinnableMoveToUser by remember { mutableStateOf(false) }
-        showWinnableMoveToUser = (uiState.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
+        showWinnableMoveToUser =
+            (uiState.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
 
         if (uiState.NeedToDIsplayNoWinnableToastMessage) {
+
             Toast.makeText(
                 contextForToast,
                 "There is no winnable move",
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_LONG
             ).show()
-           gameViewModel.noNeedToDisplayNoWinnableToastMessage()
+
+            gameViewModel.noNeedToDisplayNoWinnableToastMessage()
         }
 
-        Box() {
-            if (uiState.state == GameState.not_thinking) {
-                val imageModifier = Modifier
-                    .size(200.dp)
-                    .border(BorderStroke(1.dp, Color.Black))
-                    .background(Color.Black)
-                Image(
-                    painter = painterResource(id = R.drawable.fling),
-                    contentDescription = stringResource(id = R.string.app_name),
-                    contentScale = ContentScale.Fit,
-                    modifier = imageModifier
-                )
-            } else {
-                PlaySearchAnimation(modifier = Modifier.size(200.dp).align(Alignment.Center))
-
-                // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-                val newValue : Float = (Global.ThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0).toFloat()
-                val percentComplete = String.format("%.1f%%", newValue)
-                Text("Searching $percentComplete")
-            }
-        }
-
-        ControlButtons(gameViewModel, findWinnableMoveButtonEnabled, showWinnableMoveToUser, uiState)
+        FlingAidTopAppBar()
+        DrawUpperBoxLogo(uiState)
+        ControlButtons(
+            gameViewModel,
+            findWinnableMoveButtonEnabled,
+            showWinnableMoveToUser,
+            uiState
+        )
         DrawFlingBoard(modifier, gameViewModel, uiState)
     } // Column
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FlingAidTopAppBar() {
+    var menuExpanded by remember { mutableStateOf(false) }
+    var showAboutDialogbox by remember { mutableStateOf(false) }
+
+    CenterAlignedTopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = colorScheme.primaryContainer,
+            titleContentColor = colorScheme.primary,
+        ),
+
+        // modifier = Modifier.height(10.dp),
+        modifier = Modifier.height(30.dp),
+        title =
+        {
+            Text(
+                "Fling Aid",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        actions = {
+            IconButton(
+                onClick = { menuExpanded = !menuExpanded },
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Menu,
+                    contentDescription = null
+                )
+            }
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(text = "About") },
+                    onClick = {
+                        showAboutDialogbox = true
+                        menuExpanded = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Exit") },
+                    onClick = {
+                        menuExpanded = false
+
+                        // Android will eventually kill the entire process when it gets around to it. You have no control over this (and that is intentional).
+                        exitProcess(1)
+                    }
+                )
+            } // DropdownMenu
+        }
+    )
+
+    if (showAboutDialogbox) {
+        AboutDialogPopup(
+            onDismissRequest = { showAboutDialogbox = false },
+            onConfirmation = { showAboutDialogbox = false },
+        )
+    }
+}
+
+
+
+@Composable
+fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        // Draw a rectangle shape with rounded corners inside the dialog
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(275.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.fling),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .height(100.dp)
+                )
+                Text(
+                    text = stringResource(id = R.string.version, "v01"),
+                    modifier = Modifier.padding(16.dp),
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Button(
+                        modifier = Modifier.width(150.dp),
+                        onClick = { onConfirmation() }
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.confirm ),
+                            fontSize = 18.sp
+                        )
+                    }
+
+                }
+            }
+        }
+    }
+
+}
+
+@Composable
+fun DrawUpperBoxLogo(uiState: GameUiState)
+{
+    Box() {
+        if (uiState.state == GameState.not_thinking) {
+            val imageModifier = Modifier
+                .size(150.dp)
+                .border(BorderStroke(1.dp, Color.Black))
+                .background(Color.Black)
+            Image(
+                painter = painterResource(id = R.drawable.fling),
+                contentDescription = stringResource(id = R.string.app_name),
+                contentScale = ContentScale.Fit,
+                modifier = imageModifier
+            )
+        } else {
+            PlaySearchAnimation(modifier = Modifier
+                .size(150.dp)
+                .align(Alignment.Center))
+
+            // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
+            val newValue : Float = (Global.ThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0).toFloat()
+            val percentComplete = String.format("%.1f%%", newValue)
+            Text("Searching $percentComplete")
+        }
+    }
+
+}
 
 @Composable
 fun ControlButtons(
@@ -282,9 +430,16 @@ fun DrawFlingBoard(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = { tapOffset ->
-                            val thinkingStatus = gameViewModel.getThinkingStatus()  // For unknown reason, we can not use uistate.state
+                            val thinkingStatus =
+                                gameViewModel.getThinkingStatus()  // For unknown reason, we can not use uistate.state
                             if (thinkingStatus == GameState.thinking) {
-                                Toast.makeText(contextForToast, "Unable to modify board while still thinking", Toast.LENGTH_SHORT).show()
+                                Toast
+                                    .makeText(
+                                        contextForToast,
+                                        "Unable to modify board while still thinking",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                    .show()
                             } else {
                                 val row = (tapOffset.y / gridSize).toInt()
                                 val col = (tapOffset.x / gridSize).toInt()

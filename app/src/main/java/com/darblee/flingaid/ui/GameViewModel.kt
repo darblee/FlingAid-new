@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.concurrent.CyclicBarrier
 
-
 var gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
 var gTotalBallInCurrentMove = 0
 
@@ -22,10 +21,10 @@ class GameViewModel : ViewModel() {
     private var _ballPositionList = mutableStateListOf<pos>()
 
     /*
-    Developer's notes
-     "internal" means any client inside this module- who see this class will see this member
+        Developer's notes
+        "internal" means any client inside this module- who see this class will see this member
 
-     SnapshotList:
+        SnapshotList:
         - The composable will automatically update when that state changes
         - Values can change
         - Other functions will be notified of the changes
@@ -95,6 +94,19 @@ class GameViewModel : ViewModel() {
         }
     }
 
+    // Volatile is used to ensure each thread is reading exact same value
+    // (from memory instead of from cpu-cache)
+    @Volatile var gMultipleThread = false
+
+    private lateinit var task1 : Thread
+    private lateinit var task2 : Thread
+    private lateinit var task3 : Thread
+
+    private  var task1WinningRow = -1
+    private  var task1WinningCol = -1
+    private  var task2WinningRow = -1
+    private  var task2WinningCol = -1
+
     fun findWinningMove(gameViewModel: GameViewModel) {
         _uiState.update {currentState ->
             currentState.copy(
@@ -114,7 +126,7 @@ class GameViewModel : ViewModel() {
 
             lateinit var cyclicBarrier : CyclicBarrier
 
-            if (gTotalBallCount > 11) {
+            if (gTotalBallCount > 12) {
                 gMultipleThread = true
                 Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
                 cyclicBarrier = CyclicBarrier(2) {
@@ -206,8 +218,6 @@ class GameViewModel : ViewModel() {
         }
     }
 
-
-
     fun noNeedToDisplayNoWinnableToastMessage() {
         _uiState.update {currentState ->
             currentState.copy(
@@ -215,19 +225,6 @@ class GameViewModel : ViewModel() {
             )
         }
     }
-
-    // Volatile is used to ensure each thread is reading exact same value
-    // (from memory instead of from cpu-cache)
-    @Volatile var gMultipleThread = false
-
-    private lateinit var task1 : Thread
-    private lateinit var task2 : Thread
-    private lateinit var task3 : Thread
-
-    private  var task1WinningRow = -1
-    private  var task1WinningCol = -1
-    private  var task2WinningRow = -1
-    private  var task2WinningCol = -1
 
     private fun processTask1(totalBallCnt :  Int) {
 
@@ -311,7 +308,6 @@ class GameViewModel : ViewModel() {
         }
     }
 
-
     private fun showProcessingActivity() {
         var i = 0
         var currentValue = 0.0F
@@ -330,6 +326,7 @@ class GameViewModel : ViewModel() {
                     )
                 }
             }
+
             // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
             // loop breakout when it has finished thinking
             if (_uiState.value.state == GameState.thinking) Thread.sleep(500)

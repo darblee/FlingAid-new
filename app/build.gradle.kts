@@ -73,12 +73,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:${rootProject.extra["lifecycle_version"]}")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.6")
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // Splash API
     implementation ("androidx.core:core-splashscreen:1.0.1")
 
     // Animation
     implementation("com.airbnb.android:lottie-compose:6.3.0")
-
 }
