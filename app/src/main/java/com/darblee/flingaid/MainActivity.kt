@@ -46,6 +46,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -136,45 +137,49 @@ fun MainViewImplementation(
     val activity = LocalContext.current as Activity
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceEvenly
-    ) {
-        val contextForToast = LocalContext.current
-
-
-        var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
-        findWinnableMoveButtonEnabled =
-            ((gameViewModel.ballCount() > 1) && (!gameViewModel.foundWinnableMove()))
-
-        var showWinnableMoveToUser by remember { mutableStateOf(false) }
-        showWinnableMoveToUser =
-            (uiState.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
-
-        if (uiState.NeedToDIsplayNoWinnableToastMessage) {
-
-            Toast.makeText(
-                contextForToast,
-                "There is no winnable move",
-                Toast.LENGTH_LONG
-            ).show()
-
-            gameViewModel.noNeedToDisplayNoWinnableToastMessage()
+    Scaffold (
+        topBar = {
+            FlingAidTopAppBar()
         }
+    ) { contentPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceEvenly
+        ) {
+            val contextForToast = LocalContext.current
 
-        FlingAidTopAppBar()
-        DrawUpperBoxLogo(uiState)
-        ControlButtons(
-            gameViewModel,
-            findWinnableMoveButtonEnabled,
-            showWinnableMoveToUser,
-            uiState
-        )
-        DrawFlingBoard(modifier, gameViewModel, uiState)
-    } // Column
+            var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
+            findWinnableMoveButtonEnabled =
+                ((gameViewModel.ballCount() > 1) && (!gameViewModel.foundWinnableMove()))
+
+            var showWinnableMoveToUser by remember { mutableStateOf(false) }
+            showWinnableMoveToUser =
+                (uiState.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
+
+            if (uiState.NeedToDIsplayNoWinnableToastMessage) {
+
+                Toast.makeText(
+                    contextForToast,
+                    "There is no winnable move",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                gameViewModel.noNeedToDisplayNoWinnableToastMessage()
+            }
+
+            DrawUpperBoxLogo(uiState)
+            ControlButtons(
+                gameViewModel,
+                findWinnableMoveButtonEnabled,
+                showWinnableMoveToUser,
+                uiState
+            )
+            DrawFlingBoard(modifier, gameViewModel, uiState)
+        } // Column
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -189,15 +194,12 @@ fun FlingAidTopAppBar() {
             titleContentColor = colorScheme.primary,
         ),
 
-        // modifier = Modifier.height(10.dp),
-        modifier = Modifier.height(30.dp),
+        modifier = Modifier.height(40.dp),
         title =
         {
-            Text(
-                "Fling Aid",
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Fling Aid")
+            }
         },
         actions = {
             IconButton(
