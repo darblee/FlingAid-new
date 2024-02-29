@@ -226,7 +226,8 @@ fun FlingAidTopAppBar() {
                     onClick = {
                         menuExpanded = false
 
-                        // Android will eventually kill the entire process when it gets around to it. You have no control over this (and that is intentional).
+                        // Android will eventually kill the entire process when it gets around to it.
+                        // You have no control over this (and that is intentional).
                         exitProcess(1)
                     }
                 )
@@ -270,7 +271,7 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
                 )
                 Text(
                     text = stringResource(id = R.string.version, "v01"),
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(12.dp),
                 )
                 Row(
                     modifier = Modifier
@@ -283,7 +284,7 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
                     ) {
                         Text(
                             text = stringResource(id = R.string.confirm ),
-                            fontSize = 18.sp
+                            fontSize = 14.sp
                         )
                     }
 
@@ -335,7 +336,7 @@ fun ControlButtons(
         .fillMaxWidth()
         .wrapContentHeight(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         val contextForToast = LocalContext.current
         Button(
@@ -358,6 +359,7 @@ fun ControlButtons(
                 containerColor = Color.Green,
                 contentColor = Color.Black
             ),
+            modifier = Modifier.weight(3F).padding(5.dp),
             enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) && (uiState.state == GameState.not_thinking))
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
@@ -378,12 +380,13 @@ fun ControlButtons(
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Red,
                 contentColor = Color.White
-            )
+            ),
+            modifier = Modifier.weight(2F).padding(5.dp),
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Reset",
                 modifier = Modifier.size(iconWidth))
-            Text("Reset Board")
+            Text("Reset")
         }
 
     }
