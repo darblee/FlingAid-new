@@ -169,7 +169,6 @@ class GameViewModel : ViewModel() {
         Log.i(Global.debugPrefix, "DisplayResult after processing....")
         uiState.value.state = GameState.not_thinking
 
-        /* TODO : Need to handle case where both task threads could not find a winning move */
         if ((Global.task1_WinningDirection != Direction.NO_WINNING_DIRECTION) && (Global.task1_WinningDirection != Direction.INCOMPLETE)) {
             // Task1 has the winning move
             Log.i(Global.debugPrefix, "Task #1 has winning move with direction : ${Global.task1_WinningDirection}")
