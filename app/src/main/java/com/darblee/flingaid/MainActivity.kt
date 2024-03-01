@@ -241,8 +241,6 @@ fun FlingAidTopAppBar() {
     }
 }
 
-
-
 @Composable
 fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
     Dialog(onDismissRequest = { onDismissRequest() }) {
@@ -268,7 +266,9 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
                         .height(100.dp)
                 )
                 Text(
-                    text = stringResource(id = R.string.version, "v01"),
+                    text = stringResource(id = R.string.version) +
+                             " : " + BuildConfig.BUILD_TIME,
+                    fontSize = 10.sp,
                     modifier = Modifier.padding(12.dp),
                 )
                 Row(
@@ -413,7 +413,6 @@ fun DrawFlingBoard(
     downArrowBitmap = Bitmap.createBitmap(rightArrowBitmap, 0, 0, rightArrowBitmap.width, rightArrowBitmap.height, matrix, true )
     leftArrowBitmap = Bitmap.createBitmap(downArrowBitmap, 0, 0, downArrowBitmap.width, downArrowBitmap.height, matrix, true )
 
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -439,7 +438,7 @@ fun DrawFlingBoard(
                                 Toast
                                     .makeText(
                                         contextForToast,
-                                        "Unable to modify board while still thinking",
+                                        "Unable to modify board while still searching",
                                         Toast.LENGTH_SHORT
                                     )
                                     .show()
@@ -567,11 +566,9 @@ fun PlaySearchAnimation(modifier: Modifier) {
     )
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     FlingAidTheme {
-        MainViewImplementation()
     }
 }
