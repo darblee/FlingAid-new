@@ -89,6 +89,7 @@ import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.pos
 import com.darblee.flingaid.ui.theme.FlingAidTheme
+import java.io.File
 import kotlin.system.exitProcess
 
 // Declare these bitmaps once as it will be reused on every recompose
@@ -96,6 +97,8 @@ private lateinit var upArrowBitmap : Bitmap
 private lateinit var downArrowBitmap : Bitmap
 private lateinit var leftArrowBitmap : Bitmap
 private lateinit var rightArrowBitmap : Bitmap
+
+private lateinit var boardFile : File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,6 +110,7 @@ class MainActivity : ComponentActivity() {
         // Keep the splashscreen on-screen for specific period
         splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
         Handler(Looper.getMainLooper()).postDelayed({ keepSplashOnScreen = false }, delay)
+
 
         setContent {
             FlingAidTheme {
@@ -130,10 +134,13 @@ fun MainViewImplementation(
 ) {
     val uiState by gameViewModel.uiState.collectAsState()
     Log.i(Global.debugPrefix, "Recompose Thinking status: ${uiState.state}")
+    boardFile = File(LocalContext.current.filesDir, Global.boardFileName)
 
     // Force to be in portrait mode all the time
     val activity = LocalContext.current as Activity
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+    gameViewModel.loadBallPositions(boardFile)   //DEBUG
 
     Scaffold (
         topBar = {
@@ -336,16 +343,17 @@ fun ControlButtons(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        val contextForToast = LocalContext.current
+        val context = LocalContext.current
         Button(
             onClick = {
                 Log.i(Global.debugPrefix, ">>> Starting thinking : Button Pressed")
                 if (showWinnableMoveToUser) {
                     // Make the actual move before find the next winnable move
                     gameViewModel.makeWinningMove(uiState)
+                    gameViewModel.saveBallPositions(boardFile)
                 }
                 if (gameViewModel.ballCount() == 1) {
-                    Toast.makeText(contextForToast, "You won!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "You won!", Toast.LENGTH_SHORT).show()
                 } else {
                     Log.i(Global.debugPrefix, ">>> Looking for winnable move")
                     gameViewModel.findWinningMove(gameViewModel)
@@ -371,7 +379,7 @@ fun ControlButtons(
 
         Button(
             onClick = {
-                gameViewModel.reset()
+                gameViewModel.reset(boardFile)
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -402,7 +410,7 @@ fun DrawFlingBoard(
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUiState,
     ) {
-    val contextForToast = LocalContext.current
+    val context = LocalContext.current
     var gridSize = 0f
 
     val matrix = Matrix()
@@ -437,7 +445,7 @@ fun DrawFlingBoard(
                             if (thinkingStatus == GameState.thinking) {
                                 Toast
                                     .makeText(
-                                        contextForToast,
+                                        context,
                                         "Unable to modify board while still searching",
                                         Toast.LENGTH_SHORT
                                     )
@@ -447,6 +455,7 @@ fun DrawFlingBoard(
                                 val col = (tapOffset.x / gridSize).toInt()
                                 if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
                                     gameViewModel.toggleBallPosition(pos(row, col))
+                                    gameViewModel.saveBallPositions(boardFile)
                                 }
                             }
                         }
@@ -553,6 +562,7 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
         drawCircle(Color.Black, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
     }
 }
+
 
 @Composable
 fun PlaySearchAnimation(modifier: Modifier) {

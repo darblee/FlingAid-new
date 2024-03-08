@@ -11,6 +11,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.io.File
+import java.io.FileReader
+import java.io.FileWriter
 import java.util.concurrent.CyclicBarrier
 
 var gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
@@ -50,21 +55,63 @@ class GameViewModel : ViewModel() {
         private set
 
     init {
-        reset()
+        val file : File? = null
+        reset(file)
     }
 
+    fun saveBallPositions(file: File) {
+        Log.i(Global.debugPrefix, "Saving Ball Positions >>>")
+        val format = Json { prettyPrint = true }
+        var ball_list = listOf<pos>()
+
+        for (currentPos in _ballPositionList) {
+            ball_list += currentPos
+            Log.i(Global.debugPrefix, "S: $currentPos")
+        }
+        val output = format.encodeToString(ball_list)
+
+        try {
+            val writer = FileWriter(file)
+            writer.write(output)
+            writer.close()
+        } catch (e:Exception) {
+            Log.i(Global.debugPrefix, "${e.message}" )
+        }
+    }
+
+    fun loadBallPositions(file: File) {
+
+        Log.i(Global.debugPrefix, "Loading Ball Positions >>>")
+        try {
+            val reader = FileReader(file)
+            val data = reader.readText()
+            reader.close()
+
+            Log.i(Global.debugPrefix, data)
+            val list = Json.decodeFromString<List<pos>>(data)
+
+            _ballPositionList.clear()
+            for (pos in list) {
+                Log.i(Global.debugPrefix, "L: $pos")
+                _ballPositionList.add(pos)
+            }
+        } catch (e: Exception) {
+            Log.i(Global.debugPrefix, "An error occurred while reading the file: ${e.message}")
+        }
+    }
     fun getThinkingStatus(): GameState
     {
         return (_uiState.value.state)
     }
 
-    fun reset() {
+    fun reset(file: File?) {
         _uiState.update {currentState ->
             currentState.copy(
                 state = GameState.not_thinking
             )
         }
         _ballPositionList.clear()
+        file?.delete()
         
         uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
     }
@@ -345,13 +392,6 @@ class GameViewModel : ViewModel() {
         return (_uiState.value.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
     }
 
-    fun printGrid()
-    {
-        for (currentPos in _ballPositionList) {
-            Log.i(Global.debugPrefix, "$currentPos")
-        }
-    }
-
     fun makeWinningMove(uiState: GameUiState) {
         val game = GameEngine()
         game.populateGrid(_ballPositionList)
@@ -390,5 +430,4 @@ class GameViewModel : ViewModel() {
         // Erase the arrow
         _uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
     }
-
 }

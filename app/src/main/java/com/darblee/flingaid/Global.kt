@@ -10,4 +10,5 @@ object Global {
     var ThinkingProgress = 0
     var totalProcessCount : Float = 0.0F
     val debugPrefix = "Flinfo:"
+    val boardFileName = "Board.txt"
 }
