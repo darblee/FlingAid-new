@@ -365,7 +365,9 @@ fun ControlButtons(
                 containerColor = Color.Green,
                 contentColor = Color.Black
             ),
-            modifier = Modifier.weight(3F).padding(5.dp),
+            modifier = Modifier
+                .weight(3F)
+                .padding(5.dp),
             enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) && (uiState.state == GameState.not_thinking))
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
@@ -387,7 +389,9 @@ fun ControlButtons(
                 containerColor = Color.Red,
                 contentColor = Color.White
             ),
-            modifier = Modifier.weight(2F).padding(5.dp),
+            modifier = Modifier
+                .weight(2F)
+                .padding(5.dp),
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Reset",
@@ -420,6 +424,9 @@ fun DrawFlingBoard(
     rightArrowBitmap = Bitmap.createBitmap(upArrowBitmap, 0, 0, upArrowBitmap.width, upArrowBitmap.height, matrix, true )
     downArrowBitmap = Bitmap.createBitmap(rightArrowBitmap, 0, 0, rightArrowBitmap.width, rightArrowBitmap.height, matrix, true )
     leftArrowBitmap = Bitmap.createBitmap(downArrowBitmap, 0, 0, downArrowBitmap.width, downArrowBitmap.height, matrix, true )
+
+    val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
+    val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(), 160, 160, false).asImageBitmap()
 
     Box(
         modifier = Modifier
@@ -471,7 +478,7 @@ fun DrawFlingBoard(
             gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
             drawGrid(this, gridSize)
-            drawBalls(this, gameViewModel, gridSize)
+            drawBalls(this, gameViewModel, gridSize, displayBallImage)
 
             if (gameViewModel.ballCount() > 1) {
                 // Draw the winning arrow if there is a winning move identified
@@ -504,24 +511,30 @@ fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiS
         }
 
         // Reduce size of arrow to fit inside the grid
-        val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt()-15, gridSize.toInt()-15, false).asImageBitmap()
+        val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt(), gridSize.toInt(), false).asImageBitmap()
 
-        drawImage(displayArrow, topLeft = Offset(x = ((uiState.winningPosition.col) * gridSize) + 7f, y = ((uiState.winningPosition.row * gridSize) + 7f)))
+        drawImage(displayArrow, topLeft = Offset(x = ((uiState.winningPosition.col) * gridSize) - 3f, y = ((uiState.winningPosition.row * gridSize) -3f)))
     }
 }
 
-fun drawBalls(drawScope: DrawScope, gameViewModel: GameViewModel, gridSize: Float) {
+
+// Draw akk the balls in the provided canvas (Drawscope)
+fun drawBalls(
+    drawScope: DrawScope,
+    gameViewModel: GameViewModel,
+    gridSize: Float,
+    ballImage: ImageBitmap
+) {
     // Draw all the balls
     with (drawScope) {
         gameViewModel.ballPositionList().forEach { pos ->
-            drawCircle(
-                Color.Red,
-                radius = (gridSize / 2) - 10f,
-                center = Offset(
-                    (pos.col * gridSize) + (gridSize / 2f),
-                    (pos.row * gridSize) + (gridSize / 2f)
+                drawImage(
+                    image = ballImage,
+                    topLeft = Offset(
+                        (pos.col * gridSize)-10,
+                        (pos.row * gridSize)-10
+                    )
                 )
-            )
         }
     }
 }

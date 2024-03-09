@@ -1,5 +1,6 @@
 package com.darblee.flingaid.ui
 
+
 import kotlinx.serialization.Serializable
 
 enum class GameState {
@@ -13,6 +14,7 @@ enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
 data class pos(
     val row: Int,
     val col: Int,
+    val status : Int = 0  // Not used
 )
 
 data class GameUiState (

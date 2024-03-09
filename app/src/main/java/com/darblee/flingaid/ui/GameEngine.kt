@@ -492,7 +492,7 @@ class GameEngine {
         // Otherwise, we need re-iterate the process in the next chain
         var foundBallBeforeEdge = false
         indexRow = nextSrcRow - 1
-        // TO DO
+
         while ((indexRow > 0) && (!foundBallBeforeEdge)) {
             if (flingGrid[indexRow][col])
                 foundBallBeforeEdge = true
