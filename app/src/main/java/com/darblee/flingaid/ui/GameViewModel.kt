@@ -17,6 +17,7 @@ import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.util.concurrent.CyclicBarrier
+import kotlin.math.abs
 
 var gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
 var gTotalBallInCurrentMove = 0
@@ -60,13 +61,11 @@ class GameViewModel : ViewModel() {
     }
 
     fun saveBallPositions(file: File) {
-        Log.i(Global.debugPrefix, "Saving Ball Positions >>>")
         val format = Json { prettyPrint = true }
         var ball_list = listOf<pos>()
 
         for (currentPos in _ballPositionList) {
             ball_list += currentPos
-            Log.i(Global.debugPrefix, "S: $currentPos")
         }
         val output = format.encodeToString(ball_list)
 
@@ -80,19 +79,15 @@ class GameViewModel : ViewModel() {
     }
 
     fun loadBallPositions(file: File) {
-
-        Log.i(Global.debugPrefix, "Loading Ball Positions >>>")
         try {
             val reader = FileReader(file)
             val data = reader.readText()
             reader.close()
 
-            Log.i(Global.debugPrefix, data)
             val list = Json.decodeFromString<List<pos>>(data)
 
             _ballPositionList.clear()
             for (pos in list) {
-                Log.i(Global.debugPrefix, "L: $pos")
                 _ballPositionList.add(pos)
             }
         } catch (e: Exception) {
@@ -390,6 +385,39 @@ class GameViewModel : ViewModel() {
     fun foundWinnableMove() : Boolean
     {
         return (_uiState.value.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
+    }
+
+
+    fun getWinningMoveCount(uiState: GameUiState): Int {
+        val game = GameEngine()
+        game.populateGrid(_ballPositionList)
+
+        var WinningMoveCount = 0
+
+        var targetRow: Int
+        var targetCol: Int
+
+        if (uiState.foundWinningDirection == Direction.UP) {
+            targetRow = game.findTargetRowOnMoveUp(uiState.winningPosition.row, uiState.winningPosition.col)
+            WinningMoveCount = uiState.winningPosition.row - targetRow
+        }
+
+        if (uiState.foundWinningDirection == Direction.DOWN) {
+            targetRow = game.findTargetRowOnMoveDown(uiState.winningPosition.row, uiState.winningPosition.col)
+            WinningMoveCount = targetRow - uiState.winningPosition.row
+        }
+
+        if (uiState.foundWinningDirection == Direction.RIGHT) {
+            targetCol = game.findTargetColOnMoveRight(uiState.winningPosition.row, uiState.winningPosition.col)
+            WinningMoveCount = targetCol - uiState.winningPosition.col
+        }
+
+        if (uiState.foundWinningDirection == Direction.LEFT) {
+            targetCol = game.findTargetColOnMoveLeft(uiState.winningPosition.row, uiState.winningPosition.col)
+            WinningMoveCount = uiState.winningPosition.col - targetCol
+        }
+
+        return (WinningMoveCount)
     }
 
     fun makeWinningMove(uiState: GameUiState) {

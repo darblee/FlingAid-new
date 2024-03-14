@@ -12,6 +12,12 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -50,6 +56,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,6 +73,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -111,7 +119,6 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
         Handler(Looper.getMainLooper()).postDelayed({ keepSplashOnScreen = false }, delay)
 
-
         setContent {
             FlingAidTheme {
                 // A surface container using the 'background' color from the theme
@@ -140,7 +147,7 @@ fun MainViewImplementation(
     val activity = LocalContext.current as Activity
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-    gameViewModel.loadBallPositions(boardFile)   //DEBUG
+    gameViewModel.loadBallPositions(boardFile)
 
     Scaffold (
         topBar = {
@@ -428,6 +435,17 @@ fun DrawFlingBoard(
     val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
     val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(), 160, 160, false).asImageBitmap()
 
+    val animate = remember { Animatable(initialValue = 0f) }
+
+    LaunchedEffect(Unit){
+        animate.animateTo(targetValue = 1f, animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000,easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            )
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -483,23 +501,50 @@ fun DrawFlingBoard(
             if (gameViewModel.ballCount() > 1) {
                 // Draw the winning arrow if there is a winning move identified
                 if (gameViewModel.foundWinnableMove()) {
-                    drawWinningMoveArrow(this, gridSize, uiState)
+                    val movecount = gameViewModel.getWinningMoveCount(uiState)
+
+                    drawWinningMoveArrow(this, gridSize, uiState, animate, displayBallImage, movecount)
                 }
             }
         }
     }
 }
 
-fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiState ) {
-    with (drawScope) {
-        Log.i(Global.debugPrefix, "Winning Move exist with winning direction:  ${uiState.foundWinningDirection}")
-        Log.i(Global.debugPrefix, "Winning Move position is :  row = ${uiState.winningPosition.row}, col = ${uiState.winningPosition.col}")
 
-        val displayArrowBitMap = when (uiState.foundWinningDirection) {
-            Direction.UP -> upArrowBitmap
-            Direction.DOWN -> downArrowBitmap
-            Direction.LEFT -> leftArrowBitmap
-            Direction.RIGHT -> rightArrowBitmap
+fun drawWinningMoveArrow(
+    drawScope: DrawScope,
+    gridSize: Float,
+    uiState: GameUiState,
+    animate: Animatable<Float, AnimationVector1D>,
+    displayBallImage: ImageBitmap,
+    gWinningMoveCount: Int
+) {
+    with (drawScope) {
+       // Log.i(Global.debugPrefix, "Winning Move exist with winning direction:  ${uiState.foundWinningDirection}")
+       // Log.i(Global.debugPrefix, "Winning Move position is :  row = ${uiState.winningPosition.row}, col = ${uiState.winningPosition.col}")
+        var xOffset = 0
+        var yOffset = 0
+
+        var displayArrowBitMap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+
+       // Log.i(Global.debugPrefix, "Show winning arrow: gridsize = $gridSize, move count = $gWinningMoveCount")
+        when (uiState.foundWinningDirection) {
+            Direction.UP -> {
+                displayArrowBitMap = upArrowBitmap
+                yOffset = -1 * gridSize.toInt() * gWinningMoveCount
+            }
+            Direction.DOWN -> {
+                displayArrowBitMap = downArrowBitmap
+                yOffset = 1 * gridSize.toInt() * gWinningMoveCount
+            }
+            Direction.LEFT -> {
+                displayArrowBitMap = leftArrowBitmap
+                xOffset = -1 * gridSize.toInt() * gWinningMoveCount
+            }
+            Direction.RIGHT -> {
+                displayArrowBitMap = rightArrowBitmap
+                xOffset = 1 * gridSize.toInt() * gWinningMoveCount
+            }
 
             //NOTE: bitmap configuration describes how pixels are stored. This affects the quality (color depth) as well as the ability to display transparent/translucent colors.
             // "Bitmap.Config.ARGB_8888" indicates the maximum flexibility
@@ -513,10 +558,24 @@ fun drawWinningMoveArrow(drawScope: DrawScope, gridSize: Float, uiState: GameUiS
         // Reduce size of arrow to fit inside the grid
         val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt(), gridSize.toInt(), false).asImageBitmap()
 
-        drawImage(displayArrow, topLeft = Offset(x = ((uiState.winningPosition.col) * gridSize) - 3f, y = ((uiState.winningPosition.row * gridSize) -3f)))
+        drawImage(displayArrow, topLeft =
+            Offset(x = ((uiState.winningPosition.col) * gridSize) - 3f, y = ((uiState.winningPosition.row * gridSize) -3f))
+        )
+
+        translate(
+            (xOffset) * animate.value,
+            (yOffset) * animate.value
+        ) {
+            drawImage(
+                image = displayBallImage, topLeft =
+                Offset(
+                    x = ((uiState.winningPosition.col) * gridSize) - 10f,
+                    y = ((uiState.winningPosition.row * gridSize) - 10f)
+                )
+            )
+        }
     }
 }
-
 
 // Draw akk the balls in the provided canvas (Drawscope)
 fun drawBalls(
