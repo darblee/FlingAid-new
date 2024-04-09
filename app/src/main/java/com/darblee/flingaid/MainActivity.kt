@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.SoundEffectConstants
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -77,6 +78,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -426,6 +428,7 @@ fun DrawFlingBoard(
 
     val matrix = Matrix()
     matrix.postRotate(90F)
+    val view = LocalView.current
 
     upArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
     rightArrowBitmap = Bitmap.createBitmap(upArrowBitmap, 0, 0, upArrowBitmap.width, upArrowBitmap.height, matrix, true )
@@ -480,12 +483,13 @@ fun DrawFlingBoard(
                                 val col = (tapOffset.x / gridSize).toInt()
                                 if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
                                     gameViewModel.toggleBallPosition(pos(row, col))
+                                    view.playSoundEffect(SoundEffectConstants.CLICK)
                                     gameViewModel.saveBallPositions(boardFile)
                                 }
                             }
-                        }
-                    )
-                }
+                        }  // onTap
+                    ) // detectTapGestures
+                }  // .pointerInput
         ) {
             val canvasWidth = size.width
             val canvasHeight = size.height

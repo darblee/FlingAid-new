@@ -17,7 +17,6 @@ import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.util.concurrent.CyclicBarrier
-import kotlin.math.abs
 
 var gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
 var gTotalBallInCurrentMove = 0
