@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -93,6 +94,7 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.darblee.flingaid.R.raw
 import com.darblee.flingaid.ui.Direction
 import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUiState
@@ -346,6 +348,8 @@ fun ControlButtons(
     uiState: GameUiState,
 )
 {
+    val audio : MediaPlayer = MediaPlayer.create(LocalContext.current, R.raw.you_won)
+
     Row(modifier = Modifier
         .fillMaxWidth()
         .wrapContentHeight(),
@@ -362,6 +366,7 @@ fun ControlButtons(
                     gameViewModel.saveBallPositions(boardFile)
                 }
                 if (gameViewModel.ballCount() == 1) {
+                    audio.start()
                     Toast.makeText(context, "You won!", Toast.LENGTH_SHORT).show()
                 } else {
                     Log.i(Global.debugPrefix, ">>> Looking for winnable move")
@@ -581,7 +586,7 @@ fun drawWinningMoveArrow(
     }
 }
 
-// Draw akk the balls in the provided canvas (Drawscope)
+// Draw all the balls in the provided canvas (Drawscope)
 fun drawBalls(
     drawScope: DrawScope,
     gameViewModel: GameViewModel,
@@ -591,13 +596,13 @@ fun drawBalls(
     // Draw all the balls
     with (drawScope) {
         gameViewModel.ballPositionList().forEach { pos ->
-                drawImage(
-                    image = ballImage,
-                    topLeft = Offset(
-                        (pos.col * gridSize)-10,
-                        (pos.row * gridSize)-10
-                    )
+            drawImage(
+                image = ballImage,
+                topLeft = Offset(
+                    (pos.col * gridSize)-10,
+                    (pos.row * gridSize)-10
                 )
+            )
         }
     }
 }
@@ -643,7 +648,7 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
 @Composable
 fun PlaySearchAnimation(modifier: Modifier) {
 
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.find_animation))
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(raw.find_animation))
 
     LottieAnimation(
         modifier = modifier,
