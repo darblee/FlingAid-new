@@ -19,7 +19,7 @@ class GameEngine {
         }
     }
 
-    fun populateGrid(ballPositionList: SnapshotStateList<pos>) {
+    fun populateGrid(ballPositionList: SnapshotStateList<Pos>) {
         ballPositionList.forEach {pos ->
             flingGrid[pos.row][pos.col] = true
         }
@@ -783,14 +783,14 @@ class GameEngine {
         return
     }
 
-    fun updateBallList(): SnapshotStateList<pos> {
-        val ballList: SnapshotStateList<pos> = SnapshotStateList<pos>().apply {
+    fun updateBallList(): SnapshotStateList<Pos> {
+        val ballList: SnapshotStateList<Pos> = SnapshotStateList<Pos>().apply {
 
             // Clone the board
             repeat (Global.MaxRowSize) { curRow ->
                 repeat(Global.MaxColSize) { curCol ->
                     if (flingGrid[curRow][curCol]) {
-                        val pos = pos(curRow,curCol)
+                        val pos = Pos(curRow,curCol)
                         add(pos)
                     }
                 }

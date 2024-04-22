@@ -23,7 +23,7 @@ var gTotalBallInCurrentMove = 0
 
 class GameViewModel : ViewModel() {
 
-    private var _ballPositionList = mutableStateListOf<pos>()
+    private var _ballPositionList = mutableStateListOf<Pos>()
 
     /*
         Developer's notes
@@ -61,7 +61,7 @@ class GameViewModel : ViewModel() {
 
     fun saveBallPositions(file: File) {
         val format = Json { prettyPrint = true }
-        var ball_list = listOf<pos>()
+        var ball_list = listOf<Pos>()
 
         for (currentPos in _ballPositionList) {
             ball_list += currentPos
@@ -83,7 +83,7 @@ class GameViewModel : ViewModel() {
             val data = reader.readText()
             reader.close()
 
-            val list = Json.decodeFromString<List<pos>>(data)
+            val list = Json.decodeFromString<List<Pos>>(data)
 
             _ballPositionList.clear()
             for (pos in list) {
@@ -101,7 +101,7 @@ class GameViewModel : ViewModel() {
     fun reset(file: File?) {
         _uiState.update {currentState ->
             currentState.copy(
-                state = GameState.not_thinking
+                state = GameState.NotThinking
             )
         }
         _ballPositionList.clear()
@@ -119,7 +119,7 @@ class GameViewModel : ViewModel() {
         If the position is blank, then place the ball.
         If ball already exist on that location, then remove the ball
      */
-    fun toggleBallPosition(pos: pos)
+    fun toggleBallPosition(pos: Pos)
     {
         if (_ballPositionList.contains(pos)) {
             _ballPositionList.remove(pos)
@@ -129,7 +129,7 @@ class GameViewModel : ViewModel() {
 
         _uiState.update {currentState ->
             currentState.copy(
-                state = GameState.not_thinking,
+                state = GameState.NotThinking,
                 foundWinningDirection = Direction.NO_WINNING_DIRECTION
             )
         }
@@ -151,7 +151,7 @@ class GameViewModel : ViewModel() {
     fun findWinningMove(gameViewModel: GameViewModel) {
         _uiState.update {currentState ->
             currentState.copy(
-                state = GameState.thinking
+                state = GameState.Thinking
             )
         }
         viewModelScope.launch {
@@ -208,19 +208,19 @@ class GameViewModel : ViewModel() {
 
     private fun displayResult() {
         Log.i(Global.debugPrefix, "DisplayResult after processing....")
-        uiState.value.state = GameState.not_thinking
+        uiState.value.state = GameState.NotThinking
 
         if ((Global.task1_WinningDirection != Direction.NO_WINNING_DIRECTION) && (Global.task1_WinningDirection != Direction.INCOMPLETE)) {
             // Task1 has the winning move
             Log.i(Global.debugPrefix, "Task #1 has winning move with direction : ${Global.task1_WinningDirection}")
-            val winningPos = pos(task1WinningRow, task1WinningCol)
+            val winningPos = Pos(task1WinningRow, task1WinningCol)
             val winningDir = Global.task1_WinningDirection
 
             gWINNING_DIRECTION_from_tasks = Global.task1_WinningDirection
 
             _uiState.update {currentState ->
                 currentState.copy(
-                    state = GameState.not_thinking,
+                    state = GameState.NotThinking,
                     winningPosition = winningPos,
                     foundWinningDirection = winningDir
                 )
@@ -233,12 +233,12 @@ class GameViewModel : ViewModel() {
             if ((Global.task2_WinningDirection != Direction.NO_WINNING_DIRECTION) && (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
                 Log.i(Global.debugPrefix, "Task #2 has winning move with direction: ${Global.task2_WinningDirection}")
                 // Task2 has the winning move
-                val winningPos = pos(task2WinningRow, task2WinningCol)
+                val winningPos = Pos(task2WinningRow, task2WinningCol)
                 val winningDir = Global.task2_WinningDirection
                 gWINNING_DIRECTION_from_tasks = Global.task2_WinningDirection
                 _uiState.update {currentState ->
                     currentState.copy(
-                        state = GameState.not_thinking,
+                        state = GameState.NotThinking,
                         winningPosition = winningPos,
                         foundWinningDirection = winningDir
                     )
@@ -248,10 +248,10 @@ class GameViewModel : ViewModel() {
                 gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
                 _uiState.update {currentState ->
                     currentState.copy(
-                        state = GameState.not_thinking,
-                        winningPosition = pos(-1, -1),
+                        state = GameState.NotThinking,
+                        winningPosition = Pos(-1, -1),
                         foundWinningDirection = Direction.NO_WINNING_DIRECTION,
-                        NeedToDIsplayNoWinnableToastMessage = true
+                        needToDisplayNoWinnableToastMessage = true
                     )
                 }
             }
@@ -261,7 +261,7 @@ class GameViewModel : ViewModel() {
     fun noNeedToDisplayNoWinnableToastMessage() {
         _uiState.update {currentState ->
             currentState.copy(
-                NeedToDIsplayNoWinnableToastMessage = false
+                needToDisplayNoWinnableToastMessage = false
             )
         }
     }
@@ -353,7 +353,7 @@ class GameViewModel : ViewModel() {
         var currentValue = 0.0F
         Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
 
-        while (_uiState.value.state == GameState.thinking) {
+        while (_uiState.value.state == GameState.Thinking) {
 
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
             val newValue : Float = (Global.ThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0).toFloat()
@@ -369,15 +369,15 @@ class GameViewModel : ViewModel() {
 
             // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
             // loop breakout when it has finished thinking
-            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
-            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
-            if (_uiState.value.state == GameState.thinking) Thread.sleep(500)
+            if (_uiState.value.state == GameState.Thinking) Thread.sleep(500)
+            if (_uiState.value.state == GameState.Thinking) Thread.sleep(500)
+            if (_uiState.value.state == GameState.Thinking) Thread.sleep(500)
             i++
         }
         Log.i(Global.debugPrefix, "Finished thinking")
     }
     
-    fun ballPositionList() : SnapshotStateList<pos> {
+    fun ballPositionList() : SnapshotStateList<Pos> {
         return (_ballPositionList)
     }
 

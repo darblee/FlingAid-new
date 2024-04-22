@@ -102,11 +102,10 @@ import com.darblee.flingaid.ui.Direction
 import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
-import com.darblee.flingaid.ui.pos
+import com.darblee.flingaid.ui.Pos
 import com.darblee.flingaid.ui.theme.FlingAidTheme
 import java.io.File
 import kotlin.system.exitProcess
-
 
 // Declare these bitmaps once as it will be reused on every recompose
 private lateinit var upArrowBitmap : Bitmap
@@ -117,6 +116,7 @@ private lateinit var rightArrowBitmap : Bitmap
 private lateinit var boardFile : File
 
 private lateinit var game_audio : MediaPlayer
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -130,7 +130,7 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
         Handler(Looper.getMainLooper()).postDelayed({ keepSplashOnScreen = false }, delay)
 
-        game_audio =  MediaPlayer.create(applicationContext, R.raw.music)
+        game_audio =  MediaPlayer.create(applicationContext, raw.music)
         game_audio.isLooping = true
 
         setContent {
@@ -156,14 +156,12 @@ fun MainViewImplementation(
     Log.i(Global.debugPrefix, "Recompose Thinking status: ${uiState.state}")
     boardFile = File(LocalContext.current.filesDir, Global.boardFileName)
 
-    ForcePotraitMode()
+    ForcePortraitMode()
     SetupGameAudio()
-    gameViewModel.loadBallPositions(boardFile)
+    gameViewModel.loadBallPositions(boardFile)  // Load balls from previous game save
 
     Scaffold (
-        topBar = {
-            FlingAidTopAppBar()
-        }
+        topBar = { FlingAidTopAppBar() }
     ) { contentPadding ->
         Column(
             modifier = Modifier
@@ -172,8 +170,6 @@ fun MainViewImplementation(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
-            val contextForToast = LocalContext.current
-
             var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
             findWinnableMoveButtonEnabled =
                 ((gameViewModel.ballCount() > 1) && (!gameViewModel.foundWinnableMove()))
@@ -182,14 +178,8 @@ fun MainViewImplementation(
             showWinnableMoveToUser =
                 (uiState.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
 
-            if (uiState.NeedToDIsplayNoWinnableToastMessage) {
-
-                Toast.makeText(
-                    contextForToast,
-                    "There is no winnable move",
-                    Toast.LENGTH_LONG
-                ).show()
-
+            if (uiState.needToDisplayNoWinnableToastMessage) {
+                DisplayNoWinnableMoveToast()
                 gameViewModel.noNeedToDisplayNoWinnableToastMessage()
             }
 
@@ -206,23 +196,41 @@ fun MainViewImplementation(
 }
 
 @Composable
+fun DisplayNoWinnableMoveToast() {
+    val contextForToast = LocalContext.current
+
+    Toast.makeText(
+        contextForToast,
+        "There is no winnable move",
+        Toast.LENGTH_LONG
+    ).show()
+}
+
+@Composable
 fun SetupGameAudio() {
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // DisposableEffect is a tool that allows you to perform side effects in your composable
-    // functions that need to be cleaned up when the composable leaves the composition. You
-    // can use keys to control when the callback function is called.
+    // functions that need to be cleaned up when the composable leaves the composition.
+    // Keys is used to control when the callback function is called.
     DisposableEffect(key1 = lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                Log.i(Global.debugPrefix, "Resume event")
-                game_audio.start()
-            } else if (event == Lifecycle.Event.ON_STOP) {
-                Log.i(Global.debugPrefix, "Stop event")
-                game_audio.pause()
-            } else if (event == Lifecycle.Event.ON_START) {
-                Log.i(Global.debugPrefix, "Start event")
-                game_audio.start()
+            when (event) {
+                Lifecycle.Event.ON_START -> {
+                    Log.i(Global.debugPrefix, "Start event")
+                    game_audio.start()
+                }
+                Lifecycle.Event.ON_RESUME -> {
+                    Log.i(Global.debugPrefix, "Resume event")
+                    game_audio.start()
+                }
+                Lifecycle.Event.ON_STOP -> {
+                    Log.i(Global.debugPrefix, "Stop event")
+                    game_audio.pause()
+                }
+                else -> {
+                    Log.i(Global.debugPrefix, "$event event ignored")
+                }
             }
         }
 
@@ -235,19 +243,19 @@ fun SetupGameAudio() {
         }
     }  // DisposableEffect
 }
+
 @SuppressLint("SourceLockedOrientationActivity")
 @Composable
-fun ForcePotraitMode() {
+fun ForcePortraitMode() {
     val activity = LocalContext.current as Activity
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FlingAidTopAppBar() {
     var menuExpanded by remember { mutableStateOf(false) }
-    var showAboutDialogbox by remember { mutableStateOf(false) }
+    var showAboutDialogBox by remember { mutableStateOf(false) }
 
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -278,7 +286,7 @@ fun FlingAidTopAppBar() {
                 DropdownMenuItem(
                     text = { Text(text = "About") },
                     onClick = {
-                        showAboutDialogbox = true
+                        showAboutDialogBox = true
                         menuExpanded = false
                     }
                 )
@@ -296,10 +304,10 @@ fun FlingAidTopAppBar() {
         }
     )
 
-    if (showAboutDialogbox) {
+    if (showAboutDialogBox) {
         AboutDialogPopup(
-            onDismissRequest = { showAboutDialogbox = false },
-            onConfirmation = { showAboutDialogbox = false },
+            onDismissRequest = { showAboutDialogBox = false },
+            onConfirmation = { showAboutDialogBox = false },
         )
     }
 }
@@ -359,7 +367,7 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
 fun DrawUpperBoxLogo(uiState: GameUiState)
 {
     Box {
-        if (uiState.state == GameState.not_thinking) {
+        if (uiState.state == GameState.NotThinking) {
             val imageModifier = Modifier
                 .size(150.dp)
                 .border(BorderStroke(1.dp, Color.Black))
@@ -392,7 +400,7 @@ fun ControlButtons(
     uiState: GameUiState,
 )
 {
-    val audio : MediaPlayer = MediaPlayer.create(LocalContext.current, R.raw.you_won)
+    val audio : MediaPlayer = MediaPlayer.create(LocalContext.current, raw.you_won)
 
     Row(
         modifier = Modifier
@@ -427,7 +435,7 @@ fun ControlButtons(
             modifier = Modifier
                 .weight(3F)
                 .padding(5.dp),
-            enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) && (uiState.state == GameState.not_thinking))
+            enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) && (uiState.state == GameState.NotThinking))
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
@@ -520,7 +528,7 @@ fun DrawFlingBoard(
                         onTap = { tapOffset ->
                             val thinkingStatus =
                                 gameViewModel.getThinkingStatus()  // For unknown reason, we can not use uistate.state
-                            if (thinkingStatus == GameState.thinking) {
+                            if (thinkingStatus == GameState.Thinking) {
                                 Toast
                                     .makeText(
                                         context,
@@ -532,12 +540,12 @@ fun DrawFlingBoard(
                                 val row = (tapOffset.y / gridSize).toInt()
                                 val col = (tapOffset.x / gridSize).toInt()
                                 if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
-                                    gameViewModel.toggleBallPosition(pos(row, col))
+                                    gameViewModel.toggleBallPosition(Pos(row, col))
                                     view.playSoundEffect(SoundEffectConstants.CLICK)
                                     gameViewModel.saveBallPositions(boardFile)
                                 }
-                            }
-                        }  // onTap
+                            } // if thinkingStatus != GameState.thinking
+                        } // onTap
                     ) // detectTapGestures
                 }  // .pointerInput
         ) {
@@ -555,15 +563,13 @@ fun DrawFlingBoard(
             if (gameViewModel.ballCount() > 1) {
                 // Draw the winning arrow if there is a winning move identified
                 if (gameViewModel.foundWinnableMove()) {
-                    val movecount = gameViewModel.getWinningMoveCount(uiState)
-
-                    drawWinningMoveArrow(this, gridSize, uiState, animate, displayBallImage, movecount)
+                    val moveCount = gameViewModel.getWinningMoveCount(uiState)
+                    drawWinningMoveArrow(this, gridSize, uiState, animate, displayBallImage, moveCount)
                 }
             }
         }
     }
 }
-
 
 fun drawWinningMoveArrow(
     drawScope: DrawScope,
@@ -581,7 +587,6 @@ fun drawWinningMoveArrow(
 
         var displayArrowBitMap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
 
-       // Log.i(Global.debugPrefix, "Show winning arrow: gridsize = $gridSize, move count = $gWinningMoveCount")
         when (uiState.foundWinningDirection) {
             Direction.UP -> {
                 displayArrowBitMap = upArrowBitmap
@@ -631,7 +636,7 @@ fun drawWinningMoveArrow(
     }
 }
 
-// Draw all the balls in the provided canvas (Drawscope)
+// Draw all the balls in the provided canvas
 fun drawBalls(
     drawScope: DrawScope,
     gameViewModel: GameViewModel,
@@ -688,7 +693,6 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
         drawCircle(Color.Black, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
     }
 }
-
 
 @Composable
 fun PlaySearchAnimation(modifier: Modifier) {
