@@ -58,6 +58,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -79,16 +80,18 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -104,6 +107,7 @@ import com.darblee.flingaid.ui.theme.FlingAidTheme
 import java.io.File
 import kotlin.system.exitProcess
 
+
 // Declare these bitmaps once as it will be reused on every recompose
 private lateinit var upArrowBitmap : Bitmap
 private lateinit var downArrowBitmap : Bitmap
@@ -112,16 +116,22 @@ private lateinit var rightArrowBitmap : Bitmap
 
 private lateinit var boardFile : File
 
+private lateinit var game_audio : MediaPlayer
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
         var keepSplashOnScreen = true
         val delay = 1000L
         val splashScreen = installSplashScreen()
-        super.onCreate(savedInstanceState)
 
         // Keep the splashscreen on-screen for specific period
         splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
         Handler(Looper.getMainLooper()).postDelayed({ keepSplashOnScreen = false }, delay)
+
+        game_audio =  MediaPlayer.create(applicationContext, R.raw.music)
+        game_audio.isLooping = true
 
         setContent {
             FlingAidTheme {
@@ -152,6 +162,35 @@ fun MainViewImplementation(
     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
     gameViewModel.loadBallPositions(boardFile)
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // DisposableEffect is a tool that allows you to perform side effects in your composable
+    // functions that need to be cleaned up when the composable leaves the composition. You
+    // can use keys to control when the callback function is called.
+    DisposableEffect(key1 = lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                Log.i(Global.debugPrefix, "Resume event")
+                game_audio.start()
+            } else if (event == Lifecycle.Event.ON_STOP) {
+                Log.i(Global.debugPrefix, "Stop event")
+                game_audio.pause()
+            } else if (event == Lifecycle.Event.ON_START) {
+                Log.i(Global.debugPrefix, "Start event")
+                game_audio.start()
+            }
+        }
+
+        // Add the observer to the lifecycle
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // When the effect leaves the Composition, remove the observer
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }  // DisposableEffect
+
 
     Scaffold (
         topBar = {
@@ -303,7 +342,6 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
                             fontSize = 14.sp
                         )
                     }
-
                 }
             }
         }
@@ -350,9 +388,10 @@ fun ControlButtons(
 {
     val audio : MediaPlayer = MediaPlayer.create(LocalContext.current, R.raw.you_won)
 
-    Row(modifier = Modifier
-        .fillMaxWidth()
-        .wrapContentHeight(),
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
