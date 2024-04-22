@@ -147,7 +147,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@SuppressLint("SourceLockedOrientationActivity")
 @Composable
 fun MainViewImplementation(
         modifier: Modifier = Modifier,
@@ -157,40 +156,9 @@ fun MainViewImplementation(
     Log.i(Global.debugPrefix, "Recompose Thinking status: ${uiState.state}")
     boardFile = File(LocalContext.current.filesDir, Global.boardFileName)
 
-    // Force to be in portrait mode all the time
-    val activity = LocalContext.current as Activity
-    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-
+    ForcePotraitMode()
+    SetupGameAudio()
     gameViewModel.loadBallPositions(boardFile)
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    // DisposableEffect is a tool that allows you to perform side effects in your composable
-    // functions that need to be cleaned up when the composable leaves the composition. You
-    // can use keys to control when the callback function is called.
-    DisposableEffect(key1 = lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                Log.i(Global.debugPrefix, "Resume event")
-                game_audio.start()
-            } else if (event == Lifecycle.Event.ON_STOP) {
-                Log.i(Global.debugPrefix, "Stop event")
-                game_audio.pause()
-            } else if (event == Lifecycle.Event.ON_START) {
-                Log.i(Global.debugPrefix, "Start event")
-                game_audio.start()
-            }
-        }
-
-        // Add the observer to the lifecycle
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        // When the effect leaves the Composition, remove the observer
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }  // DisposableEffect
-
 
     Scaffold (
         topBar = {
@@ -236,6 +204,44 @@ fun MainViewImplementation(
         } // Column
     }
 }
+
+@Composable
+fun SetupGameAudio() {
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // DisposableEffect is a tool that allows you to perform side effects in your composable
+    // functions that need to be cleaned up when the composable leaves the composition. You
+    // can use keys to control when the callback function is called.
+    DisposableEffect(key1 = lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                Log.i(Global.debugPrefix, "Resume event")
+                game_audio.start()
+            } else if (event == Lifecycle.Event.ON_STOP) {
+                Log.i(Global.debugPrefix, "Stop event")
+                game_audio.pause()
+            } else if (event == Lifecycle.Event.ON_START) {
+                Log.i(Global.debugPrefix, "Start event")
+                game_audio.start()
+            }
+        }
+
+        // Add the observer to the lifecycle
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // When the effect leaves the Composition, remove the observer
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }  // DisposableEffect
+}
+@SuppressLint("SourceLockedOrientationActivity")
+@Composable
+fun ForcePotraitMode() {
+    val activity = LocalContext.current as Activity
+    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
