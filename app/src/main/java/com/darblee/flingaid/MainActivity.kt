@@ -107,18 +107,6 @@ import com.darblee.flingaid.ui.theme.FlingAidTheme
 import java.io.File
 import kotlin.system.exitProcess
 
-// Declare these bitmaps once as it will be reused on every recompose
-private lateinit var upArrowBitmap : Bitmap
-private lateinit var downArrowBitmap : Bitmap
-private lateinit var leftArrowBitmap : Bitmap
-private lateinit var rightArrowBitmap : Bitmap
-private lateinit var ballImage : ImageBitmap
-private lateinit var displayBallImage : ImageBitmap
-
-private lateinit var boardFile : File
-
-private lateinit var game_audio : MediaPlayer
-
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -148,6 +136,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+// Declare these bitmaps once as it will be reused on every recompose
+private lateinit var gUpArrowBitmap : Bitmap
+private lateinit var gDownArrowBitmap : Bitmap
+private lateinit var gLeftArrowBitmap : Bitmap
+private lateinit var gRightArrowBitmap : Bitmap
+private lateinit var gDisplayBallImage : ImageBitmap
+
+private lateinit var boardFile : File
+
+private lateinit var game_audio : MediaPlayer
 
 @Composable
 fun MainViewImplementation(
@@ -490,7 +489,6 @@ fun DrawFlingBoard(
     var gridSize = 0f
 
     val animate = remember { Animatable(initialValue = 0f) }
-
     LaunchedEffect(Unit){
         animate.animateTo(targetValue = 1f, animationSpec =
             infiniteRepeatable(
@@ -554,14 +552,13 @@ fun DrawFlingBoard(
             gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
             drawGrid(this, gridSize)
-            drawBalls(this, gameViewModel, gridSize, displayBallImage)
+            drawBalls(this, gameViewModel, gridSize)
 
             if (gameViewModel.ballCount() > 1) {
                 // Draw the winning arrow if there is a winning move identified
                 if (gameViewModel.foundWinnableMove()) {
                     val moveCount = gameViewModel.getWinningMoveCount(uiState)
-                    drawWinningMoveArrow(this, gridSize, uiState, animate,
-                        displayBallImage, moveCount)
+                    drawWinningMoveArrow(this, gridSize, uiState, animate, moveCount)
                 }
             }
         }
@@ -573,41 +570,41 @@ fun SetupAllBitMapImages() {
 
     Log.i(Global.debugPrefix, "Initializing all the images")
 
-    upArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
+    gUpArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
 
     val matrix = Matrix()
     matrix.postRotate(90F)
 
-    rightArrowBitmap = Bitmap.createBitmap(
-        upArrowBitmap,
+    gRightArrowBitmap = Bitmap.createBitmap(
+        gUpArrowBitmap,
         0,
         0,
-        upArrowBitmap.width,
-        upArrowBitmap.height,
+        gUpArrowBitmap.width,
+        gUpArrowBitmap.height,
         matrix,
         true
     )
-    downArrowBitmap = Bitmap.createBitmap(
-        rightArrowBitmap,
+    gDownArrowBitmap = Bitmap.createBitmap(
+        gRightArrowBitmap,
         0,
         0,
-        rightArrowBitmap.width,
-        rightArrowBitmap.height,
+        gRightArrowBitmap.width,
+        gRightArrowBitmap.height,
         matrix,
         true
     )
-    leftArrowBitmap = Bitmap.createBitmap(
-        downArrowBitmap,
+    gLeftArrowBitmap = Bitmap.createBitmap(
+        gDownArrowBitmap,
         0,
         0,
-        downArrowBitmap.width,
-        downArrowBitmap.height,
+        gDownArrowBitmap.width,
+        gDownArrowBitmap.height,
         matrix,
         true
     )
 
-    ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
-    displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
+    val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
+    gDisplayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
         160, 160, false).asImageBitmap()
 }
 
@@ -616,7 +613,6 @@ fun drawWinningMoveArrow(
     gridSize: Float,
     uiState: GameUiState,
     animate: Animatable<Float, AnimationVector1D>,
-    displayBallImage: ImageBitmap,
     gWinningMoveCount: Int
 ) {
     with (drawScope) {
@@ -629,19 +625,19 @@ fun drawWinningMoveArrow(
 
         when (uiState.foundWinningDirection) {
             Direction.UP -> {
-                displayArrowBitMap = upArrowBitmap
+                displayArrowBitMap = gUpArrowBitmap
                 yOffset = -1 * gridSize.toInt() * gWinningMoveCount
             }
             Direction.DOWN -> {
-                displayArrowBitMap = downArrowBitmap
+                displayArrowBitMap = gDownArrowBitmap
                 yOffset = 1 * gridSize.toInt() * gWinningMoveCount
             }
             Direction.LEFT -> {
-                displayArrowBitMap = leftArrowBitmap
+                displayArrowBitMap = gLeftArrowBitmap
                 xOffset = -1 * gridSize.toInt() * gWinningMoveCount
             }
             Direction.RIGHT -> {
-                displayArrowBitMap = rightArrowBitmap
+                displayArrowBitMap = gRightArrowBitmap
                 xOffset = 1 * gridSize.toInt() * gWinningMoveCount
             }
 
@@ -669,7 +665,7 @@ fun drawWinningMoveArrow(
             (yOffset) * animate.value
         ) {
             drawImage(
-                image = displayBallImage, topLeft =
+                image = gDisplayBallImage, topLeft =
                 Offset(
                     x = ((uiState.winningPosition.col) * gridSize) - 10f,
                     y = ((uiState.winningPosition.row * gridSize) - 10f)
@@ -683,14 +679,13 @@ fun drawWinningMoveArrow(
 fun drawBalls(
     drawScope: DrawScope,
     gameViewModel: GameViewModel,
-    gridSize: Float,
-    ballImage: ImageBitmap
+    gridSize: Float
 ) {
     // Draw all the balls
     with (drawScope) {
         gameViewModel.ballPositionList().forEach { pos ->
             drawImage(
-                image = ballImage,
+                image = gDisplayBallImage,
                 topLeft = Offset(
                     (pos.col * gridSize)-10,
                     (pos.row * gridSize)-10
