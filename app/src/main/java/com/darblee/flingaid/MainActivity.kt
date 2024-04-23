@@ -107,6 +107,15 @@ import com.darblee.flingaid.ui.theme.FlingAidTheme
 import java.io.File
 import kotlin.system.exitProcess
 
+// Declare these bitmaps once as it will be reused on every recompose
+private lateinit var gUpArrowBitmap : Bitmap
+private lateinit var gDownArrowBitmap : Bitmap
+private lateinit var gLeftArrowBitmap : Bitmap
+private lateinit var gRightArrowBitmap : Bitmap
+private lateinit var gDisplayBallImage : ImageBitmap
+
+private lateinit var game_audio : MediaPlayer
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -125,6 +134,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             FlingAidTheme {
+                SetupAllBitMapImages()
+
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -135,18 +146,52 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    @Composable
+    fun SetupAllBitMapImages() {
+
+        Log.i(Global.debugPrefix, "Initializing all the images")
+
+        gUpArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
+
+        val matrix = Matrix()
+        matrix.postRotate(90F)
+
+        gRightArrowBitmap = Bitmap.createBitmap(
+            gUpArrowBitmap,
+            0,
+            0,
+            gUpArrowBitmap.width,
+            gUpArrowBitmap.height,
+            matrix,
+            true
+        )
+        gDownArrowBitmap = Bitmap.createBitmap(
+            gRightArrowBitmap,
+            0,
+            0,
+            gRightArrowBitmap.width,
+            gRightArrowBitmap.height,
+            matrix,
+            true
+        )
+        gLeftArrowBitmap = Bitmap.createBitmap(
+            gDownArrowBitmap,
+            0,
+            0,
+            gDownArrowBitmap.width,
+            gDownArrowBitmap.height,
+            matrix,
+            true
+        )
+
+        val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
+        gDisplayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
+            160, 160, false).asImageBitmap()
+    }
 }
 
-// Declare these bitmaps once as it will be reused on every recompose
-private lateinit var gUpArrowBitmap : Bitmap
-private lateinit var gDownArrowBitmap : Bitmap
-private lateinit var gLeftArrowBitmap : Bitmap
-private lateinit var gRightArrowBitmap : Bitmap
-private lateinit var gDisplayBallImage : ImageBitmap
-
 private lateinit var boardFile : File
-
-private lateinit var game_audio : MediaPlayer
 
 @Composable
 fun MainViewImplementation(
@@ -159,7 +204,6 @@ fun MainViewImplementation(
 
     ForcePortraitMode()
     SetupGameAudio()
-    SetupAllBitMapImages()
 
     gameViewModel.loadBallPositions(boardFile)  // Load balls from previous game save
 
@@ -199,17 +243,6 @@ fun MainViewImplementation(
 }
 
 @Composable
-fun DisplayNoWinnableMoveToast() {
-    val contextForToast = LocalContext.current
-
-    Toast.makeText(
-        contextForToast,
-        "There is no winnable move",
-        Toast.LENGTH_LONG
-    ).show()
-}
-
-@Composable
 fun SetupGameAudio() {
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -246,6 +279,19 @@ fun SetupGameAudio() {
         }
     }  // DisposableEffect
 }
+
+
+@Composable
+fun DisplayNoWinnableMoveToast() {
+    val contextForToast = LocalContext.current
+
+    Toast.makeText(
+        contextForToast,
+        "There is no winnable move",
+        Toast.LENGTH_LONG
+    ).show()
+}
+
 
 @SuppressLint("SourceLockedOrientationActivity")
 @Composable
@@ -563,49 +609,6 @@ fun DrawFlingBoard(
             }
         }
     }
-}
-
-@Composable
-fun SetupAllBitMapImages() {
-
-    Log.i(Global.debugPrefix, "Initializing all the images")
-
-    gUpArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
-
-    val matrix = Matrix()
-    matrix.postRotate(90F)
-
-    gRightArrowBitmap = Bitmap.createBitmap(
-        gUpArrowBitmap,
-        0,
-        0,
-        gUpArrowBitmap.width,
-        gUpArrowBitmap.height,
-        matrix,
-        true
-    )
-    gDownArrowBitmap = Bitmap.createBitmap(
-        gRightArrowBitmap,
-        0,
-        0,
-        gRightArrowBitmap.width,
-        gRightArrowBitmap.height,
-        matrix,
-        true
-    )
-    gLeftArrowBitmap = Bitmap.createBitmap(
-        gDownArrowBitmap,
-        0,
-        0,
-        gDownArrowBitmap.width,
-        gDownArrowBitmap.height,
-        matrix,
-        true
-    )
-
-    val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
-    gDisplayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
-        160, 160, false).asImageBitmap()
 }
 
 fun drawWinningMoveArrow(
