@@ -93,6 +93,7 @@ class GameViewModel : ViewModel() {
             Log.i(Global.debugPrefix, "An error occurred while reading the file: ${e.message}")
         }
     }
+
     fun getThinkingStatus(): GameState
     {
         return (_uiState.value.state)
@@ -115,10 +116,9 @@ class GameViewModel : ViewModel() {
         return _ballPositionList.count()
     }
 
-    /*
-        If the position is blank, then place the ball.
-        If ball already exist on that location, then remove the ball
-     */
+
+    // If the position is blank, then place the ball.
+    // If ball already exist on that location, then remove the ball
     fun toggleBallPosition(pos: Pos)
     {
         if (_ballPositionList.contains(pos)) {
@@ -143,10 +143,10 @@ class GameViewModel : ViewModel() {
     private lateinit var task2 : Thread
     private lateinit var task3 : Thread
 
-    private  var task1WinningRow = -1
-    private  var task1WinningCol = -1
-    private  var task2WinningRow = -1
-    private  var task2WinningCol = -1
+    private var task1WinningRow = -1
+    private var task1WinningCol = -1
+    private var task2WinningRow = -1
+    private var task2WinningCol = -1
 
     fun findWinningMove(gameViewModel: GameViewModel) {
         _uiState.update {currentState ->
@@ -210,9 +210,11 @@ class GameViewModel : ViewModel() {
         Log.i(Global.debugPrefix, "DisplayResult after processing....")
         uiState.value.state = GameState.NotThinking
 
-        if ((Global.task1_WinningDirection != Direction.NO_WINNING_DIRECTION) && (Global.task1_WinningDirection != Direction.INCOMPLETE)) {
+        if ((Global.task1_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
+            (Global.task1_WinningDirection != Direction.INCOMPLETE)) {
             // Task1 has the winning move
-            Log.i(Global.debugPrefix, "Task #1 has winning move with direction : ${Global.task1_WinningDirection}")
+            Log.i(Global.debugPrefix,
+                "Task #1 has winning move with direction : ${Global.task1_WinningDirection}")
             val winningPos = Pos(task1WinningRow, task1WinningCol)
             val winningDir = Global.task1_WinningDirection
 
@@ -230,8 +232,10 @@ class GameViewModel : ViewModel() {
                 Global.debugPrefix,
                 "Task #1 does not have winning result. Now check on task #2 outcome"
             )
-            if ((Global.task2_WinningDirection != Direction.NO_WINNING_DIRECTION) && (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
-                Log.i(Global.debugPrefix, "Task #2 has winning move with direction: ${Global.task2_WinningDirection}")
+            if ((Global.task2_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
+                (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
+                Log.i(Global.debugPrefix,
+                    "Task #2 has winning move with direction: ${Global.task2_WinningDirection}")
                 // Task2 has the winning move
                 val winningPos = Pos(task2WinningRow, task2WinningCol)
                 val winningDir = Global.task2_WinningDirection
@@ -276,14 +280,16 @@ class GameViewModel : ViewModel() {
             val (direction, finalRow, finalCol) = game1.foundWinningMove(
                 totalBallCnt, 1, 1)
 
-            Log.i("${Global.debugPrefix} Finish Task #1", "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
+            Log.i("${Global.debugPrefix} Finish Task #1",
+                "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
 
             Global.task1_WinningDirection = direction
 
             when (direction) {
 
                 Direction.INCOMPLETE -> {
-                    Log.i(Global.debugPrefix, "Task #1 got incomplete. It expect task2 has deterministic result")
+                    Log.i(Global.debugPrefix,
+                        "Task #1 got incomplete. It expect task2 has deterministic result")
                 }
 
                 Direction.NO_WINNING_DIRECTION -> {
@@ -385,7 +391,6 @@ class GameViewModel : ViewModel() {
     {
         return (_uiState.value.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
     }
-
 
     fun getWinningMoveCount(uiState: GameUiState): Int {
         val game = GameEngine()

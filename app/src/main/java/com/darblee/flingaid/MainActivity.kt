@@ -112,6 +112,8 @@ private lateinit var upArrowBitmap : Bitmap
 private lateinit var downArrowBitmap : Bitmap
 private lateinit var leftArrowBitmap : Bitmap
 private lateinit var rightArrowBitmap : Bitmap
+private lateinit var ballImage : ImageBitmap
+private lateinit var displayBallImage : ImageBitmap
 
 private lateinit var boardFile : File
 
@@ -153,11 +155,13 @@ fun MainViewImplementation(
         gameViewModel: GameViewModel = viewModel()
 ) {
     val uiState by gameViewModel.uiState.collectAsState()
-    Log.i(Global.debugPrefix, "Recompose Thinking status: ${uiState.state}")
+    Log.i(Global.debugPrefix, "MainViewImplementation : Recompose Thinking status: ${uiState.state}")
     boardFile = File(LocalContext.current.filesDir, Global.boardFileName)
 
     ForcePortraitMode()
     SetupGameAudio()
+    SetupAllBitMapImages()
+
     gameViewModel.loadBallPositions(boardFile)  // Load balls from previous game save
 
     Scaffold (
@@ -384,7 +388,8 @@ fun DrawUpperBoxLogo(uiState: GameUiState)
                 .align(Alignment.Center))
 
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-            val newValue : Float = (Global.ThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0).toFloat()
+            val newValue : Float = (Global.ThinkingProgress.toFloat() /
+                    (Global.totalProcessCount) * 100.0).toFloat()
             val percentComplete = String.format("%.1f%%", newValue)
             Text("Searching $percentComplete")
         }
@@ -435,7 +440,8 @@ fun ControlButtons(
             modifier = Modifier
                 .weight(3F)
                 .padding(5.dp),
-            enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) && (uiState.state == GameState.NotThinking))
+            enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) &&
+                    (uiState.state == GameState.NotThinking))
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
@@ -481,20 +487,7 @@ fun DrawFlingBoard(
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUiState,
     ) {
-    val context = LocalContext.current
     var gridSize = 0f
-
-    val matrix = Matrix()
-    matrix.postRotate(90F)
-    val view = LocalView.current
-
-    upArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
-    rightArrowBitmap = Bitmap.createBitmap(upArrowBitmap, 0, 0, upArrowBitmap.width, upArrowBitmap.height, matrix, true )
-    downArrowBitmap = Bitmap.createBitmap(rightArrowBitmap, 0, 0, rightArrowBitmap.width, rightArrowBitmap.height, matrix, true )
-    leftArrowBitmap = Bitmap.createBitmap(downArrowBitmap, 0, 0, downArrowBitmap.width, downArrowBitmap.height, matrix, true )
-
-    val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
-    val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(), 160, 160, false).asImageBitmap()
 
     val animate = remember { Animatable(initialValue = 0f) }
 
@@ -519,6 +512,8 @@ fun DrawFlingBoard(
             .background(Color.Gray),
         contentAlignment = Alignment.Center
     ) {
+        val context = LocalContext.current
+        val view = LocalView.current
         Canvas(
             modifier = modifier
                 .fillMaxSize()
@@ -526,8 +521,9 @@ fun DrawFlingBoard(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = { tapOffset ->
+                            // For unknown reason, we can not use uistate.state
                             val thinkingStatus =
-                                gameViewModel.getThinkingStatus()  // For unknown reason, we can not use uistate.state
+                                gameViewModel.getThinkingStatus()
                             if (thinkingStatus == GameState.Thinking) {
                                 Toast
                                     .makeText(
@@ -564,11 +560,55 @@ fun DrawFlingBoard(
                 // Draw the winning arrow if there is a winning move identified
                 if (gameViewModel.foundWinnableMove()) {
                     val moveCount = gameViewModel.getWinningMoveCount(uiState)
-                    drawWinningMoveArrow(this, gridSize, uiState, animate, displayBallImage, moveCount)
+                    drawWinningMoveArrow(this, gridSize, uiState, animate,
+                        displayBallImage, moveCount)
                 }
             }
         }
     }
+}
+
+@Composable
+fun SetupAllBitMapImages() {
+
+    Log.i(Global.debugPrefix, "Initializing all the images")
+
+    upArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
+
+    val matrix = Matrix()
+    matrix.postRotate(90F)
+
+    rightArrowBitmap = Bitmap.createBitmap(
+        upArrowBitmap,
+        0,
+        0,
+        upArrowBitmap.width,
+        upArrowBitmap.height,
+        matrix,
+        true
+    )
+    downArrowBitmap = Bitmap.createBitmap(
+        rightArrowBitmap,
+        0,
+        0,
+        rightArrowBitmap.width,
+        rightArrowBitmap.height,
+        matrix,
+        true
+    )
+    leftArrowBitmap = Bitmap.createBitmap(
+        downArrowBitmap,
+        0,
+        0,
+        downArrowBitmap.width,
+        downArrowBitmap.height,
+        matrix,
+        true
+    )
+
+    ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
+    displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
+        160, 160, false).asImageBitmap()
 }
 
 fun drawWinningMoveArrow(
@@ -605,7 +645,8 @@ fun drawWinningMoveArrow(
                 xOffset = 1 * gridSize.toInt() * gWinningMoveCount
             }
 
-            //NOTE: bitmap configuration describes how pixels are stored. This affects the quality (color depth) as well as the ability to display transparent/translucent colors.
+            //NOTE: bitmap configuration describes how pixels are stored. This affects the quality
+            // (color depth) as well as the ability to display transparent/translucent colors.
             // "Bitmap.Config.ARGB_8888" indicates the maximum flexibility
             else -> {
                 Log.e(Global.debugPrefix, "Got unexpected Direction value: ${uiState.foundWinningDirection}")
@@ -615,10 +656,12 @@ fun drawWinningMoveArrow(
         }
 
         // Reduce size of arrow to fit inside the grid
-        val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt(), gridSize.toInt(), false).asImageBitmap()
+        val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt(),
+            gridSize.toInt(), false).asImageBitmap()
 
         drawImage(displayArrow, topLeft =
-            Offset(x = ((uiState.winningPosition.col) * gridSize) - 3f, y = ((uiState.winningPosition.row * gridSize) -3f))
+            Offset(x = ((uiState.winningPosition.col) * gridSize) - 3f,
+                y = ((uiState.winningPosition.row * gridSize) -3f))
         )
 
         translate(
