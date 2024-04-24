@@ -74,10 +74,11 @@ class GameEngine {
             while (curRow != exceededRow) {
 
                 if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
-                    val thread_int = Thread.interrupted()
-                    Log.d("${Global.debugPrefix}:", "Short circuit on row processing. Thread interrupt: $thread_int  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
+                    val threadInterrupt = Thread.interrupted()
+                    Log.d("${Global.debugPrefix}:", "Short circuit on row processing. Thread interrupt: $threadInterrupt  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
                     direction = Direction.INCOMPLETE  // We should quit the current thread
                     return@repeatBlock
+
                 }
 
                 currentCol = startColumn
@@ -102,8 +103,8 @@ class GameEngine {
                             Global.ThinkingProgress++
                         }
                         if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
-                            val thread_int = Thread.interrupted()
-                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after up. Thread interuptd: $thread_int  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
+                            val threadInterrupt = Thread.interrupted()
+                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after up. Thread interrupt: $threadInterrupt  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -119,8 +120,8 @@ class GameEngine {
                             Global.ThinkingProgress++
                         }
                         if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
-                            val thread_int = Thread.interrupted()
-                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after down. Thread interuptd: $thread_int  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
+                            val threadInterrupt = Thread.interrupted()
+                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after down. Thread interrupt: $threadInterrupt  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -136,8 +137,8 @@ class GameEngine {
                             Global.ThinkingProgress++
                         }
                         if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
-                            val thread_int = Thread.interrupted()
-                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after right. Thread interrupt: $thread_int  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
+                            val threadInterrupt = Thread.interrupted()
+                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after right. Thread interrupt: $threadInterrupt  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -153,8 +154,8 @@ class GameEngine {
                             Global.ThinkingProgress++
                         }
                         if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
-                            val thread_int = Thread.interrupted()
-                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after left. Thread interuptd: $thread_int  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
+                            val threadInterrupt = Thread.interrupted()
+                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after left. Thread interrupt: $threadInterrupt  task1: ${Global.task1_WinningDirection} task2: ${Global.task2_WinningDirection}")
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }

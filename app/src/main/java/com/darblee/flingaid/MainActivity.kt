@@ -114,8 +114,6 @@ private lateinit var gLeftArrowBitmap : Bitmap
 private lateinit var gRightArrowBitmap : Bitmap
 private lateinit var gDisplayBallImage : ImageBitmap
 
-private lateinit var game_audio : MediaPlayer
-
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -129,12 +127,12 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
         Handler(Looper.getMainLooper()).postDelayed({ keepSplashOnScreen = false }, delay)
 
-        game_audio =  MediaPlayer.create(applicationContext, raw.music)
-        game_audio.isLooping = true
-
         setContent {
             FlingAidTheme {
+
                 SetupAllBitMapImages()
+                SetupGameAudio()
+                ForcePortraitMode()
 
                 // A surface container using the 'background' color from the theme
                 Surface(
@@ -189,6 +187,54 @@ class MainActivity : ComponentActivity() {
         gDisplayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
             160, 160, false).asImageBitmap()
     }
+
+    @Composable
+    fun SetupGameAudio() {
+        val gameAudio =  MediaPlayer.create(applicationContext, raw.music)
+        gameAudio.isLooping = true
+
+        val lifecycleOwner = LocalLifecycleOwner.current
+
+        // DisposableEffect is a tool that allows you to perform side effects in your composable
+        // functions that need to be cleaned up when the composable leaves the composition.
+        // Keys is used to control when the callback function is called.
+        DisposableEffect(key1 = lifecycleOwner) {
+            val observer = LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_START -> {
+                        Log.i(Global.debugPrefix, "Start event")
+                        gameAudio.start()
+                    }
+                    Lifecycle.Event.ON_RESUME -> {
+                        Log.i(Global.debugPrefix, "Resume event")
+                        gameAudio.start()
+                    }
+                    Lifecycle.Event.ON_STOP -> {
+                        Log.i(Global.debugPrefix, "Stop event")
+                        gameAudio.pause()
+                    }
+                    else -> {
+                        Log.i(Global.debugPrefix, "$event event ignored")
+                    }
+                }
+            }
+
+            // Add the observer to the lifecycle
+            lifecycleOwner.lifecycle.addObserver(observer)
+
+            // When the effect leaves the Composition, remove the observer
+            onDispose {
+                lifecycleOwner.lifecycle.removeObserver(observer)
+            }
+        }  // DisposableEffect
+    }
+
+    @SuppressLint("SourceLockedOrientationActivity")
+    @Composable
+    fun ForcePortraitMode() {
+        val activity = LocalContext.current as Activity
+        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
 }
 
 private lateinit var boardFile : File
@@ -201,9 +247,6 @@ fun MainViewImplementation(
     val uiState by gameViewModel.uiState.collectAsState()
     Log.i(Global.debugPrefix, "MainViewImplementation : Recompose Thinking status: ${uiState.state}")
     boardFile = File(LocalContext.current.filesDir, Global.boardFileName)
-
-    ForcePortraitMode()
-    SetupGameAudio()
 
     gameViewModel.loadBallPositions(boardFile)  // Load balls from previous game save
 
@@ -243,45 +286,6 @@ fun MainViewImplementation(
 }
 
 @Composable
-fun SetupGameAudio() {
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    // DisposableEffect is a tool that allows you to perform side effects in your composable
-    // functions that need to be cleaned up when the composable leaves the composition.
-    // Keys is used to control when the callback function is called.
-    DisposableEffect(key1 = lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_START -> {
-                    Log.i(Global.debugPrefix, "Start event")
-                    game_audio.start()
-                }
-                Lifecycle.Event.ON_RESUME -> {
-                    Log.i(Global.debugPrefix, "Resume event")
-                    game_audio.start()
-                }
-                Lifecycle.Event.ON_STOP -> {
-                    Log.i(Global.debugPrefix, "Stop event")
-                    game_audio.pause()
-                }
-                else -> {
-                    Log.i(Global.debugPrefix, "$event event ignored")
-                }
-            }
-        }
-
-        // Add the observer to the lifecycle
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        // When the effect leaves the Composition, remove the observer
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }  // DisposableEffect
-}
-
-
-@Composable
 fun DisplayNoWinnableMoveToast() {
     val contextForToast = LocalContext.current
 
@@ -290,14 +294,6 @@ fun DisplayNoWinnableMoveToast() {
         "There is no winnable move",
         Toast.LENGTH_LONG
     ).show()
-}
-
-
-@SuppressLint("SourceLockedOrientationActivity")
-@Composable
-fun ForcePortraitMode() {
-    val activity = LocalContext.current as Activity
-    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -433,9 +429,9 @@ fun DrawUpperBoxLogo(uiState: GameUiState)
                 .align(Alignment.Center))
 
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-            val newValue : Float = (Global.ThinkingProgress.toFloat() /
+            val newPercentageValue : Float = (Global.ThinkingProgress.toFloat() /
                     (Global.totalProcessCount) * 100.0).toFloat()
-            val percentComplete = String.format("%.1f%%", newValue)
+            val percentComplete = String.format("%.1f%%", newPercentageValue)
             Text("Searching $percentComplete")
         }
     }
@@ -624,24 +620,22 @@ fun drawWinningMoveArrow(
         var xOffset = 0
         var yOffset = 0
 
-        var displayArrowBitMap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-
-        when (uiState.foundWinningDirection) {
+        val displayArrowBitMap = when (uiState.foundWinningDirection) {
             Direction.UP -> {
-                displayArrowBitMap = gUpArrowBitmap
                 yOffset = -1 * gridSize.toInt() * gWinningMoveCount
+                gUpArrowBitmap
             }
             Direction.DOWN -> {
-                displayArrowBitMap = gDownArrowBitmap
                 yOffset = 1 * gridSize.toInt() * gWinningMoveCount
+                gDownArrowBitmap
             }
             Direction.LEFT -> {
-                displayArrowBitMap = gLeftArrowBitmap
                 xOffset = -1 * gridSize.toInt() * gWinningMoveCount
+                gLeftArrowBitmap
             }
             Direction.RIGHT -> {
-                displayArrowBitMap = gRightArrowBitmap
                 xOffset = 1 * gridSize.toInt() * gWinningMoveCount
+                gRightArrowBitmap
             }
 
             //NOTE: bitmap configuration describes how pixels are stored. This affects the quality
@@ -650,7 +644,7 @@ fun drawWinningMoveArrow(
             else -> {
                 Log.e(Global.debugPrefix, "Got unexpected Direction value: ${uiState.foundWinningDirection}")
                 assert(true)
-                Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+                (Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888))
             }
         }
 

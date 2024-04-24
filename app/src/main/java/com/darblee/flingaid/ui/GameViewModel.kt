@@ -61,12 +61,12 @@ class GameViewModel : ViewModel() {
 
     fun saveBallPositions(file: File) {
         val format = Json { prettyPrint = true }
-        var ball_list = listOf<Pos>()
+        val ballList = mutableListOf<Pos>()
 
         for (currentPos in _ballPositionList) {
-            ball_list += currentPos
+            ballList += currentPos
         }
-        val output = format.encodeToString(ball_list)
+        val output = format.encodeToString(ballList)
 
         try {
             val writer = FileWriter(file)
@@ -396,32 +396,32 @@ class GameViewModel : ViewModel() {
         val game = GameEngine()
         game.populateGrid(_ballPositionList)
 
-        var WinningMoveCount = 0
+        var winningMoveCount = 0
 
         var targetRow: Int
         var targetCol: Int
 
         if (uiState.foundWinningDirection == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(uiState.winningPosition.row, uiState.winningPosition.col)
-            WinningMoveCount = uiState.winningPosition.row - targetRow
+            winningMoveCount = uiState.winningPosition.row - targetRow
         }
 
         if (uiState.foundWinningDirection == Direction.DOWN) {
             targetRow = game.findTargetRowOnMoveDown(uiState.winningPosition.row, uiState.winningPosition.col)
-            WinningMoveCount = targetRow - uiState.winningPosition.row
+            winningMoveCount = targetRow - uiState.winningPosition.row
         }
 
         if (uiState.foundWinningDirection == Direction.RIGHT) {
             targetCol = game.findTargetColOnMoveRight(uiState.winningPosition.row, uiState.winningPosition.col)
-            WinningMoveCount = targetCol - uiState.winningPosition.col
+            winningMoveCount = targetCol - uiState.winningPosition.col
         }
 
         if (uiState.foundWinningDirection == Direction.LEFT) {
             targetCol = game.findTargetColOnMoveLeft(uiState.winningPosition.row, uiState.winningPosition.col)
-            WinningMoveCount = uiState.winningPosition.col - targetCol
+            winningMoveCount = uiState.winningPosition.col - targetCol
         }
 
-        return (WinningMoveCount)
+        return (winningMoveCount)
     }
 
     fun makeWinningMove(uiState: GameUiState) {
