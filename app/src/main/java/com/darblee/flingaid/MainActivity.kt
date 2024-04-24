@@ -600,14 +600,19 @@ fun DrawFlingBoard(
                 // Draw the winning arrow if there is a winning move identified
                 if (gameViewModel.foundWinnableMove()) {
                     val moveCount = gameViewModel.getWinningMoveCount(uiState)
-                    drawWinningMoveArrow(this, gridSize, uiState, animate, moveCount)
+                    showWinningMove(this, gridSize, uiState, animate, moveCount)
                 }
             }
         }
     }
 }
 
-fun drawWinningMoveArrow(
+/*
+ * Show Winning Move
+ *   Show direction arrow
+ *   Animate the ball movement
+ */
+fun showWinningMove(
     drawScope: DrawScope,
     gridSize: Float,
     uiState: GameUiState,
@@ -638,7 +643,7 @@ fun drawWinningMoveArrow(
                 gRightArrowBitmap
             }
 
-            //NOTE: bitmap configuration describes how pixels are stored. This affects the quality
+            // NOTE: bitmap configuration describes how pixels are stored. This affects the quality
             // (color depth) as well as the ability to display transparent/translucent colors.
             // "Bitmap.Config.ARGB_8888" indicates the maximum flexibility
             else -> {

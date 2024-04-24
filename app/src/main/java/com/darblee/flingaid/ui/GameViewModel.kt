@@ -26,9 +26,6 @@ class GameViewModel : ViewModel() {
     private var _ballPositionList = mutableStateListOf<Pos>()
 
     /*
-        Developer's notes
-        "internal" means any client inside this module- who see this class will see this member
-
         SnapshotList:
         - The composable will automatically update when that state changes
         - Values can change
@@ -50,9 +47,14 @@ class GameViewModel : ViewModel() {
         updates and make the screen state survive configuration changes.
 
         In the GameViewModel class, add the following _uiState property.
+
+        "internal" means any client inside this module who sees the declaring class see its internal members
+        module means a group of files that are compiled together. It provides real encapsulation for the
+        implementation details
+
      */
     internal var uiState : StateFlow<GameUiState> = _uiState.asStateFlow()
-        private set
+        private set  // Public getter (read-only access from outside) and private setter (only internally modifiable)
 
     init {
         val file : File? = null
@@ -108,7 +110,7 @@ class GameViewModel : ViewModel() {
         _ballPositionList.clear()
         file?.delete()
         
-        uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
+        _uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
     }
 
     fun ballCount():Int
@@ -139,9 +141,9 @@ class GameViewModel : ViewModel() {
     // (from memory instead of from cpu-cache)
     @Volatile var gMultipleThread = false
 
-    private lateinit var task1 : Thread
-    private lateinit var task2 : Thread
-    private lateinit var task3 : Thread
+    private lateinit var gThinkingThread1 : Thread
+    private lateinit var gThinkingThread2 : Thread
+    private lateinit var gShowProgressThread : Thread
 
     private var task1WinningRow = -1
     private var task1WinningCol = -1
@@ -182,26 +184,26 @@ class GameViewModel : ViewModel() {
                 }
             }
 
-            task1 = Thread {
+            gThinkingThread1 = Thread {
                 processTask1(gTotalBallCount)
                 Log.i("${Global.debugPrefix} Task 1", "Task #1 is completed. Now waiting for all threads to complete.")
                 cyclicBarrier.await()
             }
-            task2 = Thread {
+            gThinkingThread2 = Thread {
                 processTask2(gTotalBallCount)
                 Log.i("${Global.debugPrefix}: Task 2", "Task #2 is completed. Now waiting for all threads to complete.")
                 cyclicBarrier.await()
             }
 
-            task3 = Thread {
+            gShowProgressThread = Thread {
                 showProcessingActivity()
             }
 
-            task3.start()
-            task1.start()
+            gShowProgressThread.start()
+            gThinkingThread1.start()
 
             if (gMultipleThread) {
-                task2.start()
+                gThinkingThread2.start()
             }
         }
     }
@@ -294,7 +296,7 @@ class GameViewModel : ViewModel() {
 
                 Direction.NO_WINNING_DIRECTION -> {
                     Log.i(Global.debugPrefix, "Task #1 concluded there is no winning move")
-                    if (gMultipleThread) task2.interrupt()
+                    if (gMultipleThread) gThinkingThread2.interrupt()
                 }
 
                 else -> {
@@ -305,7 +307,7 @@ class GameViewModel : ViewModel() {
                     Global.task1_WinningDirection = direction
 
                     Log.i(Global.debugPrefix, "Attempting to interrupt task #2")
-                    if (gMultipleThread) task2.interrupt()
+                    if (gMultipleThread) gThinkingThread2.interrupt()
                 }
             }
         } catch (e: InterruptedException) {
@@ -335,7 +337,7 @@ class GameViewModel : ViewModel() {
 
                 Direction.NO_WINNING_DIRECTION -> {
                     Log.i(Global.debugPrefix, "Task #2 concluded there is no winning move")
-                    task1.interrupt()
+                    gThinkingThread1.interrupt()
                 }
 
                 else -> {
@@ -346,7 +348,7 @@ class GameViewModel : ViewModel() {
                     Global.task2_WinningDirection = direction
 
                     Log.i(Global.debugPrefix, "Attempting to interrupt task #1")
-                    task1.interrupt()
+                    gThinkingThread1.interrupt()
                 }
             }
         } catch (e: InterruptedException) {
