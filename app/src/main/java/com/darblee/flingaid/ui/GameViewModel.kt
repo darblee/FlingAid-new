@@ -48,9 +48,9 @@ class GameViewModel : ViewModel() {
 
         In the GameViewModel class, add the following _uiState property.
 
-        "internal" means any client inside this module who sees the declaring class see its internal members
-        module means a group of files that are compiled together. It provides real encapsulation for the
-        implementation details
+        "internal" means it will only be visible within that module. A module is a set of Kotlin
+        files that are compiled together e.g. a library or application. It provides real
+        encapsulation for the implementation details
 
      */
     internal var uiState : StateFlow<GameUiState> = _uiState.asStateFlow()

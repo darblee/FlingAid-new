@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,6 +41,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -55,6 +57,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -113,6 +117,8 @@ private lateinit var gDownArrowBitmap : Bitmap
 private lateinit var gLeftArrowBitmap : Bitmap
 private lateinit var gRightArrowBitmap : Bitmap
 private lateinit var gDisplayBallImage : ImageBitmap
+
+private lateinit var gameAudio : MediaPlayer
 
 class MainActivity : ComponentActivity() {
 
@@ -190,7 +196,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun SetupGameAudio() {
-        val gameAudio =  MediaPlayer.create(applicationContext, raw.music)
+        gameAudio =  MediaPlayer.create(applicationContext, raw.music)
         gameAudio.isLooping = true
 
         val lifecycleOwner = LocalLifecycleOwner.current
@@ -203,11 +209,11 @@ class MainActivity : ComponentActivity() {
                 when (event) {
                     Lifecycle.Event.ON_START -> {
                         Log.i(Global.debugPrefix, "Start event")
-                        gameAudio.start()
+                        if (Global.gameMusicOn) gameAudio.start()
                     }
                     Lifecycle.Event.ON_RESUME -> {
                         Log.i(Global.debugPrefix, "Resume event")
-                        gameAudio.start()
+                        if (Global.gameMusicOn) gameAudio.start()
                     }
                     Lifecycle.Event.ON_STOP -> {
                         Log.i(Global.debugPrefix, "Stop event")
@@ -301,6 +307,7 @@ fun DisplayNoWinnableMoveToast() {
 fun FlingAidTopAppBar() {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialogBox by remember { mutableStateOf(false) }
+    var showSettingDialogBox by remember { mutableStateOf(false) }
 
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -336,6 +343,13 @@ fun FlingAidTopAppBar() {
                     }
                 )
                 DropdownMenuItem(
+                    text = { Text(text = "Setting...") },
+                    onClick = {
+                        showSettingDialogBox = true
+                        menuExpanded = false
+                    }
+                )
+                DropdownMenuItem(
                     text = { Text("Exit") },
                     onClick = {
                         menuExpanded = false
@@ -353,6 +367,12 @@ fun FlingAidTopAppBar() {
         AboutDialogPopup(
             onDismissRequest = { showAboutDialogBox = false },
             onConfirmation = { showAboutDialogBox = false },
+        )
+    }
+
+    if (showSettingDialogBox) {
+        SettingPopup(
+            onDismissRequest = { showSettingDialogBox = false },
         )
     }
 }
@@ -405,7 +425,69 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
             }
         }
     }
+}
 
+@Composable
+fun SettingPopup(onDismissRequest: () -> Unit) {
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        // Draw a rectangle shape with rounded corners inside the dialog
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Music")
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    var musicSwitch by remember {
+                        mutableStateOf(Global.gameMusicOn)
+                    }
+
+                    val icon: (@Composable () -> Unit)? = if (Global.gameMusicOn) {
+                        {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(SwitchDefaults.IconSize)
+                            )
+                        }
+                    } else null
+
+                    Switch(
+                        checked = musicSwitch,
+                        onCheckedChange = { isCheckStatus ->
+                            musicSwitch = isCheckStatus
+                            Global.gameMusicOn = musicSwitch
+                            setGameMusic(Global.gameMusicOn ) },
+                        thumbContent = icon
+                    )
+                }
+            }
+        } // ColumnScope
+    }
+}
+
+fun setGameMusic(on: Boolean)
+{
+    if (on) {
+        if (!gameAudio.isPlaying)
+            gameAudio.start()
+    } else {
+        gameAudio.pause()
+    }
 }
 
 @Composable

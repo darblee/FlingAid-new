@@ -11,4 +11,5 @@ object Global {
     var totalProcessCount : Float = 0.0F
     const val debugPrefix = "Flinfo:"
     const val boardFileName = "Board.txt"
+    var gameMusicOn = true
 }
