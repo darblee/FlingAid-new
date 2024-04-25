@@ -118,7 +118,7 @@ private lateinit var gLeftArrowBitmap : Bitmap
 private lateinit var gRightArrowBitmap : Bitmap
 private lateinit var gDisplayBallImage : ImageBitmap
 
-private lateinit var gameAudio : MediaPlayer
+private lateinit var gGameAudio : MediaPlayer
 
 class MainActivity : ComponentActivity() {
 
@@ -196,8 +196,8 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun SetupGameAudio() {
-        gameAudio =  MediaPlayer.create(applicationContext, raw.music)
-        gameAudio.isLooping = true
+        gGameAudio =  MediaPlayer.create(applicationContext, raw.music)
+        gGameAudio.isLooping = true
 
         val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -209,15 +209,15 @@ class MainActivity : ComponentActivity() {
                 when (event) {
                     Lifecycle.Event.ON_START -> {
                         Log.i(Global.debugPrefix, "Start event")
-                        if (Global.gameMusicOn) gameAudio.start()
+                        if (Global.gameMusicOn) gGameAudio.start()
                     }
                     Lifecycle.Event.ON_RESUME -> {
                         Log.i(Global.debugPrefix, "Resume event")
-                        if (Global.gameMusicOn) gameAudio.start()
+                        if (Global.gameMusicOn) gGameAudio.start()
                     }
                     Lifecycle.Event.ON_STOP -> {
                         Log.i(Global.debugPrefix, "Stop event")
-                        gameAudio.pause()
+                        gGameAudio.pause()
                     }
                     else -> {
                         Log.i(Global.debugPrefix, "$event event ignored")
@@ -483,10 +483,10 @@ fun SettingPopup(onDismissRequest: () -> Unit) {
 fun setGameMusic(on: Boolean)
 {
     if (on) {
-        if (!gameAudio.isPlaying)
-            gameAudio.start()
+        if (!gGameAudio.isPlaying)
+            gGameAudio.start()
     } else {
-        gameAudio.pause()
+        gGameAudio.pause()
     }
 }
 
