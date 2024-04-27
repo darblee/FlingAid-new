@@ -100,6 +100,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:${rootProject.extra["lifecycle_version"]}")
     implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:${rootProject.extra["lifecycle_version"]}")
 
+    // Preference datastore
+    implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+    implementation ("androidx.datastore:datastore-preferences-rxjava2:1.1.0")
+    implementation ("androidx.datastore:datastore-preferences-rxjava3:1.1.0")
+
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
 

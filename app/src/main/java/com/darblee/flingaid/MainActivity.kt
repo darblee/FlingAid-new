@@ -107,7 +107,11 @@ import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.Pos
+import com.darblee.flingaid.ui.PreferenceStore
 import com.darblee.flingaid.ui.theme.FlingAidTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.system.exitProcess
 
@@ -136,8 +140,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             FlingAidTheme {
 
+                // We are passing Unit as a parameter that means we only want to call this suspend
+                // block when the first time a user enters the screen
+                LaunchedEffect(key1 = Unit) {
+                    val Context = applicationContext
+                    val pref = PreferenceStore(Context)
+                    Global.gameMusicOn = pref.getGameMusicOnFlag()
+                    if (Global.gameMusicOn) gGameAudio.start()
+                }
                 SetupAllBitMapImages()
-                SetupGameAudio()
+                InitiateGameAudio()
                 ForcePortraitMode()
 
                 // A surface container using the 'background' color from the theme
@@ -195,7 +207,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SetupGameAudio() {
+    fun InitiateGameAudio() {
         gGameAudio =  MediaPlayer.create(applicationContext, raw.music)
         gGameAudio.isLooping = true
 
@@ -208,15 +220,12 @@ class MainActivity : ComponentActivity() {
             val observer = LifecycleEventObserver { _, event ->
                 when (event) {
                     Lifecycle.Event.ON_START -> {
-                        Log.i(Global.debugPrefix, "Start event")
                         if (Global.gameMusicOn) gGameAudio.start()
                     }
                     Lifecycle.Event.ON_RESUME -> {
-                        Log.i(Global.debugPrefix, "Resume event")
                         if (Global.gameMusicOn) gGameAudio.start()
                     }
                     Lifecycle.Event.ON_STOP -> {
-                        Log.i(Global.debugPrefix, "Stop event")
                         gGameAudio.pause()
                     }
                     else -> {
@@ -445,6 +454,7 @@ fun SettingPopup(onDismissRequest: () -> Unit) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                val preference = PreferenceStore(LocalContext.current)
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -471,7 +481,12 @@ fun SettingPopup(onDismissRequest: () -> Unit) {
                         onCheckedChange = { isCheckStatus ->
                             musicSwitch = isCheckStatus
                             Global.gameMusicOn = musicSwitch
-                            setGameMusic(Global.gameMusicOn ) },
+
+                            setGameMusic(Global.gameMusicOn )
+                            CoroutineScope(Dispatchers.IO).launch {
+                                preference.saveGameMusicFlag((Global.gameMusicOn))
+                            }
+                         },
                         thumbContent = icon
                     )
                 }
@@ -483,8 +498,9 @@ fun SettingPopup(onDismissRequest: () -> Unit) {
 fun setGameMusic(on: Boolean)
 {
     if (on) {
-        if (!gGameAudio.isPlaying)
+        if (!gGameAudio.isPlaying) {
             gGameAudio.start()
+        }
     } else {
         gGameAudio.pause()
     }
