@@ -157,17 +157,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        when (this.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
-            Configuration.UI_MODE_NIGHT_NO -> {
-                window.statusBarColor = resources.getColor(R.color.white, null)
-            } else -> {
-                window.statusBarColor = resources.getColor(R.color.black, null)
-            }
-        }
-    }
-
     @Composable
     fun SetupAllBitMapImages() {
 
