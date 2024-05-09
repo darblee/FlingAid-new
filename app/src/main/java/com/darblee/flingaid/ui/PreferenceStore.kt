@@ -23,6 +23,7 @@ class PreferenceStore(private val context: Context)
         }
     }
 
+    // Get the data as a stand-alone method instead of Flow<boolean> method
     suspend fun getGameMusicOnFlag() : Boolean {
         val preferences = context.datastore.data.first()
         return preferences[GAME_MUSIC_KEY] ?: false

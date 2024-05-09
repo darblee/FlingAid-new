@@ -3,6 +3,7 @@ package com.darblee.flingaid
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.media.MediaPlayer
@@ -140,16 +141,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             FlingAidTheme {
 
-                // We are passing Unit as a parameter that means we only want to call this suspend
-                // block when the first time a user enters the screen
-                LaunchedEffect(key1 = Unit) {
-                    val Context = applicationContext
-                    val pref = PreferenceStore(Context)
-                    Global.gameMusicOn = pref.getGameMusicOnFlag()
-                    if (Global.gameMusicOn) gGameAudio.start()
-                }
                 SetupAllBitMapImages()
-                InitiateGameAudio()
+                SetUpGameAudio()
                 ForcePortraitMode()
 
                 // A surface container using the 'background' color from the theme
@@ -159,6 +152,17 @@ class MainActivity : ComponentActivity() {
                 ) {
                     MainViewImplementation()
                 }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        when (this.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
+            Configuration.UI_MODE_NIGHT_NO -> {
+                window.statusBarColor = resources.getColor(R.color.white, null)
+            } else -> {
+                window.statusBarColor = resources.getColor(R.color.black, null)
             }
         }
     }
@@ -207,9 +211,16 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun InitiateGameAudio() {
+    fun SetUpGameAudio() {
         gGameAudio =  MediaPlayer.create(applicationContext, raw.music)
         gGameAudio.isLooping = true
+
+        // We are passing Unit as a parameter that means we only want to call this suspend
+        // block when the first time a user enters the screen
+        LaunchedEffect(key1 = Unit) {
+            Global.gameMusicOn = PreferenceStore(applicationContext).getGameMusicOnFlag()
+            if (Global.gameMusicOn) gGameAudio.start()
+        }
 
         val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -252,7 +263,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private lateinit var boardFile : File
+private lateinit var gBoardFile : File
+
+
 
 @Composable
 fun MainViewImplementation(
@@ -261,9 +274,9 @@ fun MainViewImplementation(
 ) {
     val uiState by gameViewModel.uiState.collectAsState()
     Log.i(Global.debugPrefix, "MainViewImplementation : Recompose Thinking status: ${uiState.state}")
-    boardFile = File(LocalContext.current.filesDir, Global.boardFileName)
+    gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
 
-    gameViewModel.loadBallPositions(boardFile)  // Load balls from previous game save
+    gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
 
     Scaffold (
         topBar = { FlingAidTopAppBar() }
@@ -560,7 +573,7 @@ fun ControlButtons(
                 if (showWinnableMoveToUser) {
                     // Make the actual move before find the next winnable move
                     gameViewModel.makeWinningMove(uiState)
-                    gameViewModel.saveBallPositions(boardFile)
+                    gameViewModel.saveBallPositions(gBoardFile)
                 }
                 if (gameViewModel.ballCount() == 1) {
                     audio.start()
@@ -573,8 +586,8 @@ fun ControlButtons(
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Green,
-                contentColor = Color.Black
+                containerColor = colorScheme.primary,
+                contentColor = colorScheme.primaryContainer
             ),
             modifier = Modifier
                 .weight(3F)
@@ -593,13 +606,13 @@ fun ControlButtons(
 
         Button(
             onClick = {
-                gameViewModel.reset(boardFile)
+                gameViewModel.reset(gBoardFile)
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Red,
-                contentColor = Color.White
+                containerColor = colorScheme.errorContainer,
+                contentColor = colorScheme.error
             ),
             modifier = Modifier
                 .weight(2F)
@@ -647,11 +660,12 @@ fun DrawFlingBoard(
                 shape = RoundedCornerShape(20.dp)
             )
             .clip(RoundedCornerShape(20.dp))
-            .background(Color.Gray),
+            .background(colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         val context = LocalContext.current
         val view = LocalView.current
+        val lineColor = colorScheme.outline
         Canvas(
             modifier = modifier
                 .fillMaxSize()
@@ -676,7 +690,7 @@ fun DrawFlingBoard(
                                 if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
                                     gameViewModel.toggleBallPosition(Pos(row, col))
                                     view.playSoundEffect(SoundEffectConstants.CLICK)
-                                    gameViewModel.saveBallPositions(boardFile)
+                                    gameViewModel.saveBallPositions(gBoardFile)
                                 }
                             } // if thinkingStatus != GameState.thinking
                         } // onTap
@@ -691,7 +705,7 @@ fun DrawFlingBoard(
 
             gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
-            drawGrid(this, gridSize)
+            drawGrid(this, gridSize, lineColor)
             drawBalls(this, gameViewModel, gridSize)
 
             if (gameViewModel.ballCount() > 1) {
@@ -795,7 +809,7 @@ fun drawBalls(
     }
 }
 
-fun drawGrid(drawScope: DrawScope, gridSize: Float) {
+fun drawGrid(drawScope: DrawScope, gridSize: Float, lineColor: Color) {
     with (drawScope) {
         // Draw horizontal lines
         var currentY = 0F
@@ -805,7 +819,7 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
             drawLine(
                 start = Offset(x = 0.dp.toPx(), y = currentY),
                 end = Offset(x = gridWidth, y = currentY),
-                color = Color.Black,
+                color = lineColor,
                 strokeWidth = lineWidth.dp.toPx() // instead of 5.dp.toPx() , you can also pass 5f
             )
             currentY += gridSize
@@ -815,10 +829,11 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
         var currentX = 0F
         val gridHeight = gridSize * Global.MaxRowSize
         repeat(Global.MaxColSize + 1) {
+
             drawLine(
                 start = Offset(x = currentX, y = 0.dp.toPx()),
                 end = Offset(x = currentX, y = gridHeight),
-                color = Color.Black,
+                color = lineColor,
                 strokeWidth = 2.dp.toPx() // instead of 5.dp.toPx() , you can also pass 5f
             )
             currentX += gridSize
@@ -828,9 +843,11 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float) {
         val offsetX = (gridSize  * ((Global.MaxColSize / 2) + 0.5)).toFloat()
         val offsetY = (gridSize  * ((Global.MaxRowSize / 2)))
         val radiusLength = (gridSize * 0.66).toFloat()
-        drawCircle(Color.Black, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
+        drawCircle(lineColor, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
     }
 }
+
+
 
 @Composable
 fun PlaySearchAnimation(modifier: Modifier) {
