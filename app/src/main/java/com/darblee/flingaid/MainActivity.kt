@@ -69,6 +69,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -264,8 +265,6 @@ class MainActivity : ComponentActivity() {
 }
 
 private lateinit var gBoardFile : File
-
-
 
 @Composable
 fun MainViewImplementation(
@@ -639,7 +638,9 @@ fun DrawFlingBoard(
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUiState,
     ) {
-    var gridSize = 0f
+    var gridSize by rememberSaveable {
+        mutableStateOf(0f)
+    }
 
     val animate = remember { Animatable(initialValue = 0f) }
     LaunchedEffect(Unit){
@@ -666,6 +667,7 @@ fun DrawFlingBoard(
         val context = LocalContext.current
         val view = LocalView.current
         val lineColor = colorScheme.outline
+
         Canvas(
             modifier = modifier
                 .fillMaxSize()
@@ -846,8 +848,6 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float, lineColor: Color) {
         drawCircle(lineColor, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
     }
 }
-
-
 
 @Composable
 fun PlaySearchAnimation(modifier: Modifier) {
