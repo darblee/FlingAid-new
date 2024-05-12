@@ -40,6 +40,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -55,7 +58,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -67,6 +72,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -91,7 +97,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -110,7 +116,8 @@ import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.Pos
 import com.darblee.flingaid.ui.PreferenceStore
-import com.darblee.flingaid.ui.theme.FlingAidTheme
+import com.darblee.flingaid.ui.theme.SetColorTheme
+import com.darblee.flingaid.ui.theme.ColorThemeOption
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -140,8 +147,11 @@ class MainActivity : ComponentActivity() {
         Handler(Looper.getMainLooper()).postDelayed({ keepSplashOnScreen = false }, delay)
 
         setContent {
-            FlingAidTheme {
+            var currentColorThemeSetting by remember {
+                mutableStateOf(ColorThemeOption.System)
+            }
 
+            SetColorTheme(currentColorThemeSetting) {
                 SetupAllBitMapImages()
                 SetUpGameAudio()
                 ForcePortraitMode()
@@ -151,8 +161,23 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = colorScheme.background
                 ) {
-                    MainViewImplementation()
+                    MainViewImplementation(onColorThemeUpdated = { newColorThemeSetting ->
+                        currentColorThemeSetting = newColorThemeSetting
+                    })
                 }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // Jetpack compose does not change theme for status bar
+        when (this.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
+            Configuration.UI_MODE_NIGHT_NO -> {
+                window.statusBarColor = resources.getColor(R.color.white, null)
+            } else -> {
+                window.statusBarColor = resources.getColor(R.color.black, null)
             }
         }
     }
@@ -257,9 +282,9 @@ private lateinit var gBoardFile : File
 
 @Composable
 fun MainViewImplementation(
-        modifier: Modifier = Modifier,
-        gameViewModel: GameViewModel = viewModel()
-) {
+    modifier: Modifier = Modifier,
+    gameViewModel: GameViewModel = viewModel(),
+    onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit) {
     val uiState by gameViewModel.uiState.collectAsState()
     Log.i(Global.debugPrefix, "MainViewImplementation : Recompose Thinking status: ${uiState.state}")
     gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
@@ -267,7 +292,7 @@ fun MainViewImplementation(
     gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
 
     Scaffold (
-        topBar = { FlingAidTopAppBar() }
+        topBar = { FlingAidTopAppBar(onColorThemeUpdated = onColorThemeUpdated) }
     ) { contentPadding ->
         Column(
             modifier = Modifier
@@ -314,7 +339,7 @@ fun DisplayNoWinnableMoveToast() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FlingAidTopAppBar() {
+fun FlingAidTopAppBar(onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialogBox by remember { mutableStateOf(false) }
     var showSettingDialogBox by remember { mutableStateOf(false) }
@@ -383,6 +408,7 @@ fun FlingAidTopAppBar() {
     if (showSettingDialogBox) {
         SettingPopup(
             onDismissRequest = { showSettingDialogBox = false },
+            onColorThemeUpdated = onColorThemeUpdated
         )
     }
 }
@@ -438,61 +464,68 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
 }
 
 @Composable
-fun SettingPopup(onDismissRequest: () -> Unit) {
+fun SettingPopup(onDismissRequest: () -> Unit, onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit) {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .padding(16.dp),
+                .width(275.dp)
+                .wrapContentHeight()
+                .padding(8.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                val preference = PreferenceStore(LocalContext.current)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Music")
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    var musicSwitch by remember {
-                        mutableStateOf(Global.gameMusicOn)
-                    }
-
-                    val icon: (@Composable () -> Unit)? = if (Global.gameMusicOn) {
-                        {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(SwitchDefaults.IconSize)
-                            )
-                        }
-                    } else null
-
-                    Switch(
-                        checked = musicSwitch,
-                        onCheckedChange = { isCheckStatus ->
-                            musicSwitch = isCheckStatus
-                            Global.gameMusicOn = musicSwitch
-
-                            setGameMusic(Global.gameMusicOn )
-                            CoroutineScope(Dispatchers.IO).launch {
-                                preference.saveGameMusicFlag((Global.gameMusicOn))
-                            }
-                         },
-                        thumbContent = icon
-                    )
-                }
+                MusicSetting()
+                ColorThemeSetting(onColorThemeUpdated)
             }
         } // ColumnScope
+    }
+}
+
+@Composable
+fun MusicSetting() {
+    val preference = PreferenceStore(LocalContext.current)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Text("Music")
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        var musicSwitch by remember {
+            mutableStateOf(Global.gameMusicOn)
+        }
+
+        val icon: (@Composable () -> Unit)? = if (Global.gameMusicOn) {
+            {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
+            }
+        } else null
+
+        Switch(
+            modifier = Modifier.padding(8.dp),
+            checked = musicSwitch,
+            onCheckedChange = { isCheckStatus ->
+                musicSwitch = isCheckStatus
+                Global.gameMusicOn = musicSwitch
+
+                setGameMusic(Global.gameMusicOn )
+                CoroutineScope(Dispatchers.IO).launch {
+                    preference.saveGameMusicFlag((Global.gameMusicOn))
+                }
+            },
+            thumbContent = icon
+        )
     }
 }
 
@@ -504,6 +537,68 @@ fun setGameMusic(on: Boolean)
         }
     } else {
         gGameAudio.pause()
+    }
+}
+
+@Composable
+fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit) {
+    Row (
+        modifier = Modifier
+            .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp))
+            .wrapContentWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        val ColorThemeOptionsStringValues
+        = listOf(ColorThemeOption.System.toString(), ColorThemeOption.Light.toString(), ColorThemeOption.Dark.toString())
+        val (selectedOption, onOptionSelected) = remember {
+            mutableStateOf(ColorThemeOptionsStringValues[0])
+        }
+        Text(text = "Color Theme", modifier = Modifier
+            .padding(5.dp)
+            .wrapContentWidth())
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Column(
+            modifier = Modifier
+                .wrapContentWidth()
+                .selectableGroup()
+                .padding(5.dp)) {
+            ColorThemeOptionsStringValues.forEach { text ->
+                Row(
+                    Modifier
+                        .selectable(
+                            selected = (text == selectedOption),
+                            onClick = {
+                                onOptionSelected(text)  // This make this button get selected
+                                val newSelectedTheme =
+                                    when (text) {
+                                        ColorThemeOption.System.toString() -> ColorThemeOption.System
+                                        ColorThemeOption.Light.toString() -> ColorThemeOption.Light
+                                        else -> ColorThemeOption.Dark
+                                    }
+                                onColorThemeUpdated(newSelectedTheme)
+                            },
+                            role = Role.RadioButton
+                        )
+                        .padding(horizontal = 8.dp)
+                        .fillMaxWidth(),  // Make the entire row selectable
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = (text == selectedOption),
+                        onClick = null  // null recommended for accessibility with screenreaders
+                    )
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .wrapContentWidth()
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -628,7 +723,7 @@ fun DrawFlingBoard(
     uiState: GameUiState,
     ) {
     var gridSize by rememberSaveable {
-        mutableStateOf(0f)
+        mutableFloatStateOf(0f)
     }
 
     val animate = remember { Animatable(initialValue = 0f) }
@@ -848,11 +943,4 @@ fun PlaySearchAnimation(modifier: Modifier) {
         composition = composition,
         iterations = LottieConstants.IterateForever
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    FlingAidTheme {
-    }
 }

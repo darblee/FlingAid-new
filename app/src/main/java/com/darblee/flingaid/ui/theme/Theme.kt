@@ -80,22 +80,46 @@ private val DarkColorScheme = darkColorScheme(
     scrim = md_theme_dark_scrim,
 )
 
+enum class ColorThemeOption { System, Light, Dark }
+
 @Composable
-fun FlingAidTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+fun SetColorTheme(
+    currentColorTheme : ColorThemeOption,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val context = LocalContext.current
+    val darkTheme: Boolean
+    val dynamicColorSupported = Build.VERSION.SDK_INT > Build.VERSION_CODES.S
+    val colorScheme = if (currentColorTheme == ColorThemeOption.System) {
+        if (isSystemInDarkTheme()) {
+            darkTheme = true
+            if (dynamicColorSupported)
+                dynamicDarkColorScheme(context)
+            else
+                DarkColorScheme
+        } else {
+            darkTheme = false
+            if (dynamicColorSupported)
+                dynamicLightColorScheme(context)
+            else
+                LightColorScheme
         }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    } else {
+        if (currentColorTheme == ColorThemeOption.Dark) {
+            darkTheme = true
+            if (dynamicColorSupported)
+                dynamicDarkColorScheme(context)
+            else
+                DarkColorScheme
+        } else {
+            darkTheme = false
+            if (dynamicColorSupported)
+                dynamicLightColorScheme(context)
+            else
+                LightColorScheme
+        }
     }
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
