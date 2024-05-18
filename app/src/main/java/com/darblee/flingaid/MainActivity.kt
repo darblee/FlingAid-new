@@ -120,6 +120,7 @@ import com.darblee.flingaid.ui.theme.SetColorTheme
 import com.darblee.flingaid.ui.theme.ColorThemeOption
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.system.exitProcess
@@ -150,11 +151,12 @@ class MainActivity : ComponentActivity() {
             var currentColorThemeSetting by remember {
                 mutableStateOf(ColorThemeOption.System)
             }
+            SetupAllBitMapImages()
+            SetUpGameAudioOnAppStart()
+            SetupColorModeOnAppStart()
+            ForcePortraitMode()
 
             SetColorTheme(currentColorThemeSetting) {
-                SetupAllBitMapImages()
-                SetUpGameAudio()
-                ForcePortraitMode()
 
                 // A surface container using the 'background' color from the theme
                 Surface(
@@ -162,8 +164,8 @@ class MainActivity : ComponentActivity() {
                     color = colorScheme.background
                 ) {
                     MainViewImplementation(onColorThemeUpdated = { newColorThemeSetting ->
-                        currentColorThemeSetting = newColorThemeSetting
-                    })
+                        currentColorThemeSetting = newColorThemeSetting }
+                    )
                 }
             }
         }
@@ -226,7 +228,12 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SetUpGameAudio() {
+    fun SetupColorModeOnAppStart() {
+        Log.i(Global.debugPrefix, "Loading color mode")
+    }
+
+    @Composable
+    fun SetUpGameAudioOnAppStart() {
         gGameAudio =  MediaPlayer.create(applicationContext, raw.music)
         gGameAudio.isLooping = true
 
@@ -253,6 +260,7 @@ class MainActivity : ComponentActivity() {
                     }
                     Lifecycle.Event.ON_STOP -> {
                         gGameAudio.pause()
+                        Log.i(Global.debugPrefix, "Music paused")
                     }
                     else -> {
                         Log.i(Global.debugPrefix, "$event event ignored")
@@ -284,7 +292,8 @@ private lateinit var gBoardFile : File
 fun MainViewImplementation(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
-    onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit) {
+    onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit)
+{
     val uiState by gameViewModel.uiState.collectAsState()
     Log.i(Global.debugPrefix, "MainViewImplementation : Recompose Thinking status: ${uiState.state}")
     gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
