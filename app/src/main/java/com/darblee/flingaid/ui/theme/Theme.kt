@@ -2,6 +2,7 @@ package com.darblee.flingaid.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import android.util.Log
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.darblee.flingaid.Global
 
 private val LightColorScheme = lightColorScheme(
     primary = md_theme_light_primary,
@@ -90,6 +92,7 @@ fun SetColorTheme(
     val context = LocalContext.current
     val darkTheme: Boolean
     val dynamicColorSupported = Build.VERSION.SDK_INT > Build.VERSION_CODES.S
+    Log.i(Global.debugPrefix, "SetColorTheme: $currentColorTheme")
     val colorScheme = if (currentColorTheme == ColorThemeOption.System) {
         if (isSystemInDarkTheme()) {
             darkTheme = true

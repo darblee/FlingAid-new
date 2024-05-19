@@ -120,7 +120,6 @@ import com.darblee.flingaid.ui.theme.SetColorTheme
 import com.darblee.flingaid.ui.theme.ColorThemeOption
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.system.exitProcess
@@ -148,16 +147,33 @@ class MainActivity : ComponentActivity() {
         Handler(Looper.getMainLooper()).postDelayed({ keepSplashOnScreen = false }, delay)
 
         setContent {
+            Log.i(Global.debugPrefix, "Recompose")
+            ForcePortraitMode()
+            SetupAllBitMapImages()
+            SetUpGameAudioOnAppStart()
+
             var currentColorThemeSetting by remember {
                 mutableStateOf(ColorThemeOption.System)
             }
-            SetupAllBitMapImages()
-            SetUpGameAudioOnAppStart()
-            SetupColorModeOnAppStart()
-            ForcePortraitMode()
 
-            SetColorTheme(currentColorThemeSetting) {
+            // LaunchedEffect is a mechanism to perform async tasks (suspend function) in a composable function,
+            // It fetch data from setting persistent store without blocking the main UI thread.
+            //
+            // As soon as data is fetched. then 'currentColorThemeSetting' is updated, it will do
+            // a recompose automatically
+            //
+            // THis tasks is cancelled automatically when composable is removed from the composition
+            //
+            // "true" in "LaunchEffect(true)" means run this once.
+            //
+            LaunchedEffect(true) {
+                currentColorThemeSetting = PreferenceStore(applicationContext).readColorModeFromSetting()
+                Log.i(Global.debugPrefix, "Loading color mode after launch: $currentColorThemeSetting")
+                Global.colorMode = currentColorThemeSetting
+            }
 
+            SetColorTheme(currentColorThemeSetting)
+            {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -186,9 +202,6 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun SetupAllBitMapImages() {
-
-        Log.i(Global.debugPrefix, "Initializing all the images")
-
         gUpArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
 
         val matrix = Matrix()
@@ -228,11 +241,6 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SetupColorModeOnAppStart() {
-        Log.i(Global.debugPrefix, "Loading color mode")
-    }
-
-    @Composable
     fun SetUpGameAudioOnAppStart() {
         gGameAudio =  MediaPlayer.create(applicationContext, raw.music)
         gGameAudio.isLooping = true
@@ -240,7 +248,7 @@ class MainActivity : ComponentActivity() {
         // We are passing Unit as a parameter that means we only want to call this suspend
         // block when the first time a user enters the screen
         LaunchedEffect(key1 = Unit) {
-            Global.gameMusicOn = PreferenceStore(applicationContext).getGameMusicOnFlag()
+            Global.gameMusicOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
             if (Global.gameMusicOn) gGameAudio.start()
         }
 
@@ -295,7 +303,7 @@ fun MainViewImplementation(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit)
 {
     val uiState by gameViewModel.uiState.collectAsState()
-    Log.i(Global.debugPrefix, "MainViewImplementation : Recompose Thinking status: ${uiState.state}")
+    Log.i(Global.debugPrefix, "MainViewImplementation : Thinking status: ${uiState.state}")
     gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
 
     gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
@@ -530,7 +538,7 @@ fun MusicSetting() {
 
                 setGameMusic(Global.gameMusicOn )
                 CoroutineScope(Dispatchers.IO).launch {
-                    preference.saveGameMusicFlag((Global.gameMusicOn))
+                    preference.saveGameMusicFlagToSetting((Global.gameMusicOn))
                 }
             },
             thumbContent = icon
@@ -557,10 +565,10 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
             .wrapContentWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        val ColorThemeOptionsStringValues
+        val colorThemeOptionsStringValues
         = listOf(ColorThemeOption.System.toString(), ColorThemeOption.Light.toString(), ColorThemeOption.Dark.toString())
         val (selectedOption, onOptionSelected) = remember {
-            mutableStateOf(ColorThemeOptionsStringValues[0])
+            mutableStateOf(Global.colorMode.toString())  // Make the initial selection match the global color theme
         }
         Text(text = "Color Theme", modifier = Modifier
             .padding(5.dp)
@@ -568,12 +576,14 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
 
         Spacer(modifier = Modifier.weight(1f))
 
+        val preference = PreferenceStore(LocalContext.current)
+
         Column(
             modifier = Modifier
                 .wrapContentWidth()
                 .selectableGroup()
                 .padding(5.dp)) {
-            ColorThemeOptionsStringValues.forEach { text ->
+            colorThemeOptionsStringValues.forEach { text ->
                 Row(
                     Modifier
                         .selectable(
@@ -587,6 +597,9 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
                                         else -> ColorThemeOption.Dark
                                     }
                                 onColorThemeUpdated(newSelectedTheme)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    preference.saveColorModeToSetting(newSelectedTheme)
+                                }
                             },
                             role = Role.RadioButton
                         )
