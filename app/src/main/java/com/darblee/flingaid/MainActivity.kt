@@ -47,6 +47,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -60,6 +61,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -131,6 +133,7 @@ private lateinit var gLeftArrowBitmap : Bitmap
 private lateinit var gRightArrowBitmap : Bitmap
 
 private lateinit var gGameAudio : MediaPlayer
+private lateinit var gPlayerName : String
 
 class MainActivity : ComponentActivity() {
 
@@ -143,12 +146,13 @@ class MainActivity : ComponentActivity() {
 
         // Keep the splashscreen on-screen for specific period
         splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
+        gPlayerName = ""
         Handler(Looper.getMainLooper()).postDelayed({ keepSplashOnScreen = false }, delay)
 
         setContent {
             Log.i(Global.debugPrefix, "Recompose")
             ForcePortraitMode()
-            SetupAllBitMapImages()
+            SetupAllBitMapImagesOnAppStart()
             SetUpGameAudioOnAppStart()
 
             var currentColorThemeSetting by remember {
@@ -169,6 +173,8 @@ class MainActivity : ComponentActivity() {
                 currentColorThemeSetting = PreferenceStore(applicationContext).readColorModeFromSetting()
                 Log.i(Global.debugPrefix, "Loading color mode after launch: $currentColorThemeSetting")
                 Global.colorMode = currentColorThemeSetting
+
+                gPlayerName = PreferenceStore(applicationContext).readPlayerNameFomSetting()
             }
 
             SetColorTheme(currentColorThemeSetting)
@@ -200,7 +206,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SetupAllBitMapImages() {
+    fun SetupAllBitMapImagesOnAppStart() {
         gUpArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
 
         val matrix = Matrix()
@@ -355,6 +361,7 @@ fun FlingAidTopAppBar(onColorThemeUpdated: (colorThemeSetting: ColorThemeOption)
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialogBox by remember { mutableStateOf(false) }
     var showSettingDialogBox by remember { mutableStateOf(false) }
+    var titleText by remember { mutableStateOf("Fling Aid") }
 
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -365,8 +372,9 @@ fun FlingAidTopAppBar(onColorThemeUpdated: (colorThemeSetting: ColorThemeOption)
         modifier = Modifier.height(40.dp),
         title =
         {
+            titleText = if (gPlayerName == "") "Fling Aid" else "Fling Aid : $gPlayerName"
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Fling Aid")
+                Text(titleText)
             }
         },
         actions = {
@@ -491,10 +499,34 @@ fun SettingPopup(onDismissRequest: () -> Unit, onColorThemeUpdated: (colorThemeT
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                PlayerNameSetting()
                 MusicSetting()
                 ColorThemeSetting(onColorThemeUpdated)
             }
         } // ColumnScope
+    }
+}
+
+@Composable
+fun PlayerNameSetting() {
+    val preference = PreferenceStore(LocalContext.current)
+    Row {
+        var text by remember {
+            mutableStateOf(gPlayerName)
+        }
+        OutlinedTextField(
+            value = text, onValueChange = {newText ->
+            text = newText
+            gPlayerName = newText
+            CoroutineScope(Dispatchers.IO).launch {
+                preference.savePlayerNameToSetting(gPlayerName)
+            }},
+            label = { Text(text = "Player Name")},
+            singleLine = true,
+            leadingIcon = {
+                Icon(imageVector = Icons.Filled.Person, contentDescription = "Player Name")
+            }
+        )
     }
 }
 

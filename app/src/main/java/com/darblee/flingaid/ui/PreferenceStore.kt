@@ -17,6 +17,7 @@ class PreferenceStore(private val context: Context)
         private val Context.datastore : DataStore<Preferences> by preferencesDataStore(name = "GAME_SETTING_KEY")
         private val GAME_MUSIC_KEY = booleanPreferencesKey("gameMusicFlag")
         private val COLOR_MODE_KEY = stringPreferencesKey("ColorMode")
+        private val PLAYER_NAME_KEY = stringPreferencesKey("PlayerName")
     }
 
     // 'suspend' will pause the co-routine thread to allow other thread to perform task
@@ -52,5 +53,18 @@ class PreferenceStore(private val context: Context)
             return (ColorThemeOption.Dark)
 
         return ColorThemeOption.System
+    }
+
+    // 'suspend' will pause the co-routine thread to allow other thread to perform task
+    suspend fun savePlayerNameToSetting(playerName: String) {
+        context.datastore.edit { pref ->
+            pref[PLAYER_NAME_KEY] = playerName
+        }
+    }
+
+    // Get the data as a stand-alone method instead of Flow<boolean> method
+    suspend fun readPlayerNameFomSetting() : String {
+        val preferences = context.datastore.data.first()
+        return preferences[PLAYER_NAME_KEY] ?: ""
     }
 }
