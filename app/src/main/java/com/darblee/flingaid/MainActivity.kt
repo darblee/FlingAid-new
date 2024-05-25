@@ -428,6 +428,7 @@ fun FlingAidTopAppBar(onColorThemeUpdated: (colorThemeSetting: ColorThemeOption)
     if (showSettingDialogBox) {
         SettingPopup(
             onDismissRequest = { showSettingDialogBox = false },
+            onConfirmation = { showSettingDialogBox = false},
             onColorThemeUpdated = onColorThemeUpdated
         )
     }
@@ -484,7 +485,7 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
 }
 
 @Composable
-fun SettingPopup(onDismissRequest: () -> Unit, onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit) {
+fun SettingPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit, onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit) {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
@@ -502,6 +503,22 @@ fun SettingPopup(onDismissRequest: () -> Unit, onColorThemeUpdated: (colorThemeT
                 PlayerNameSetting()
                 MusicSetting()
                 ColorThemeSetting(onColorThemeUpdated)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Button(
+                        modifier = Modifier.width(150.dp),
+                        onClick = { onConfirmation() }
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.confirm ),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
         } // ColumnScope
     }
