@@ -46,6 +46,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
@@ -542,6 +543,11 @@ fun PlayerNameSetting() {
             singleLine = true,
             leadingIcon = {
                 Icon(imageVector = Icons.Filled.Person, contentDescription = "Player Name")
+            },
+            trailingIcon = {
+                IconButton(onClick = { text = "" }) {
+                    Icon(imageVector = Icons.Filled.Clear, contentDescription = "Clear name")
+                }
             }
         )
     }
@@ -653,7 +659,7 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
                 ) {
                     RadioButton(
                         selected = (text == selectedOption),
-                        onClick = null  // null recommended for accessibility with screenreaders
+                        onClick = null  // null recommended for accessibility with ScreenReaders
                     )
                     Text(
                         text = text,
