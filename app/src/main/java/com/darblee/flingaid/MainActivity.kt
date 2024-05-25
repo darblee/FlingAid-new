@@ -140,17 +140,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        var keepSplashOnScreen = true
-        val delay = 1000L
-        val splashScreen = installSplashScreen()
-
-        // Keep the splashscreen on-screen for specific period
-        splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
-        Handler(Looper.getMainLooper()).postDelayed({ keepSplashOnScreen = false }, delay)
-
         setContent {
             Log.i(Global.debugPrefix, "Recompose")
             ForcePortraitMode()
+
+            val splashScreen = installSplashScreen()
+
             SetupAllBitMapImagesOnAppStart()
             SetUpGameAudioOnAppStart()
 
@@ -169,11 +164,16 @@ class MainActivity : ComponentActivity() {
             // "true" in "LaunchEffect(true)" means run this once.
             //
             LaunchedEffect(true) {
+                var keepSplashOnScreen = true
+                splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
+
                 currentColorThemeSetting = PreferenceStore(applicationContext).readColorModeFromSetting()
                 Log.i(Global.debugPrefix, "Loading color mode after launch: $currentColorThemeSetting")
                 Global.colorMode = currentColorThemeSetting
 
                 gPlayerName = PreferenceStore(applicationContext).readPlayerNameFomSetting()
+
+                keepSplashOnScreen = false // End the splash screen
             }
 
             SetColorTheme(currentColorThemeSetting)
