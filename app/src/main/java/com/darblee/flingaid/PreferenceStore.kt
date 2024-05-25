@@ -1,4 +1,4 @@
-package com.darblee.flingaid.ui
+package com.darblee.flingaid
 
 import android.content.Context
 import androidx.datastore.core.DataStore
