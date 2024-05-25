@@ -186,7 +186,8 @@ class MainActivity : ComponentActivity() {
                     color = colorScheme.background
                 ) {
                     MainViewImplementation(onColorThemeUpdated = { newColorThemeSetting ->
-                        currentColorThemeSetting = newColorThemeSetting }
+                        currentColorThemeSetting = newColorThemeSetting
+                        Global.colorMode = currentColorThemeSetting }
                     )
                 }
             }
@@ -615,11 +616,14 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
             .wrapContentWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
+
+        Log.i(Global.debugPrefix, "ColorThemeSetting Entry: Global color = ${Global.colorMode.toString()}")
         val colorThemeOptionsStringValues
         = listOf(ColorThemeOption.System.toString(), ColorThemeOption.Light.toString(), ColorThemeOption.Dark.toString())
         val (selectedOption, onOptionSelected) = remember {
             mutableStateOf(Global.colorMode.toString())  // Make the initial selection match the global color theme
         }
+        Log.i(Global.debugPrefix, "ColorThemeSetting: Entry - selectedOption = ${selectedOption}")
         Text(text = "Color Theme", modifier = Modifier
             .padding(5.dp)
             .wrapContentWidth())
@@ -671,7 +675,9 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
                 }
             }
         }
+        Log.i(Global.debugPrefix, "ColorThemeSetting: Exit - selectedOption = ${selectedOption}")
     }
+
 }
 
 @Composable
