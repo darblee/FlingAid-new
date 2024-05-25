@@ -185,8 +185,13 @@ class MainActivity : ComponentActivity() {
                 ) {
                     MainViewImplementation(onColorThemeUpdated = { newColorThemeSetting ->
                         currentColorThemeSetting = newColorThemeSetting
-                        Global.colorMode = currentColorThemeSetting }
-                    )
+                        Global.colorMode = currentColorThemeSetting
+
+                        // Save the Color Theme setting
+                        CoroutineScope(Dispatchers.IO).launch {
+                            PreferenceStore(applicationContext).saveColorModeToSetting(newColorThemeSetting)
+                        }
+                    })
                 }
             }
         }
@@ -628,8 +633,6 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
 
         Spacer(modifier = Modifier.weight(1f))
 
-        val preference = PreferenceStore(LocalContext.current)
-
         Column(
             modifier = Modifier
                 .wrapContentWidth()
@@ -651,11 +654,6 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
 
                                 // Calls the lambda function that does the actual Color theme change to the app
                                 onColorThemeUpdated(newSelectedTheme)
-
-                                // Save the Color Theme setting
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    preference.saveColorModeToSetting(newSelectedTheme)
-                                }
                             },
                         )
                         .padding(horizontal = 8.dp)
