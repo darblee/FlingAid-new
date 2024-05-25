@@ -13,5 +13,4 @@ object Global {
     const val debugPrefix = "Flinfo:"
     const val boardFileName = "Board.txt"
     var gameMusicOn = false
-    var colorMode : ColorThemeOption = ColorThemeOption.System
 }

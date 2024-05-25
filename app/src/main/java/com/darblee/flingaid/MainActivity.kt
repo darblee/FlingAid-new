@@ -132,6 +132,7 @@ private lateinit var gRightArrowBitmap : Bitmap
 private lateinit var gGameAudio : MediaPlayer
 
 private var gPlayerName = ""
+private var gTheme = ColorThemeOption.System
 
 class MainActivity : ComponentActivity() {
 
@@ -167,7 +168,7 @@ class MainActivity : ComponentActivity() {
 
                 currentColorThemeSetting = PreferenceStore(applicationContext).readColorModeFromSetting()
                 Log.i(Global.debugPrefix, "Loading color mode after launch: $currentColorThemeSetting")
-                Global.colorMode = currentColorThemeSetting
+                gTheme = currentColorThemeSetting
 
                 gPlayerName = PreferenceStore(applicationContext).readPlayerNameFomSetting()
 
@@ -183,7 +184,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     MainViewImplementation(onColorThemeUpdated = { newColorThemeSetting ->
                         currentColorThemeSetting = newColorThemeSetting
-                        Global.colorMode = currentColorThemeSetting
+                        gTheme = currentColorThemeSetting
 
                         // Save the Color Theme setting
                         CoroutineScope(Dispatchers.IO).launch {
@@ -623,7 +624,7 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
         val (selectedOption, onOptionSelected) = remember {
             // Make the initial selection match the global color theme
             // at the start of opening the Theme setting dialog box
-            mutableStateOf(Global.colorMode.toString())
+            mutableStateOf(gTheme.toString())
         }
         Text(text = "Color Theme", modifier = Modifier
             .padding(5.dp)
