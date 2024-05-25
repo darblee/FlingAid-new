@@ -134,7 +134,8 @@ private lateinit var gLeftArrowBitmap : Bitmap
 private lateinit var gRightArrowBitmap : Bitmap
 
 private lateinit var gGameAudio : MediaPlayer
-private lateinit var gPlayerName : String
+
+private var gPlayerName = ""
 
 class MainActivity : ComponentActivity() {
 
@@ -147,7 +148,6 @@ class MainActivity : ComponentActivity() {
 
         // Keep the splashscreen on-screen for specific period
         splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
-        gPlayerName = ""
         Handler(Looper.getMainLooper()).postDelayed({ keepSplashOnScreen = false }, delay)
 
         setContent {
@@ -616,14 +616,14 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
             .wrapContentWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-
-        Log.i(Global.debugPrefix, "ColorThemeSetting Entry: Global color = ${Global.colorMode.toString()}")
         val colorThemeOptionsStringValues
         = listOf(ColorThemeOption.System.toString(), ColorThemeOption.Light.toString(), ColorThemeOption.Dark.toString())
+
         val (selectedOption, onOptionSelected) = remember {
-            mutableStateOf(Global.colorMode.toString())  // Make the initial selection match the global color theme
+            // Make the initial selection match the global color theme
+            // at the start of opening the Theme setting dialog box
+            mutableStateOf(Global.colorMode.toString())
         }
-        Log.i(Global.debugPrefix, "ColorThemeSetting: Entry - selectedOption = ${selectedOption}")
         Text(text = "Color Theme", modifier = Modifier
             .padding(5.dp)
             .wrapContentWidth())
@@ -637,36 +637,39 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
                 .wrapContentWidth()
                 .selectableGroup()
                 .padding(5.dp)) {
-            colorThemeOptionsStringValues.forEach { text ->
+            colorThemeOptionsStringValues.forEach { curColorString ->
                 Row(
                     Modifier
                         .selectable(
-                            selected = (text == selectedOption),
+                            selected = (curColorString == selectedOption),
                             onClick = {
-                                onOptionSelected(text)  // This make this button get selected
+                                onOptionSelected(curColorString)  // This make this button get selected
                                 val newSelectedTheme =
-                                    when (text) {
+                                    when (curColorString) {
                                         ColorThemeOption.System.toString() -> ColorThemeOption.System
                                         ColorThemeOption.Light.toString() -> ColorThemeOption.Light
                                         else -> ColorThemeOption.Dark
                                     }
+
+                                // Calls the lambda function that does the actual Color theme change to the app
                                 onColorThemeUpdated(newSelectedTheme)
+
+                                // Save the Color Theme setting
                                 CoroutineScope(Dispatchers.IO).launch {
                                     preference.saveColorModeToSetting(newSelectedTheme)
                                 }
                             },
-                            role = Role.RadioButton
                         )
                         .padding(horizontal = 8.dp)
                         .fillMaxWidth(),  // Make the entire row selectable
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     RadioButton(
-                        selected = (text == selectedOption),
+                        selected = (curColorString == selectedOption),
                         onClick = null  // null recommended for accessibility with ScreenReaders
                     )
                     Text(
-                        text = text,
+                        text = curColorString,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier
                             .padding(start = 8.dp)
@@ -675,9 +678,7 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
                 }
             }
         }
-        Log.i(Global.debugPrefix, "ColorThemeSetting: Exit - selectedOption = ${selectedOption}")
     }
-
 }
 
 @Composable
@@ -800,7 +801,6 @@ fun DrawFlingBoard(
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUiState,
     ) {
-
 
     var gridSize by rememberSaveable {
         mutableFloatStateOf(0f)
