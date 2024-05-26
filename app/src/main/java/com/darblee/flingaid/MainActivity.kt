@@ -171,8 +171,6 @@ class MainActivity : ComponentActivity() {
                 gSoundOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
                 if (gSoundOn) gGameAudio.start()
 
-                gPlayerName = PreferenceStore(applicationContext).readPlayerNameFomSetting()
-
                 keepSplashOnScreen = false // End the splash screen
             }
 
@@ -183,16 +181,20 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = colorScheme.background
                 ) {
-                    MainViewImplementation(currentTheme = colorTheme, onColorThemeUpdated = { newColorThemeSetting ->
-                        colorTheme = newColorThemeSetting
+                    MainViewImplementation(
+                        currentTheme = colorTheme,
 
-                        // Save the Color Theme setting
-                        CoroutineScope(Dispatchers.IO).launch {
-                            PreferenceStore(applicationContext).saveColorModeToSetting(newColorThemeSetting)
+                        onColorThemeUpdated = { newColorThemeSetting ->
+                            colorTheme = newColorThemeSetting
+
+                            // Save the Color Theme setting
+                            CoroutineScope(Dispatchers.IO).launch {
+                                PreferenceStore(applicationContext).saveColorModeToSetting(newColorThemeSetting)
+                            }
                         }
-                    })
+                    )
                 }
-            }
+            }  // SetColorTheme()
         }
     }
 
@@ -364,6 +366,12 @@ fun FlingAidTopAppBar(
     var showAboutDialogBox by remember { mutableStateOf(false) }
     var showSettingDialogBox by remember { mutableStateOf(false) }
     var titleText by remember { mutableStateOf("Fling Aid") }
+
+    val preference = PreferenceStore(LocalContext.current)
+    LaunchedEffect(key1 = true) {
+        gPlayerName = preference.readPlayerNameFomSetting()
+        titleText = if (gPlayerName == "") "Fling Aid" else "Fling Aid : $gPlayerName"
+    }
 
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
