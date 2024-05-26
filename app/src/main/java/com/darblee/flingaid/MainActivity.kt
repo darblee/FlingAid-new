@@ -170,10 +170,10 @@ class MainActivity : ComponentActivity() {
                 gTheme = PreferenceStore(applicationContext).readColorModeFromSetting()
                 currentColorThemeSetting = gTheme
 
-                gPlayerName = PreferenceStore(applicationContext).readPlayerNameFomSetting()
-
                 gSoundOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
                 if (gSoundOn) gGameAudio.start()
+
+                gPlayerName = PreferenceStore(applicationContext).readPlayerNameFomSetting()
 
                 keepSplashOnScreen = false // End the splash screen
             }
@@ -417,7 +417,6 @@ fun FlingAidTopAppBar(onColorThemeUpdated: (colorThemeSetting: ColorThemeOption)
             } // DropdownMenu
         }
     )
-
     if (showAboutDialogBox) {
         AboutDialogPopup(
             onDismissRequest = { showAboutDialogBox = false },
@@ -428,7 +427,7 @@ fun FlingAidTopAppBar(onColorThemeUpdated: (colorThemeSetting: ColorThemeOption)
     if (showSettingDialogBox) {
         SettingPopup(
             onDismissRequest = { showSettingDialogBox = false },
-            onConfirmation = { showSettingDialogBox = false},
+            onConfirmation = { showSettingDialogBox = false },
             onColorThemeUpdated = onColorThemeUpdated
         )
     }
@@ -533,11 +532,13 @@ fun PlayerNameSetting() {
         }
         OutlinedTextField(
             value = text, onValueChange = {newText ->
-            text = newText
-            gPlayerName = newText
-            CoroutineScope(Dispatchers.IO).launch {
-                preference.savePlayerNameToSetting(gPlayerName)
-            }},
+                text = newText
+                gPlayerName = newText
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    preference.savePlayerNameToSetting(gPlayerName)
+                }},
+
             label = { Text(text = "Player Name")},
             singleLine = true,
             leadingIcon = {
