@@ -132,7 +132,6 @@ private lateinit var gRightArrowBitmap : Bitmap
 private lateinit var gGameAudio : MediaPlayer
 
 private var gPlayerName = ""
-private var gTheme = ColorThemeOption.System
 private var gSoundOn = false
 
 class MainActivity : ComponentActivity() {
@@ -149,7 +148,7 @@ class MainActivity : ComponentActivity() {
             SetupAllBitMapImagesOnAppStart()
             SetUpGameAudioOnAppStart()
 
-            var currentColorThemeSetting by remember {
+            var colorTheme by remember {
                 mutableStateOf(ColorThemeOption.System)
             }
 
@@ -167,8 +166,7 @@ class MainActivity : ComponentActivity() {
                 var keepSplashOnScreen = true
                 splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
 
-                gTheme = PreferenceStore(applicationContext).readColorModeFromSetting()
-                currentColorThemeSetting = gTheme
+                colorTheme = PreferenceStore(applicationContext).readColorModeFromSetting()
 
                 gSoundOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
                 if (gSoundOn) gGameAudio.start()
@@ -178,16 +176,15 @@ class MainActivity : ComponentActivity() {
                 keepSplashOnScreen = false // End the splash screen
             }
 
-            SetColorTheme(currentColorThemeSetting)
+            SetColorTheme(colorTheme)
             {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = colorScheme.background
                 ) {
-                    MainViewImplementation(onColorThemeUpdated = { newColorThemeSetting ->
-                        currentColorThemeSetting = newColorThemeSetting
-                        gTheme = currentColorThemeSetting
+                    MainViewImplementation(currentTheme = colorTheme, onColorThemeUpdated = { newColorThemeSetting ->
+                        colorTheme = newColorThemeSetting
 
                         // Save the Color Theme setting
                         CoroutineScope(Dispatchers.IO).launch {
@@ -301,7 +298,9 @@ private lateinit var gBoardFile : File
 fun MainViewImplementation(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
-    onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit)
+    onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
+    currentTheme: ColorThemeOption
+)
 {
     val uiState by gameViewModel.uiState.collectAsState()
     Log.i(Global.debugPrefix, "MainViewImplementation : Thinking status: ${uiState.state}")
@@ -310,7 +309,7 @@ fun MainViewImplementation(
     gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
 
     Scaffold (
-        topBar = { FlingAidTopAppBar(onColorThemeUpdated = onColorThemeUpdated) }
+        topBar = { FlingAidTopAppBar(onColorThemeUpdated = onColorThemeUpdated, currentTheme = currentTheme) }
     ) { contentPadding ->
         Column(
             modifier = Modifier
@@ -357,7 +356,10 @@ fun DisplayNoWinnableMoveToast() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FlingAidTopAppBar(onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit) {
+fun FlingAidTopAppBar(
+    onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
+    currentTheme: ColorThemeOption
+) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialogBox by remember { mutableStateOf(false) }
     var showSettingDialogBox by remember { mutableStateOf(false) }
@@ -428,7 +430,8 @@ fun FlingAidTopAppBar(onColorThemeUpdated: (colorThemeSetting: ColorThemeOption)
         SettingPopup(
             onDismissRequest = { showSettingDialogBox = false },
             onConfirmation = { showSettingDialogBox = false },
-            onColorThemeUpdated = onColorThemeUpdated
+            onColorThemeUpdated = onColorThemeUpdated,
+            currentTheme
         )
     }
 }
@@ -484,7 +487,7 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
 }
 
 @Composable
-fun SettingPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit, onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit) {
+fun SettingPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit, onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit, currentTheme: ColorThemeOption) {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
@@ -501,7 +504,7 @@ fun SettingPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit, onCol
             ) {
                 PlayerNameSetting()
                 MusicSetting()
-                ColorThemeSetting(onColorThemeUpdated)
+                ColorThemeSetting(onColorThemeUpdated, currentTheme)
 
                 Row(
                     modifier = Modifier
@@ -608,7 +611,7 @@ fun setGameMusic(on: Boolean)
 }
 
 @Composable
-fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit) {
+fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit, currentTheme: ColorThemeOption) {
     Row (
         modifier = Modifier
             .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp))
@@ -621,7 +624,7 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
         val (selectedOption, onOptionSelected) = remember {
             // Make the initial selection match the global color theme
             // at the start of opening the Theme setting dialog box
-            mutableStateOf(gTheme.toString())
+            mutableStateOf(currentTheme.toString())
         }
         Text(text = "Color Theme", modifier = Modifier
             .padding(5.dp)
