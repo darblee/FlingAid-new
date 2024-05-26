@@ -133,6 +133,7 @@ private lateinit var gGameAudio : MediaPlayer
 
 private var gPlayerName = ""
 private var gTheme = ColorThemeOption.System
+private var gSoundOn = false
 
 class MainActivity : ComponentActivity() {
 
@@ -166,11 +167,13 @@ class MainActivity : ComponentActivity() {
                 var keepSplashOnScreen = true
                 splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
 
-                currentColorThemeSetting = PreferenceStore(applicationContext).readColorModeFromSetting()
-                Log.i(Global.debugPrefix, "Loading color mode after launch: $currentColorThemeSetting")
-                gTheme = currentColorThemeSetting
+                gTheme = PreferenceStore(applicationContext).readColorModeFromSetting()
+                currentColorThemeSetting = gTheme
 
                 gPlayerName = PreferenceStore(applicationContext).readPlayerNameFomSetting()
+
+                gSoundOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
+                if (gSoundOn) gGameAudio.start()
 
                 keepSplashOnScreen = false // End the splash screen
             }
@@ -250,13 +253,6 @@ class MainActivity : ComponentActivity() {
         gGameAudio =  MediaPlayer.create(applicationContext, raw.music)
         gGameAudio.isLooping = true
 
-        // We are passing Unit as a parameter that means we only want to call this suspend
-        // block when the first time a user enters the screen
-        LaunchedEffect(key1 = Unit) {
-            Global.gameMusicOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
-            if (Global.gameMusicOn) gGameAudio.start()
-        }
-
         val lifecycleOwner = LocalLifecycleOwner.current
 
         // DisposableEffect is a tool that allows you to perform side effects in your composable
@@ -266,10 +262,10 @@ class MainActivity : ComponentActivity() {
             val observer = LifecycleEventObserver { _, event ->
                 when (event) {
                     Lifecycle.Event.ON_START -> {
-                        if (Global.gameMusicOn) gGameAudio.start()
+                        if (gSoundOn) gGameAudio.start()
                     }
                     Lifecycle.Event.ON_RESUME -> {
-                        if (Global.gameMusicOn) gGameAudio.start()
+                        if (gSoundOn) gGameAudio.start()
                     }
                     Lifecycle.Event.ON_STOP -> {
                         gGameAudio.pause()
@@ -569,10 +565,10 @@ fun MusicSetting() {
         Spacer(modifier = Modifier.weight(1f))
 
         var musicSwitch by remember {
-            mutableStateOf(Global.gameMusicOn)
+            mutableStateOf(gSoundOn)
         }
 
-        val icon: (@Composable () -> Unit)? = if (Global.gameMusicOn) {
+        val icon: (@Composable () -> Unit)? = if (gSoundOn) {
             {
                 Icon(
                     imageVector = Icons.Filled.Check,
@@ -587,11 +583,11 @@ fun MusicSetting() {
             checked = musicSwitch,
             onCheckedChange = { isCheckStatus ->
                 musicSwitch = isCheckStatus
-                Global.gameMusicOn = musicSwitch
+                gSoundOn = musicSwitch
 
-                setGameMusic(Global.gameMusicOn )
+                setGameMusic(gSoundOn )
                 CoroutineScope(Dispatchers.IO).launch {
-                    preference.saveGameMusicFlagToSetting((Global.gameMusicOn))
+                    preference.saveGameMusicFlagToSetting((gSoundOn))
                 }
             },
             thumbContent = icon
