@@ -561,26 +561,34 @@ fun PlayerNameSetting(
 {
     val preference = PreferenceStore(LocalContext.current)
     Row {
-        var text by remember {
+        var rawText by remember {
             mutableStateOf(currentPlayerName)
         }
         OutlinedTextField(
-            value = text, onValueChange = {newText ->
-                text = newText
-                onPlayerNameUpdated(newText) // Call the lambda function to update new player name
+            value = rawText, onValueChange = { newRawText ->
+                rawText = newRawText
+                onPlayerNameUpdated(newRawText) // Call the lambda function to update new player name
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    preference.savePlayerNameToSetting(newText)
+                    preference.savePlayerNameToSetting(newRawText)
                 }},
 
-            label = { Text(text = "Player Name")},
+            label = { Text(text = stringResource(id = R.string.player_name))},
             singleLine = true,
             leadingIcon = {
-                Icon(imageVector = Icons.Filled.Person, contentDescription = "Player Name")
+                Icon(imageVector = Icons.Filled.Person, contentDescription = stringResource(id = R.string.player_name))
             },
             trailingIcon = {
-                IconButton(onClick = { text = "" }) {
-                    Icon(imageVector = Icons.Filled.Clear, contentDescription = "Clear name")
+                IconButton(onClick =
+                {
+                    rawText = ""
+                    onPlayerNameUpdated("")
+                    CoroutineScope(Dispatchers.IO).launch {
+                        preference.savePlayerNameToSetting("")
+                    }
+                })
+                {
+                    Icon(imageVector = Icons.Filled.Clear, contentDescription = stringResource(id = R.string.clear_name))
                 }
             }
         )
@@ -871,7 +879,8 @@ fun DrawFlingBoard(
                             // For unknown reason, we can not use uistate.state
                             val thinkingStatus = gameViewModel.getThinkingStatus()
                             if (thinkingStatus == GameState.Thinking) {
-                                Toast.makeText(
+                                Toast
+                                    .makeText(
                                         context,
                                         "Unable to modify board while still searching",
                                         Toast.LENGTH_SHORT
@@ -880,8 +889,7 @@ fun DrawFlingBoard(
                             } else {
                                 val row = (tapOffset.y / gridSize).toInt()
                                 val col = (tapOffset.x / gridSize).toInt()
-                                if ((row < Global.MaxRowSize) && (col < Global.MaxColSize))
-                                {
+                                if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
                                     gameViewModel.toggleBallPosition(Pos(row, col))
                                     view.playSoundEffect(SoundEffectConstants.CLICK)
                                     gameViewModel.saveBallPositions(gBoardFile)
