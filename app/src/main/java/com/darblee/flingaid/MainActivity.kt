@@ -134,8 +134,8 @@ private lateinit var gGameAudio : MediaPlayer
 private var gPlayerName = ""
 private var gSoundOn = false
 
-class MainActivity : ComponentActivity() {
-
+class MainActivity : ComponentActivity()
+{
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -198,7 +198,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onResume() {
+    override fun onResume()
+    {
         super.onResume()
 
         // Jetpack compose does not change theme for status bar
@@ -212,7 +213,8 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SetupAllBitMapImagesOnAppStart() {
+    fun SetupAllBitMapImagesOnAppStart()
+    {
         gUpArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
 
         val matrix = Matrix()
@@ -248,7 +250,8 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SetUpGameAudioOnAppStart() {
+    fun SetUpGameAudioOnAppStart()
+    {
         gGameAudio =  MediaPlayer.create(applicationContext, raw.music)
         gGameAudio.isLooping = true
 
@@ -288,7 +291,8 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("SourceLockedOrientationActivity")
     @Composable
-    fun ForcePortraitMode() {
+    fun ForcePortraitMode()
+    {
         val activity = LocalContext.current as Activity
         activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
@@ -301,8 +305,7 @@ fun MainViewImplementation(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
-    currentTheme: ColorThemeOption
-)
+    currentTheme: ColorThemeOption)
 {
     val uiState by gameViewModel.uiState.collectAsState()
     Log.i(Global.debugPrefix, "MainViewImplementation : Thinking status: ${uiState.state}")
@@ -346,7 +349,8 @@ fun MainViewImplementation(
 }
 
 @Composable
-fun DisplayNoWinnableMoveToast() {
+fun DisplayNoWinnableMoveToast()
+{
     val contextForToast = LocalContext.current
 
     Toast.makeText(
@@ -360,8 +364,8 @@ fun DisplayNoWinnableMoveToast() {
 @Composable
 fun FlingAidTopAppBar(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
-    currentTheme: ColorThemeOption
-) {
+    currentTheme: ColorThemeOption)
+{
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialogBox by remember { mutableStateOf(false) }
     var showSettingDialogBox by remember { mutableStateOf(false) }
@@ -445,7 +449,9 @@ fun FlingAidTopAppBar(
 }
 
 @Composable
-fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
+fun AboutDialogPopup(onDismissRequest: () -> Unit,
+                     onConfirmation: () -> Unit)
+{
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
@@ -495,7 +501,11 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit) {
 }
 
 @Composable
-fun SettingPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit, onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit, currentTheme: ColorThemeOption) {
+fun SettingPopup(onDismissRequest: () -> Unit,
+                 onConfirmation: () -> Unit,
+                 onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
+                 currentTheme: ColorThemeOption)
+{
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
@@ -535,7 +545,8 @@ fun SettingPopup(onDismissRequest: () -> Unit, onConfirmation: () -> Unit, onCol
 }
 
 @Composable
-fun PlayerNameSetting() {
+fun PlayerNameSetting()
+{
     val preference = PreferenceStore(LocalContext.current)
     Row {
         var text by remember {
@@ -565,7 +576,8 @@ fun PlayerNameSetting() {
 }
 
 @Composable
-fun MusicSetting() {
+fun MusicSetting()
+{
     val preference = PreferenceStore(LocalContext.current)
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -619,7 +631,9 @@ fun setGameMusic(on: Boolean)
 }
 
 @Composable
-fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit, currentTheme: ColorThemeOption) {
+fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
+                      currentTheme: ColorThemeOption)
+{
     Row (
         modifier = Modifier
             .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp))
@@ -719,8 +733,7 @@ fun ControlButtons(
     gameViewModel: GameViewModel = viewModel(),
     findWinnableMoveButtonEnabled: Boolean,
     showWinnableMoveToUser: Boolean,
-    uiState: GameUiState,
-)
+    uiState: GameUiState)
 {
     val audio : MediaPlayer = MediaPlayer.create(LocalContext.current, raw.you_won)
 
@@ -802,8 +815,8 @@ fun ControlButtons(
 fun DrawFlingBoard(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
-    uiState: GameUiState,
-    ) {
+    uiState: GameUiState)
+{
 
     var gridSize by rememberSaveable {
         mutableFloatStateOf(0f)
@@ -906,8 +919,8 @@ fun showWinningMove(
     uiState: GameUiState,
     animate: Animatable<Float, AnimationVector1D>,
     gWinningMoveCount: Int,
-    displayBallImage: ImageBitmap
-) {
+    displayBallImage: ImageBitmap)
+{
     with (drawScope) {
        // Log.i(Global.debugPrefix, "Winning Move exist with winning direction:  ${uiState.foundWinningDirection}")
        // Log.i(Global.debugPrefix, "Winning Move position is :  row = ${uiState.winningPosition.row}, col = ${uiState.winningPosition.col}")
@@ -971,8 +984,8 @@ fun drawBalls(
     drawScope: DrawScope,
     gameViewModel: GameViewModel,
     gridSize: Float,
-    displayBallImage: ImageBitmap
-) {
+    displayBallImage: ImageBitmap)
+{
     // Draw all the balls
     with (drawScope) {
         gameViewModel.ballPositionList().forEach { pos ->
@@ -987,7 +1000,10 @@ fun drawBalls(
     }
 }
 
-fun drawGrid(drawScope: DrawScope, gridSize: Float, lineColor: Color) {
+fun drawGrid(drawScope: DrawScope,
+             gridSize: Float,
+             lineColor: Color)
+{
     with (drawScope) {
         // Draw horizontal lines
         var currentY = 0F
@@ -1026,7 +1042,8 @@ fun drawGrid(drawScope: DrawScope, gridSize: Float, lineColor: Color) {
 }
 
 @Composable
-fun PlaySearchAnimation(modifier: Modifier) {
+fun PlaySearchAnimation(modifier: Modifier)
+{
 
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(raw.find_animation))
 
