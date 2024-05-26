@@ -512,8 +512,7 @@ fun SettingPopup(
     onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
     currentTheme: ColorThemeOption,
     onPlayerNameUpdated: (newPlayerName: String) -> Unit,
-    currentPlayerName: String
-)
+    currentPlayerName: String)
 {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
@@ -556,8 +555,7 @@ fun SettingPopup(
 @Composable
 fun PlayerNameSetting(
     currentPlayerName: String,
-    onPlayerNameUpdated: (newPlayerName: String) -> Unit
-)
+    onPlayerNameUpdated: (newPlayerName: String) -> Unit)
 {
     val preference = PreferenceStore(LocalContext.current)
     Row {
@@ -565,20 +563,24 @@ fun PlayerNameSetting(
             mutableStateOf(currentPlayerName)
         }
         OutlinedTextField(
-            value = rawText, onValueChange = { newRawText ->
+            value = rawText,
+            onValueChange =
+            { newRawText ->
                 rawText = newRawText
                 onPlayerNameUpdated(newRawText) // Call the lambda function to update new player name
 
                 CoroutineScope(Dispatchers.IO).launch {
                     preference.savePlayerNameToSetting(newRawText)
-                }},
-
+                }
+            },
             label = { Text(text = stringResource(id = R.string.player_name))},
             singleLine = true,
-            leadingIcon = {
+            leadingIcon =
+            {
                 Icon(imageVector = Icons.Filled.Person, contentDescription = stringResource(id = R.string.player_name))
             },
-            trailingIcon = {
+            trailingIcon =
+            {
                 IconButton(onClick =
                 {
                     rawText = ""
@@ -876,7 +878,7 @@ fun DrawFlingBoard(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = { tapOffset ->
-                            // For unknown reason, we can not use uistate.state
+                            // For unknown reason, we can not use uiState.state
                             val thinkingStatus = gameViewModel.getThinkingStatus()
                             if (thinkingStatus == GameState.Thinking) {
                                 Toast
