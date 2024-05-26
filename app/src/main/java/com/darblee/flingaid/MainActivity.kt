@@ -131,7 +131,6 @@ private lateinit var gRightArrowBitmap : Bitmap
 
 private lateinit var gGameAudio : MediaPlayer
 
-private var gPlayerName = ""
 private var gSoundOn = false
 
 class MainActivity : ComponentActivity()
@@ -314,7 +313,7 @@ fun MainViewImplementation(
     gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
 
     Scaffold (
-        topBar = { FlingAidTopAppBar(onColorThemeUpdated = onColorThemeUpdated, currentTheme = currentTheme) }
+        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme) }
     ) { contentPadding ->
         Column(
             modifier = Modifier
@@ -369,13 +368,14 @@ fun FlingAidTopAppBar(
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialogBox by remember { mutableStateOf(false) }
     var showSettingDialogBox by remember { mutableStateOf(false) }
-    var titleText by remember { mutableStateOf("Fling Aid") }
+    var currentPlayerName by remember { mutableStateOf("") }
 
     val preference = PreferenceStore(LocalContext.current)
     LaunchedEffect(key1 = true) {
-        gPlayerName = preference.readPlayerNameFomSetting()
-        titleText = if (gPlayerName == "") "Fling Aid" else "Fling Aid : $gPlayerName"
+        currentPlayerName = preference.readPlayerNameFomSetting()
     }
+
+    Log.i(Global.debugPrefix, "Recompose CenterAlignedTopAppBar")
 
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
@@ -386,7 +386,8 @@ fun FlingAidTopAppBar(
         modifier = Modifier.height(40.dp),
         title =
         {
-            titleText = if (gPlayerName == "") "Fling Aid" else "Fling Aid : $gPlayerName"
+            val appName = stringResource(id = R.string.app_name)
+            val titleText = if (currentPlayerName == "") appName else "$appName : $currentPlayerName"
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(titleText)
             }
@@ -443,7 +444,11 @@ fun FlingAidTopAppBar(
             onDismissRequest = { showSettingDialogBox = false },
             onConfirmation = { showSettingDialogBox = false },
             onColorThemeUpdated = onColorThemeUpdated,
-            currentTheme
+            currentTheme,
+            onPlayerNameUpdated = { newPlayerName ->
+                currentPlayerName = newPlayerName
+            },
+            currentPlayerName
         )
     }
 }
@@ -501,10 +506,14 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit,
 }
 
 @Composable
-fun SettingPopup(onDismissRequest: () -> Unit,
-                 onConfirmation: () -> Unit,
-                 onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
-                 currentTheme: ColorThemeOption)
+fun SettingPopup(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
+    currentTheme: ColorThemeOption,
+    onPlayerNameUpdated: (newPlayerName: String) -> Unit,
+    currentPlayerName: String
+)
 {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
@@ -520,7 +529,7 @@ fun SettingPopup(onDismissRequest: () -> Unit,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                PlayerNameSetting()
+                PlayerNameSetting(currentPlayerName, onPlayerNameUpdated)
                 MusicSetting()
                 ColorThemeSetting(onColorThemeUpdated, currentTheme)
 
@@ -545,20 +554,23 @@ fun SettingPopup(onDismissRequest: () -> Unit,
 }
 
 @Composable
-fun PlayerNameSetting()
+fun PlayerNameSetting(
+    currentPlayerName: String,
+    onPlayerNameUpdated: (newPlayerName: String) -> Unit
+)
 {
     val preference = PreferenceStore(LocalContext.current)
     Row {
         var text by remember {
-            mutableStateOf(gPlayerName)
+            mutableStateOf(currentPlayerName)
         }
         OutlinedTextField(
             value = text, onValueChange = {newText ->
                 text = newText
-                gPlayerName = newText
+                onPlayerNameUpdated(newText) // Call the lambda function to update new player name
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    preference.savePlayerNameToSetting(gPlayerName)
+                    preference.savePlayerNameToSetting(newText)
                 }},
 
             label = { Text(text = "Player Name")},
@@ -725,7 +737,6 @@ fun DrawUpperBoxLogo(uiState: GameUiState)
             Text("Searching $percentComplete")
         }
     }
-
 }
 
 @Composable
@@ -817,12 +828,12 @@ fun DrawFlingBoard(
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUiState)
 {
-
     var gridSize by rememberSaveable {
         mutableFloatStateOf(0f)
     }
 
     val animate = remember { Animatable(initialValue = 0f) }
+
     LaunchedEffect(Unit){
         animate.animateTo(targetValue = 1f, animationSpec =
             infiniteRepeatable(
@@ -858,11 +869,9 @@ fun DrawFlingBoard(
                     detectTapGestures(
                         onTap = { tapOffset ->
                             // For unknown reason, we can not use uistate.state
-                            val thinkingStatus =
-                                gameViewModel.getThinkingStatus()
+                            val thinkingStatus = gameViewModel.getThinkingStatus()
                             if (thinkingStatus == GameState.Thinking) {
-                                Toast
-                                    .makeText(
+                                Toast.makeText(
                                         context,
                                         "Unable to modify board while still searching",
                                         Toast.LENGTH_SHORT
@@ -871,13 +880,14 @@ fun DrawFlingBoard(
                             } else {
                                 val row = (tapOffset.y / gridSize).toInt()
                                 val col = (tapOffset.x / gridSize).toInt()
-                                if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
+                                if ((row < Global.MaxRowSize) && (col < Global.MaxColSize))
+                                {
                                     gameViewModel.toggleBallPosition(Pos(row, col))
                                     view.playSoundEffect(SoundEffectConstants.CLICK)
                                     gameViewModel.saveBallPositions(gBoardFile)
                                 }
                             } // if thinkingStatus != GameState.thinking
-                        } // onTap
+                        }, // onTap
                     ) // detectTapGestures
                 }  // .pointerInput
         ) {
@@ -891,7 +901,7 @@ fun DrawFlingBoard(
 
             drawGrid(this, gridSize, lineColor)
 
-            val ballSize =  gridSize.toInt()
+            val ballSize =  (gridSize * 1.10).toInt()
             val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
                 ballSize, ballSize, false).asImageBitmap()
 
