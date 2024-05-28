@@ -451,13 +451,15 @@ fun FlingAidTopAppBar(
             },
             currentPlayerName,
             onSoundSettingUpdated = { newSoundSetting ->
-                Global.soundOn = newSoundSetting
+                gSoundOn = newSoundSetting
+
+                setGameMusic(newSoundSetting)
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    preference.saveGameMusicFlagToSetting((Global.soundOn))
+                    preference.saveGameMusicFlagToSetting(gSoundOn)
                 }
             },
-            Global.soundOn
+            gSoundOn
         )
     }
 }
@@ -971,7 +973,6 @@ fun PlayerNameSetting(
 @Composable
 fun MusicSetting(onSoundSettingUpdated: (soundOn: Boolean) -> Unit, currentSoundSetting: Boolean)
 {
-    val preference = PreferenceStore(LocalContext.current)
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -982,10 +983,10 @@ fun MusicSetting(onSoundSettingUpdated: (soundOn: Boolean) -> Unit, currentSound
         Spacer(modifier = Modifier.weight(1f))
 
         var musicSwitch by remember {
-            mutableStateOf(Global.soundOn)
+            mutableStateOf(currentSoundSetting)
         }
 
-        val icon: (@Composable () -> Unit)? = if (Global.soundOn) {
+        val icon: (@Composable () -> Unit)? = if (gSoundOn) {
             {
                 Icon(
                     imageVector = Icons.Filled.Check,
@@ -1000,13 +1001,7 @@ fun MusicSetting(onSoundSettingUpdated: (soundOn: Boolean) -> Unit, currentSound
             checked = musicSwitch,
             onCheckedChange = { isCheckStatus ->
                 musicSwitch = isCheckStatus
-
-                setGameMusic(musicSwitch)
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    preference.saveGameMusicFlagToSetting((Global.soundOn))
-                }
-
+                onSoundSettingUpdated(isCheckStatus)
             },
             thumbContent = icon
         )
