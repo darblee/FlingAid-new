@@ -43,9 +43,10 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -93,7 +94,6 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
@@ -139,7 +139,7 @@ class MainActivity : ComponentActivity()
         super.onCreate(savedInstanceState)
 
         setContent {
-            Log.i(Global.debugPrefix, "Recompose")
+            Log.i(Global.debugPrefix, "Recompose: SetContent")
             ForcePortraitMode()
 
             val splashScreen = installSplashScreen()
@@ -254,7 +254,7 @@ class MainActivity : ComponentActivity()
         gGameAudio =  MediaPlayer.create(applicationContext, raw.music)
         gGameAudio.isLooping = true
 
-        val lifecycleOwner = LocalLifecycleOwner.current
+        val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
         // DisposableEffect is a tool that allows you to perform side effects in your composable
         // functions that need to be cleaned up when the composable leaves the composition.
@@ -397,7 +397,7 @@ fun FlingAidTopAppBar(
                 onClick = { menuExpanded = !menuExpanded },
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Menu,
+                    imageVector = Icons.Filled.MoreVert,
                     contentDescription = null
                 )
             }
@@ -440,6 +440,7 @@ fun FlingAidTopAppBar(
     }
 
     if (showSettingDialogBox) {
+
         SettingPopup(
             onDismissRequest = { showSettingDialogBox = false },
             onConfirmation = { showSettingDialogBox = false },
@@ -448,7 +449,15 @@ fun FlingAidTopAppBar(
             onPlayerNameUpdated = { newPlayerName ->
                 currentPlayerName = newPlayerName
             },
-            currentPlayerName
+            currentPlayerName,
+            onSoundSettingUpdated = { newSoundSetting ->
+                Global.soundOn = newSoundSetting
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    preference.saveGameMusicFlagToSetting((Global.soundOn))
+                }
+            },
+            Global.soundOn
         )
     }
 }
@@ -491,229 +500,15 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit,
                     horizontalArrangement = Arrangement.Center,
                 ) {
                     Button(
-                        modifier = Modifier.width(150.dp),
+                        modifier = Modifier.width(100.dp),
                         onClick = { onConfirmation() }
                     ) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Spacer(modifier = Modifier.weight(1f))
                         Text(
-                            text = stringResource(id = R.string.confirm ),
-                            fontSize = 14.sp
+                            text = stringResource(id = R.string.back )
                         )
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SettingPopup(
-    onDismissRequest: () -> Unit,
-    onConfirmation: () -> Unit,
-    onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
-    currentTheme: ColorThemeOption,
-    onPlayerNameUpdated: (newPlayerName: String) -> Unit,
-    currentPlayerName: String)
-{
-    Dialog(onDismissRequest = { onDismissRequest() }) {
-        // Draw a rectangle shape with rounded corners inside the dialog
-        Card(
-            modifier = Modifier
-                .width(275.dp)
-                .wrapContentHeight()
-                .padding(8.dp),
-            shape = RoundedCornerShape(16.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                PlayerNameSetting(currentPlayerName, onPlayerNameUpdated)
-                MusicSetting()
-                ColorThemeSetting(onColorThemeUpdated, currentTheme)
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Button(
-                        modifier = Modifier.width(150.dp),
-                        onClick = { onConfirmation() }
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.confirm ),
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
-        } // ColumnScope
-    }
-}
-
-@Composable
-fun PlayerNameSetting(
-    currentPlayerName: String,
-    onPlayerNameUpdated: (newPlayerName: String) -> Unit)
-{
-    val preference = PreferenceStore(LocalContext.current)
-    Row {
-        var rawText by remember {
-            mutableStateOf(currentPlayerName)
-        }
-        OutlinedTextField(
-            value = rawText,
-            onValueChange =
-            { newRawText ->
-                rawText = newRawText
-                onPlayerNameUpdated(newRawText) // Call the lambda function to update new player name
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    preference.savePlayerNameToSetting(newRawText)
-                }
-            },
-            label = { Text(text = stringResource(id = R.string.player_name))},
-            singleLine = true,
-            leadingIcon =
-            {
-                Icon(imageVector = Icons.Filled.Person, contentDescription = stringResource(id = R.string.player_name))
-            },
-            trailingIcon =
-            {
-                IconButton(onClick =
-                {
-                    rawText = ""
-                    onPlayerNameUpdated("")
-                    CoroutineScope(Dispatchers.IO).launch {
-                        preference.savePlayerNameToSetting("")
-                    }
-                })
-                {
-                    Icon(imageVector = Icons.Filled.Clear, contentDescription = stringResource(id = R.string.clear_name))
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun MusicSetting()
-{
-    val preference = PreferenceStore(LocalContext.current)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        Text("Music")
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        var musicSwitch by remember {
-            mutableStateOf(gSoundOn)
-        }
-
-        val icon: (@Composable () -> Unit)? = if (gSoundOn) {
-            {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = null,
-                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                )
-            }
-        } else null
-
-        Switch(
-            modifier = Modifier.padding(8.dp),
-            checked = musicSwitch,
-            onCheckedChange = { isCheckStatus ->
-                musicSwitch = isCheckStatus
-                gSoundOn = musicSwitch
-
-                setGameMusic(gSoundOn )
-                CoroutineScope(Dispatchers.IO).launch {
-                    preference.saveGameMusicFlagToSetting((gSoundOn))
-                }
-            },
-            thumbContent = icon
-        )
-    }
-}
-
-fun setGameMusic(on: Boolean)
-{
-    if (on) {
-        if (!gGameAudio.isPlaying) {
-            gGameAudio.start()
-        }
-    } else {
-        gGameAudio.pause()
-    }
-}
-
-@Composable
-fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
-                      currentTheme: ColorThemeOption)
-{
-    Row (
-        modifier = Modifier
-            .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp))
-            .wrapContentWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        val colorThemeOptionsStringValues
-        = listOf(ColorThemeOption.System.toString(), ColorThemeOption.Light.toString(), ColorThemeOption.Dark.toString())
-
-        val (selectedOption, onOptionSelected) = remember {
-            // Make the initial selection match the global color theme
-            // at the start of opening the Theme setting dialog box
-            mutableStateOf(currentTheme.toString())
-        }
-        Text(text = "Color Theme", modifier = Modifier
-            .padding(5.dp)
-            .wrapContentWidth())
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Column(
-            modifier = Modifier
-                .wrapContentWidth()
-                .selectableGroup()
-                .padding(5.dp)) {
-            colorThemeOptionsStringValues.forEach { curColorString ->
-                Row(
-                    Modifier
-                        .selectable(
-                            selected = (curColorString == selectedOption),
-                            onClick = {
-                                onOptionSelected(curColorString)  // This make this button get selected
-                                val newSelectedTheme =
-                                    when (curColorString) {
-                                        ColorThemeOption.System.toString() -> ColorThemeOption.System
-                                        ColorThemeOption.Light.toString() -> ColorThemeOption.Light
-                                        else -> ColorThemeOption.Dark
-                                    }
-
-                                // Calls the lambda function that does the actual Color theme change to the app
-                                onColorThemeUpdated(newSelectedTheme)
-                            },
-                        )
-                        .padding(horizontal = 8.dp)
-                        .fillMaxWidth(),  // Make the entire row selectable
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(
-                        selected = (curColorString == selectedOption),
-                        onClick = null  // null recommended for accessibility with ScreenReaders
-                    )
-                    Text(
-                        text = curColorString,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .wrapContentWidth()
-                    )
                 }
             }
         }
@@ -1072,4 +867,227 @@ fun PlaySearchAnimation(modifier: Modifier)
         composition = composition,
         iterations = LottieConstants.IterateForever
     )
+}
+
+
+@Composable
+fun SettingPopup(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
+    currentTheme: ColorThemeOption,
+    onPlayerNameUpdated: (newPlayerName: String) -> Unit,
+    currentPlayerName: String,
+    onSoundSettingUpdated: (soundOn : Boolean) -> Unit,
+    currentSoundSetting: Boolean
+)
+{
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        // Draw a rectangle shape with rounded corners inside the dialog
+        Card(
+            modifier = Modifier
+                .width(275.dp)
+                .wrapContentHeight()
+                .padding(8.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                PlayerNameSetting(currentPlayerName, onPlayerNameUpdated)
+                MusicSetting(onSoundSettingUpdated, currentSoundSetting)
+                ColorThemeSetting(onColorThemeUpdated, currentTheme)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Button(
+                        modifier = Modifier.width(100.dp),
+                        onClick = { onConfirmation() },
+
+                        ) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = stringResource(id = R.string.back ),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+        } // ColumnScope
+    }
+}
+
+@Composable
+fun PlayerNameSetting(
+    currentPlayerName: String,
+    onPlayerNameUpdated: (newPlayerName: String) -> Unit)
+{
+    val preference = PreferenceStore(LocalContext.current)
+    Row {
+        var rawText by remember {
+            mutableStateOf(currentPlayerName)
+        }
+        OutlinedTextField(
+            value = rawText,
+            onValueChange =
+            { newRawText ->
+                rawText = newRawText
+                onPlayerNameUpdated(newRawText) // Call the lambda function to update new player name
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    preference.savePlayerNameToSetting(newRawText)
+                }
+            },
+            label = { Text(text = stringResource(id = R.string.player_name))},
+            singleLine = true,
+            leadingIcon =
+            {
+                Icon(imageVector = Icons.Filled.Person, contentDescription = stringResource(id = R.string.player_name))
+            },
+            trailingIcon =
+            {
+                IconButton(onClick =
+                {
+                    rawText = ""
+                    onPlayerNameUpdated("")
+                    CoroutineScope(Dispatchers.IO).launch {
+                        preference.savePlayerNameToSetting("")
+                    }
+                })
+                {
+                    Icon(imageVector = Icons.Filled.Clear, contentDescription = stringResource(id = R.string.clear_name))
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun MusicSetting(onSoundSettingUpdated: (soundOn: Boolean) -> Unit, currentSoundSetting: Boolean)
+{
+    val preference = PreferenceStore(LocalContext.current)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Text("Music")
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        var musicSwitch by remember {
+            mutableStateOf(Global.soundOn)
+        }
+
+        val icon: (@Composable () -> Unit)? = if (Global.soundOn) {
+            {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
+            }
+        } else null
+
+        Switch(
+            modifier = Modifier.padding(8.dp),
+            checked = musicSwitch,
+            onCheckedChange = { isCheckStatus ->
+                musicSwitch = isCheckStatus
+
+                setGameMusic(musicSwitch)
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    preference.saveGameMusicFlagToSetting((Global.soundOn))
+                }
+
+            },
+            thumbContent = icon
+        )
+    }
+}
+
+fun setGameMusic(on: Boolean)
+{
+    if (on) {
+        if (!gGameAudio.isPlaying) {
+            gGameAudio.start()
+        }
+    } else {
+        gGameAudio.pause()
+    }
+}
+
+@Composable
+fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
+                      currentTheme: ColorThemeOption)
+{
+    Row (
+        modifier = Modifier
+            .border(1.dp, MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(5.dp))
+            .wrapContentWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        val colorThemeOptionsStringValues
+                = listOf(ColorThemeOption.System.toString(), ColorThemeOption.Light.toString(), ColorThemeOption.Dark.toString())
+
+        val (selectedOption, onOptionSelected) = remember {
+            // Make the initial selection match the global color theme
+            // at the start of opening the Theme setting dialog box
+            mutableStateOf(currentTheme.toString())
+        }
+        Text(text = "Color Theme", modifier = Modifier
+            .padding(5.dp)
+            .wrapContentWidth())
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Column(
+            modifier = Modifier
+                .wrapContentWidth()
+                .selectableGroup()
+                .padding(5.dp)) {
+            colorThemeOptionsStringValues.forEach { curColorString ->
+                Row(
+                    Modifier
+                        .selectable(
+                            selected = (curColorString == selectedOption),
+                            onClick = {
+                                onOptionSelected(curColorString)  // This make this button get selected
+                                val newSelectedTheme =
+                                    when (curColorString) {
+                                        ColorThemeOption.System.toString() -> ColorThemeOption.System
+                                        ColorThemeOption.Light.toString() -> ColorThemeOption.Light
+                                        else -> ColorThemeOption.Dark
+                                    }
+
+                                // Calls the lambda function that does the actual Color theme change to the app
+                                onColorThemeUpdated(newSelectedTheme)
+                            },
+                        )
+                        .padding(horizontal = 8.dp)
+                        .fillMaxWidth(),  // Make the entire row selectable
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = (curColorString == selectedOption),
+                        onClick = null  // null recommended for accessibility with ScreenReaders
+                    )
+                    Text(
+                        text = curColorString,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .wrapContentWidth()
+                    )
+                }
+            }
+        }
+    }
 }

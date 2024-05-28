@@ -26,7 +26,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -101,12 +101,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:${rootProject.extra["lifecycle_version"]}")
 
     // Preference datastore
-    implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+
     implementation ("androidx.datastore:datastore-preferences-rxjava2:1.1.1")
     implementation ("androidx.datastore:datastore-preferences-rxjava3:1.1.1")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.navigation:navigation-compose:2.8.0-beta01")
 
     // Splash API
     implementation ("androidx.core:core-splashscreen:1.0.1")
@@ -115,5 +115,5 @@ dependencies {
     implementation("com.airbnb.android:lottie-compose:6.3.0")
 
     // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 }
