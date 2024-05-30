@@ -68,7 +68,7 @@ android {
         buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10"
+        kotlinCompilerExtensionVersion = "1.5.13"
     }
     packaging {
         resources {
@@ -106,7 +106,7 @@ dependencies {
     implementation ("androidx.datastore:datastore-preferences-rxjava3:1.1.1")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.0-beta01")
+    implementation("androidx.navigation:navigation-compose:2.8.0-beta02")
 
     // Splash API
     implementation ("androidx.core:core-splashscreen:1.0.1")

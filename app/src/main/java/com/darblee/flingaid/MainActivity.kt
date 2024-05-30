@@ -98,6 +98,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -383,7 +384,7 @@ fun FlingAidTopAppBar(
             titleContentColor = colorScheme.primary,
         ),
 
-        modifier = Modifier.height(40.dp),
+        modifier = Modifier.height(48.dp),
         title =
         {
             val appName = stringResource(id = R.string.app_name)
@@ -908,7 +909,7 @@ fun SettingPopup(
                     horizontalArrangement = Arrangement.Center,
                 ) {
                     Button(
-                        modifier = Modifier.width(100.dp),
+                        modifier = Modifier.width(125.dp),
                         onClick = { onConfirmation() },
 
                         ) {
@@ -1025,7 +1026,7 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
 {
     Row (
         modifier = Modifier
-            .border(1.dp, MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(5.dp))
+            .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp))
             .wrapContentWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -1085,4 +1086,20 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
             }
         }
     }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun ScreenPreview()
+{
+    SettingPopup(
+        onDismissRequest = { /*TODO*/ },
+        onConfirmation = { /*TODO*/ },
+        onColorThemeUpdated = {},
+        currentTheme = ColorThemeOption.Dark,
+        onPlayerNameUpdated = {},
+        currentPlayerName = "Tom",
+        onSoundSettingUpdated = {},
+        currentSoundSetting = true
+    )
 }
