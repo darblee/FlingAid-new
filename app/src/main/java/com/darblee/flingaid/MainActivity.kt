@@ -28,9 +28,12 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,12 +56,15 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedTextField
@@ -68,8 +74,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -98,10 +106,13 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -122,6 +133,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.Locale
 import kotlin.system.exitProcess
 
 // Declare these bitmaps once as it will be reused on every recompose
@@ -312,6 +324,14 @@ fun MainViewImplementation(
     gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
 
     gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
+
+    // When doing back press on main screen, confirm with the user whether it should exit the app
+    // or not
+    val backPressed = remember { mutableStateOf(false) }
+    BackPressHandler(onBackPressed = { backPressed.value = true })
+
+    if (backPressed.value)
+        ExitAlertDialog(onDismiss = { backPressed.value = false}, onExit = { exitProcess(1)})
 
     Scaffold (
         topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme) }
@@ -541,7 +561,7 @@ fun DrawUpperBoxLogo(uiState: GameUiState)
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
             val newPercentageValue : Float = (Global.ThinkingProgress.toFloat() /
                     (Global.totalProcessCount) * 100.0).toFloat()
-            val percentComplete = String.format("%.1f%%", newPercentageValue)
+            val percentComplete = String.format(Locale.getDefault(), "%.1f%%", newPercentageValue)
             Text("Searching $percentComplete")
         }
     }
@@ -1087,6 +1107,102 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
+    Dialog(
+        onDismissRequest = { onDismiss() }, properties = DialogProperties(
+            dismissOnBackPress = false, dismissOnClickOutside = false
+        )
+    ) {
+        Card(
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(0.dp)
+                .height(IntrinsicSize.Min),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+            ) {
+                Text(
+                    text = "Logout",
+                    color = Color.Black,
+                    modifier = Modifier
+                        .padding(8.dp, 16.dp, 8.dp, 2.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .fillMaxWidth(), fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "Are you sure you want to exit?",
+                    color = Color.Black,
+                    modifier = Modifier
+                        .padding(8.dp, 2.dp, 8.dp, 16.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .width(1.dp), color = Color.Gray
+                )
+                Row(Modifier.padding(top = 0.dp)) {
+                    CompositionLocalProvider(
+                        LocalMinimumInteractiveComponentEnforcement provides false,
+                    ) {
+                        TextButton(
+                            onClick = { onDismiss() },
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp)
+                                .weight(1F)
+                                .border(0.dp, Color.Transparent)
+                                .height(48.dp),
+                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
+                            shape = RoundedCornerShape(0.dp),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text(text = "Not now", color = Color.Gray)
+                        }
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(1.dp), color = Color.Gray
+                    )
+                    CompositionLocalProvider(
+                        LocalMinimumInteractiveComponentEnforcement provides false,
+                    ) {
+                        TextButton(
+                            onClick = {
+                                onExit.invoke()
+                            },
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp)
+                                .weight(1F)
+                                .border(0.dp, color = Color.Transparent)
+                                .height(48.dp),
+                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
+                            shape = RoundedCornerShape(0.dp),
+                            contentPadding = PaddingValues()
+                        ) {
+                            Text(text = "Exit", color = Color.Red)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 @Preview(showBackground = true)
