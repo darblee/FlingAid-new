@@ -100,8 +100,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:${rootProject.extra["lifecycle_version"]}")
     implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:${rootProject.extra["lifecycle_version"]}")
 
-    // Preference datastore
+    // Serialization. This is needed for navigation-compose as well.
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
+    // Preference datastore
     implementation ("androidx.datastore:datastore-preferences-rxjava2:1.1.1")
     implementation ("androidx.datastore:datastore-preferences-rxjava3:1.1.1")
 
@@ -113,7 +115,4 @@ dependencies {
 
     // Animation
     implementation("com.airbnb.android:lottie-compose:6.3.0")
-
-    // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 }
