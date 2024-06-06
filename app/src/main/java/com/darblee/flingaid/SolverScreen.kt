@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -76,6 +77,11 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -130,7 +136,7 @@ fun SolverScreen(
             gameViewModel.noNeedToDisplayNoWinnableToastMessage()
         }
 
-        DrawUpperBoxLogo(uiState, onNavigateBack)
+        Instruction(uiState, onNavigateBack)
         ControlButtons(
             gameViewModel,
             findWinnableMoveButtonEnabled,
@@ -272,21 +278,20 @@ fun DisplayNoWinnableMoveToast()
 }
 
 @Composable
-fun DrawUpperBoxLogo(uiState: GameUiState,
-                     onNavigateBack: () -> Unit)
+fun Instruction(uiState: GameUiState,
+                onNavigateBack: () -> Unit)
 {
+    val logoSize = 125.dp
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(5.dp),
         horizontalArrangement = Arrangement.Center
-
     ) {
-        Text(text = "Instruction")
         Box {
             if (uiState.state == GameState.NotThinking) {
                 val imageModifier = Modifier
-                    .size(150.dp)
+                    .size(logoSize)
                     .border(BorderStroke(1.dp, Color.Black))
                     .background(Color.Black)
                 Image(
@@ -298,7 +303,7 @@ fun DrawUpperBoxLogo(uiState: GameUiState,
             } else {
                 PlaySearchAnimation(
                     modifier = Modifier
-                        .size(150.dp)
+                        .size(logoSize)
                         .align(Alignment.Center)
                 )
 
@@ -310,15 +315,39 @@ fun DrawUpperBoxLogo(uiState: GameUiState,
                 Text("Searching $percentComplete")
             }
         }
-        Button(
-            modifier = Modifier.width(75.dp),
-            onClick = { onNavigateBack.invoke() }
-        ) {
-            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = stringResource(id = R.string.back )
+        Column(Modifier.padding(5.dp)) {
+            Text(text = "Instruction:",
+                style = MaterialTheme.typography.titleSmall)
+
+            val bullet = "\u2022"
+            val messages = listOf(
+                "Clear the board with \"Reset\" button",
+                "Add new balls on the grid",
+                "Solve the game with \"Find next\" button"
             )
+            val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 15.sp))
+            Text(
+                text =
+                buildAnnotatedString {
+                    messages.forEach {
+                        withStyle(style = paragraphStyle) {
+                            append(bullet)
+                            append("\t\t")
+                            append(it)
+                        }
+                    }},
+                style = MaterialTheme.typography.bodySmall)
+
+            Spacer(modifier = Modifier.padding(10.dp))
+            Button(
+                onClick = { onNavigateBack.invoke() },
+                modifier = Modifier.defaultMinSize()
+            ) {
+                Icon(painterResource(id = R.drawable.home_image), "Home")
+                Text(
+                    text = "Back to Home"
+                )
+            }
         }
     }
 }
@@ -722,3 +751,57 @@ fun setGameMusic(on: Boolean)
     }
 }
 
+@Composable
+@Preview(showBackground = true)
+fun SolverScreenPreview()
+{
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(5.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box {
+            Image(
+                painter = painterResource(id = R.drawable.fling),
+                contentDescription = stringResource(id = R.string.app_name),
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(150.dp)
+            )
+        }
+        Column(Modifier.padding(5.dp)) {
+            Text(text = "Instruction:",
+                style = MaterialTheme.typography.titleSmall)
+            val bullet = "\u2022"
+            val messages = listOf(
+                "Clear the board with \"Reset\" button",
+                "Add new balls on the grid",
+                "Solve the game with \"Find next\" button"
+            )
+            val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 15.sp))
+            Text(
+                text =
+                buildAnnotatedString {
+                    messages.forEach {
+                        withStyle(style = paragraphStyle) {
+                            append(bullet)
+                            append("\t\t")
+                            append(it)
+                        }
+                    }},
+                style = MaterialTheme.typography.bodySmall)
+
+            Spacer(modifier = Modifier.padding(10.dp))
+
+            Button(
+                onClick = { },
+                modifier = Modifier.defaultMinSize()
+            ) {
+                Icon(painterResource(id = R.drawable.home_image), "Home")
+                Text(
+                    text = "Go back to Main Menu"
+                )
+            }
+        }
+    }
+}
