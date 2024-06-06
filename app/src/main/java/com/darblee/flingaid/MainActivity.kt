@@ -26,14 +26,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -48,14 +53,18 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,15 +88,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.compose.rememberNavController
-import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.theme.SetColorTheme
 import com.darblee.flingaid.ui.theme.ColorThemeOption
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File
 import kotlin.system.exitProcess
 
 
@@ -97,11 +105,9 @@ lateinit var gDownArrowBitmap : Bitmap
 lateinit var gLeftArrowBitmap : Bitmap
 lateinit var gRightArrowBitmap : Bitmap
 
-lateinit var gGameAudio : MediaPlayer
+private lateinit var gGameAudio : MediaPlayer
 
-var gSoundOn = false
-
-lateinit var gBoardFile : File
+private var gSoundOn = false
 
 class MainActivity : ComponentActivity()
 {
@@ -191,7 +197,7 @@ class MainActivity : ComponentActivity()
 }
 
 @Composable
-fun SetupAllBitMapImagesOnAppStart()
+private fun SetupAllBitMapImagesOnAppStart()
 {
     gUpArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
 
@@ -228,102 +234,49 @@ fun SetupAllBitMapImagesOnAppStart()
 }
 
 @Composable
-fun MainViewImplementation(
-    modifier: Modifier = Modifier,
-    gameViewModel: GameViewModel = viewModel(),
-    onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
-    currentTheme: ColorThemeOption)
+private fun SetUpGameAudioOnAppStart()
 {
-    var currentScreenName by remember { mutableStateOf("Fling Aid") }
+//    gGameAudio =  MediaPlayer.create(applicationContext, R.raw.music)
+    gGameAudio =  MediaPlayer.create(LocalContext.current, R.raw.music)
+    gGameAudio.isLooping = true
 
-    // When doing back press on main screen, confirm with the user whether
-    // it should exit the app or not
-    val backPressed = remember { mutableStateOf(false) }
-    BackPressHandler(onBackPressed = { backPressed.value = true })
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
-    if (backPressed.value)
-        ExitAlertDialog(onDismiss = { backPressed.value = false}, onExit = { exitProcess(1)})
-
-    val navController = rememberNavController()
-
-    Scaffold (
-        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme, currentScreenName) }
-    ) { contentPadding ->
-        SetUpNavGraph(navController = navController, contentPadding, onScreenChange = { newScreenTitle -> currentScreenName = newScreenTitle } )
-    }
-}
-
-@Composable
-fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
-                      currentTheme: ColorThemeOption)
-{
-    Row (
-        modifier = Modifier
-            .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp))
-            .wrapContentWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        val colorThemeOptionsStringValues
-                = listOf(ColorThemeOption.System.toString(), ColorThemeOption.Light.toString(), ColorThemeOption.Dark.toString())
-
-        val (selectedOption, onOptionSelected) = remember {
-            // Make the initial selection match the global color theme
-            // at the start of opening the Theme setting dialog box
-            mutableStateOf(currentTheme.toString())
-        }
-        Text(text = "Color Theme", modifier = Modifier
-            .padding(5.dp)
-            .wrapContentWidth())
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Column(
-            modifier = Modifier
-                .wrapContentWidth()
-                .selectableGroup()
-                .padding(5.dp)) {
-            colorThemeOptionsStringValues.forEach { curColorString ->
-                Row(
-                    Modifier
-                        .selectable(
-                            selected = (curColorString == selectedOption),
-                            onClick = {
-                                onOptionSelected(curColorString)  // This make this button get selected
-                                val newSelectedTheme =
-                                    when (curColorString) {
-                                        ColorThemeOption.System.toString() -> ColorThemeOption.System
-                                        ColorThemeOption.Light.toString() -> ColorThemeOption.Light
-                                        else -> ColorThemeOption.Dark
-                                    }
-
-                                // Calls the lambda function that does the actual Color theme change to the app
-                                onColorThemeUpdated(newSelectedTheme)
-                            },
-                        )
-                        .padding(horizontal = 8.dp)
-                        .fillMaxWidth(),  // Make the entire row selectable
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(
-                        selected = (curColorString == selectedOption),
-                        onClick = null  // null recommended for accessibility with ScreenReaders
-                    )
-                    Text(
-                        text = curColorString,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .wrapContentWidth()
-                    )
+    // DisposableEffect is a tool that allows you to perform side effects in your composable
+    // functions that need to be cleaned up when the composable leaves the composition.
+    // Keys is used to control when the callback function is called.
+    DisposableEffect(key1 = lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> {
+                    if (gSoundOn) gGameAudio.start()
+                }
+                Lifecycle.Event.ON_RESUME -> {
+                    if (gSoundOn) gGameAudio.start()
+                }
+                Lifecycle.Event.ON_STOP -> {
+                    gGameAudio.pause()
+                    Log.i(Global.debugPrefix, "Music paused")
+                }
+                else -> {
+                    Log.i(Global.debugPrefix, "$event event ignored")
                 }
             }
         }
-    }
+
+        // Add the observer to the lifecycle
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        // When the effect leaves the Composition, remove the observer
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }  // DisposableEffect
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FlingAidTopAppBar(
+private fun FlingAidTopAppBar(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
     currentTheme: ColorThemeOption,
     screenTitle: String
@@ -343,8 +296,8 @@ fun FlingAidTopAppBar(
 
     CenterAlignedTopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            titleContentColor = MaterialTheme.colorScheme.primary,
+            containerColor = colorScheme.primaryContainer,
+            titleContentColor = colorScheme.primary,
         ),
 
         modifier = Modifier.height(48.dp),
@@ -428,8 +381,32 @@ fun FlingAidTopAppBar(
 }
 
 @Composable
-fun AboutDialogPopup(onDismissRequest: () -> Unit,
-                     onConfirmation: () -> Unit)
+private fun MainViewImplementation(
+    onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
+    currentTheme: ColorThemeOption)
+{
+    var currentScreenName by remember { mutableStateOf("Fling Aid") }
+
+    // When doing back press on main screen, confirm with the user whether
+    // it should exit the app or not
+    val backPressed = remember { mutableStateOf(false) }
+    BackPressHandler(onBackPressed = { backPressed.value = true })
+
+    if (backPressed.value)
+        ExitAlertDialog(onDismiss = { backPressed.value = false}, onExit = { exitProcess(1)})
+
+    val navController = rememberNavController()
+
+    Scaffold (
+        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme, currentScreenName) }
+    ) { contentPadding ->
+        SetUpNavGraph(navController = navController, contentPadding, onScreenChange = { newScreenTitle -> currentScreenName = newScreenTitle } )
+    }
+}
+
+@Composable
+private fun AboutDialogPopup(onDismissRequest: () -> Unit,
+                             onConfirmation: () -> Unit)
 {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
@@ -480,13 +457,229 @@ fun AboutDialogPopup(onDismissRequest: () -> Unit,
     }
 }
 
+@Composable
+private fun SettingPopup(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
+    currentTheme: ColorThemeOption,
+    onPlayerNameUpdated: (newPlayerName: String) -> Unit,
+    currentPlayerName: String,
+    onSoundSettingUpdated: (soundOn : Boolean) -> Unit,
+    currentSoundSetting: Boolean
+)
+{
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        // Draw a rectangle shape with rounded corners inside the dialog
+        Card(
+            modifier = Modifier
+                .width(275.dp)
+                .wrapContentHeight()
+                .padding(8.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                PlayerNameSetting(currentPlayerName, onPlayerNameUpdated)
+                MusicSetting(onSoundSettingUpdated, currentSoundSetting)
+                ColorThemeSetting(onColorThemeUpdated, currentTheme)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Button(
+                        modifier = Modifier.width(125.dp),
+                        onClick = { onConfirmation() },
+
+                        ) {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = stringResource(id = R.string.back ),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+        } // ColumnScope
+    }
+}
+
+@Composable
+private fun PlayerNameSetting(
+    currentPlayerName: String,
+    onPlayerNameUpdated: (newPlayerName: String) -> Unit)
+{
+    val preference = PreferenceStore(LocalContext.current)
+    Row {
+        var rawText by remember {
+            mutableStateOf(currentPlayerName)
+        }
+        OutlinedTextField(
+            value = rawText,
+            onValueChange =
+            { newRawText ->
+                rawText = newRawText
+                onPlayerNameUpdated(newRawText) // Call the lambda function to update new player name
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    preference.savePlayerNameToSetting(newRawText)
+                }
+            },
+            label = { Text(text = stringResource(id = R.string.player_name))},
+            singleLine = true,
+            leadingIcon =
+            {
+                Icon(imageVector = Icons.Filled.Person, contentDescription = stringResource(id = R.string.player_name))
+            },
+            trailingIcon =
+            {
+                IconButton(onClick =
+                {
+                    rawText = ""
+                    onPlayerNameUpdated("")
+                    CoroutineScope(Dispatchers.IO).launch {
+                        preference.savePlayerNameToSetting("")
+                    }
+                })
+                {
+                    Icon(imageVector = Icons.Filled.Clear, contentDescription = stringResource(id = R.string.clear_name))
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun MusicSetting(onSoundSettingUpdated: (soundOn: Boolean) -> Unit, currentSoundSetting: Boolean)
+{
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Text("Music")
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        var musicSwitch by remember {
+            mutableStateOf(currentSoundSetting)
+        }
+
+        val icon: (@Composable () -> Unit)? = if (gSoundOn) {
+            {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                )
+            }
+        } else null
+
+        Switch(
+            modifier = Modifier.padding(8.dp),
+            checked = musicSwitch,
+            onCheckedChange = { isCheckStatus ->
+                musicSwitch = isCheckStatus
+                onSoundSettingUpdated(isCheckStatus)
+            },
+            thumbContent = icon
+        )
+    }
+}
+
+@Composable
+private fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
+                      currentTheme: ColorThemeOption)
+{
+    Row (
+        modifier = Modifier
+            .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp))
+            .wrapContentWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        val colorThemeOptionsStringValues
+                = listOf(ColorThemeOption.System.toString(), ColorThemeOption.Light.toString(), ColorThemeOption.Dark.toString())
+
+        val (selectedOption, onOptionSelected) = remember {
+            // Make the initial selection match the global color theme
+            // at the start of opening the Theme setting dialog box
+            mutableStateOf(currentTheme.toString())
+        }
+        Text(text = "Color Theme", modifier = Modifier
+            .padding(5.dp)
+            .wrapContentWidth())
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Column(
+            modifier = Modifier
+                .wrapContentWidth()
+                .selectableGroup()
+                .padding(5.dp)) {
+            colorThemeOptionsStringValues.forEach { curColorString ->
+                Row(
+                    Modifier
+                        .selectable(
+                            selected = (curColorString == selectedOption),
+                            onClick = {
+                                onOptionSelected(curColorString)  // This make this button get selected
+                                val newSelectedTheme =
+                                    when (curColorString) {
+                                        ColorThemeOption.System.toString() -> ColorThemeOption.System
+                                        ColorThemeOption.Light.toString() -> ColorThemeOption.Light
+                                        else -> ColorThemeOption.Dark
+                                    }
+
+                                // Calls the lambda function that does the actual Color theme change to the app
+                                onColorThemeUpdated(newSelectedTheme)
+                            },
+                        )
+                        .padding(horizontal = 8.dp)
+                        .fillMaxWidth(),  // Make the entire row selectable
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = (curColorString == selectedOption),
+                        onClick = null  // null recommended for accessibility with ScreenReaders
+                    )
+                    Text(
+                        text = curColorString,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .wrapContentWidth()
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun setGameMusic(on: Boolean)
+{
+    if (on) {
+        if (!gGameAudio.isPlaying) {
+            gGameAudio.start()
+        }
+    } else {
+        gGameAudio.pause()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
+private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
     Dialog(
-        onDismissRequest = { onDismiss() }, properties = DialogProperties(
-            dismissOnBackPress = false, dismissOnClickOutside = false
-        )
+        onDismissRequest = { onDismiss() },
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false)
     ) {
         Card(
             shape = RoundedCornerShape(10.dp),
@@ -575,10 +768,9 @@ fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
     }
 }
 
-
 @Composable
 @Preview(showBackground = true)
-fun ScreenPreview()
+private fun ScreenPreview()
 {
     SettingPopup(
         onDismissRequest = { /*TODO*/ },

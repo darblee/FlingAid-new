@@ -1,4 +1,4 @@
-package com.darblee.flingaid
+package com.darblee.flingaid.ui.screens
 
 import android.graphics.Bitmap
 import android.media.MediaPlayer
@@ -28,28 +28,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -84,30 +73,31 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.darblee.flingaid.Global
+import com.darblee.flingaid.R
+import com.darblee.flingaid.gDownArrowBitmap
+import com.darblee.flingaid.gLeftArrowBitmap
+import com.darblee.flingaid.gRightArrowBitmap
+import com.darblee.flingaid.gUpArrowBitmap
 import com.darblee.flingaid.ui.Direction
 import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.Pos
-import com.darblee.flingaid.ui.theme.ColorThemeOption
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
+
+lateinit var gBoardFile : File
 
 @Composable
 fun SolverScreen(
     modifier: Modifier = Modifier,
-    screenRouteParams: Screen.Solver, onNavigateBack: () -> Unit)
+    onNavigateBack: () -> Unit)
 {
     val gameViewModel: GameViewModel = viewModel()
     Column (
@@ -147,45 +137,89 @@ fun SolverScreen(
     }
 }
 
+/*
+ * Provide instruction on how to play Solver Screen.
+ *
+ * Display the game logo. Game logo also change to animation
+ * when it is searching for the solution.
+ */
 @Composable
-fun SetUpGameAudioOnAppStart()
+fun Instruction_DynamicLogo(uiState: GameUiState,
+                            onNavigateBack: () -> Unit)
 {
-//    gGameAudio =  MediaPlayer.create(applicationContext, R.raw.music)
-    gGameAudio =  MediaPlayer.create(LocalContext.current, R.raw.music)
-    gGameAudio.isLooping = true
+    val logoSize = 125.dp
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(5.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box {
+            if (uiState.state == GameState.NotThinking) {
+                val imageModifier = Modifier
+                    .size(logoSize)
+                    .border(BorderStroke(1.dp, Color.Black))
+                    .background(Color.Black)
+                Image(
+                    painter = painterResource(id = R.drawable.fling),
+                    contentDescription = stringResource(id = R.string.app_name),
+                    contentScale = ContentScale.Fit,
+                    modifier = imageModifier
+                )
+            } else {
+                PlaySearchAnimation(
+                    modifier = Modifier
+                        .size(logoSize)
+                        .align(Alignment.Center)
+                )
 
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-
-    // DisposableEffect is a tool that allows you to perform side effects in your composable
-    // functions that need to be cleaned up when the composable leaves the composition.
-    // Keys is used to control when the callback function is called.
-    DisposableEffect(key1 = lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_START -> {
-                    if (gSoundOn) gGameAudio.start()
-                }
-                Lifecycle.Event.ON_RESUME -> {
-                    if (gSoundOn) gGameAudio.start()
-                }
-                Lifecycle.Event.ON_STOP -> {
-                    gGameAudio.pause()
-                    Log.i(Global.debugPrefix, "Music paused")
-                }
-                else -> {
-                    Log.i(Global.debugPrefix, "$event event ignored")
-                }
+                //  Track two level processing = level #1: 4 direction x level 2: 4 directions = 16
+                val newPercentageValue: Float = (Global.ThinkingProgress.toFloat() /
+                        (Global.totalProcessCount) * 100.0).toFloat()
+                val percentComplete =
+                    String.format(Locale.getDefault(), "%.1f%%", newPercentageValue)
+                Text("Searching $percentComplete",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.TopCenter))
             }
         }
+        Column(Modifier.padding(5.dp)) {
+            Text(text = "Instruction:",
+                style = MaterialTheme.typography.titleSmall)
 
-        // Add the observer to the lifecycle
-        lifecycleOwner.lifecycle.addObserver(observer)
+            val bullet = "\u2022"
+            val messages = listOf(
+                "Clear the board with \"Reset\" button",
+                "Add new balls on the grid",
+                "Solve the game with \"Find next\" button"
+            )
+            val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 10.sp))
+            Text(
+                text =
+                buildAnnotatedString {
+                    messages.forEach {
+                        withStyle(style = paragraphStyle) {
+                            append(bullet)
+                            append("\t")
+                            append(it)
+                        }
+                    }},
+                style = MaterialTheme.typography.bodySmall)
 
-        // When the effect leaves the Composition, remove the observer
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
+            Spacer(modifier = Modifier.padding(10.dp))
+
+            Button(
+                { onNavigateBack.invoke() }, Modifier
+                    .defaultMinSize()
+                    .align(Alignment.CenterHorizontally)
+            ) {
+                Icon(painterResource(id = R.drawable.home_image), "Home")
+                Text(
+                    text = "Back to Home"
+                )
+            }
         }
-    }  // DisposableEffect
+    }
 }
 
 @Composable
@@ -275,91 +309,6 @@ fun DisplayNoWinnableMoveToast()
         "There is no winnable move",
         Toast.LENGTH_LONG
     ).show()
-}
-
-/*
- * Provide instruction on how to play Solver Screen.
- *
- * Display the game logo. Game logo also change to animation
- * when it is searching for the solution.
- */
-@Composable
-fun Instruction_DynamicLogo(uiState: GameUiState,
-                            onNavigateBack: () -> Unit)
-{
-    val logoSize = 125.dp
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(5.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Box {
-            if (uiState.state == GameState.NotThinking) {
-                val imageModifier = Modifier
-                    .size(logoSize)
-                    .border(BorderStroke(1.dp, Color.Black))
-                    .background(Color.Black)
-                Image(
-                    painter = painterResource(id = R.drawable.fling),
-                    contentDescription = stringResource(id = R.string.app_name),
-                    contentScale = ContentScale.Fit,
-                    modifier = imageModifier
-                )
-            } else {
-                PlaySearchAnimation(
-                    modifier = Modifier
-                        .size(logoSize)
-                        .align(Alignment.Center)
-                )
-
-                //  Track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-                val newPercentageValue: Float = (Global.ThinkingProgress.toFloat() /
-                        (Global.totalProcessCount) * 100.0).toFloat()
-                val percentComplete =
-                    String.format(Locale.getDefault(), "%.1f%%", newPercentageValue)
-                Text("Searching $percentComplete",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.align(Alignment.TopCenter))
-            }
-        }
-        Column(Modifier.padding(5.dp)) {
-            Text(text = "Instruction:",
-                style = MaterialTheme.typography.titleSmall)
-
-            val bullet = "\u2022"
-            val messages = listOf(
-                "Clear the board with \"Reset\" button",
-                "Add new balls on the grid",
-                "Solve the game with \"Find next\" button"
-            )
-            val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 10.sp))
-            Text(
-                text =
-                buildAnnotatedString {
-                    messages.forEach {
-                        withStyle(style = paragraphStyle) {
-                            append(bullet)
-                            append("\t")
-                            append(it)
-                        }
-                    }},
-                style = MaterialTheme.typography.bodySmall)
-
-            Spacer(modifier = Modifier.padding(10.dp))
-
-            Button(
-                { onNavigateBack.invoke() }, Modifier
-                    .defaultMinSize()
-                    .align(Alignment.CenterHorizontally)
-            ) {
-                Icon(painterResource(id = R.drawable.home_image), "Home")
-                Text(
-                    text = "Back to Home"
-                )
-            }
-        }
-    }
 }
 
 /*
@@ -611,154 +560,6 @@ fun PlaySearchAnimation(modifier: Modifier)
         composition = composition,
         iterations = LottieConstants.IterateForever
     )
-}
-
-
-@Composable
-fun SettingPopup(
-    onDismissRequest: () -> Unit,
-    onConfirmation: () -> Unit,
-    onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
-    currentTheme: ColorThemeOption,
-    onPlayerNameUpdated: (newPlayerName: String) -> Unit,
-    currentPlayerName: String,
-    onSoundSettingUpdated: (soundOn : Boolean) -> Unit,
-    currentSoundSetting: Boolean
-)
-{
-    Dialog(onDismissRequest = { onDismissRequest() }) {
-        // Draw a rectangle shape with rounded corners inside the dialog
-        Card(
-            modifier = Modifier
-                .width(275.dp)
-                .wrapContentHeight()
-                .padding(8.dp),
-            shape = RoundedCornerShape(16.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                PlayerNameSetting(currentPlayerName, onPlayerNameUpdated)
-                MusicSetting(onSoundSettingUpdated, currentSoundSetting)
-                ColorThemeSetting(onColorThemeUpdated, currentTheme)
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Button(
-                        modifier = Modifier.width(125.dp),
-                        onClick = { onConfirmation() },
-
-                        ) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(
-                            text = stringResource(id = R.string.back ),
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
-        } // ColumnScope
-    }
-}
-
-@Composable
-fun PlayerNameSetting(
-    currentPlayerName: String,
-    onPlayerNameUpdated: (newPlayerName: String) -> Unit)
-{
-    val preference = PreferenceStore(LocalContext.current)
-    Row {
-        var rawText by remember {
-            mutableStateOf(currentPlayerName)
-        }
-        OutlinedTextField(
-            value = rawText,
-            onValueChange =
-            { newRawText ->
-                rawText = newRawText
-                onPlayerNameUpdated(newRawText) // Call the lambda function to update new player name
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    preference.savePlayerNameToSetting(newRawText)
-                }
-            },
-            label = { Text(text = stringResource(id = R.string.player_name))},
-            singleLine = true,
-            leadingIcon =
-            {
-                Icon(imageVector = Icons.Filled.Person, contentDescription = stringResource(id = R.string.player_name))
-            },
-            trailingIcon =
-            {
-                IconButton(onClick =
-                {
-                    rawText = ""
-                    onPlayerNameUpdated("")
-                    CoroutineScope(Dispatchers.IO).launch {
-                        preference.savePlayerNameToSetting("")
-                    }
-                })
-                {
-                    Icon(imageVector = Icons.Filled.Clear, contentDescription = stringResource(id = R.string.clear_name))
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun MusicSetting(onSoundSettingUpdated: (soundOn: Boolean) -> Unit, currentSoundSetting: Boolean)
-{
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        Text("Music")
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        var musicSwitch by remember {
-            mutableStateOf(currentSoundSetting)
-        }
-
-        val icon: (@Composable () -> Unit)? = if (gSoundOn) {
-            {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = null,
-                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                )
-            }
-        } else null
-
-        Switch(
-            modifier = Modifier.padding(8.dp),
-            checked = musicSwitch,
-            onCheckedChange = { isCheckStatus ->
-                musicSwitch = isCheckStatus
-                onSoundSettingUpdated(isCheckStatus)
-            },
-            thumbContent = icon
-        )
-    }
-}
-
-fun setGameMusic(on: Boolean)
-{
-    if (on) {
-        if (!gGameAudio.isPlaying) {
-            gGameAudio.start()
-        }
-    } else {
-        gGameAudio.pause()
-    }
 }
 
 @Composable

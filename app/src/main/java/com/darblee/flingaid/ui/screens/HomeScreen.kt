@@ -1,4 +1,4 @@
-package com.darblee.flingaid
+package com.darblee.flingaid.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.darblee.flingaid.Screen
 import com.darblee.flingaid.ui.GameViewModel
 
 @Composable
@@ -31,13 +32,13 @@ fun HomeScreen(
     ) {
 
         Button (onClick = {
-            navController.navigate(Screen.Game(soundOn = true, playerName = "David"))
+            navController.navigate(Screen.Game)
         }) {
             Text(text = "Test - Go to game")
         }
 
         Button (onClick = {
-            navController.navigate(Screen.Solver(soundOn = true, playerName = "John"))
+            navController.navigate(Screen.Solver)
         }) {
             Text(text = "Test - Go to solver game")
         }

@@ -14,11 +14,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
+import com.darblee.flingaid.ui.screens.GameScreen
+import com.darblee.flingaid.ui.screens.HomeScreen
+import com.darblee.flingaid.ui.screens.SolverScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -27,16 +28,10 @@ sealed class Screen {
     data object Home: Screen()
 
     @Serializable
-    data class Game(
-        val soundOn: Boolean,
-        val playerName: String
-    ): Screen()
+    data object Game : Screen()
 
     @Serializable
-    data class Solver(
-        val soundOn: Boolean,
-        val playerName: String
-    ): Screen()
+    data object Solver : Screen()
 }
 
 @SuppressLint("RestrictedApi")
@@ -63,34 +58,25 @@ fun SetUpNavGraph(
             )
         }
 
-        composable<Screen.Game>{navBackStackEntry ->
-            // Need to pass parameters to Game screen
-            val screenRouteParams = navBackStackEntry.toRoute<Screen.Game>()
+        composable<Screen.Game>{
             onScreenChange.invoke("Game")
-            GameScreen(screenRouteParams) {
+            GameScreen(
+                modifier = Modifier
+                .fillMaxSize()) {
                 navController.popBackStack()
             }
         }
 
-        composable<Screen.Solver>{navBackStackEntry ->
-            val screenRouteParams = navBackStackEntry.toRoute<Screen.Solver>()
-            // Need to pass parameters to Solver screen
+        composable<Screen.Solver>{
             onScreenChange.invoke("Solver")
             SolverScreen(
-                modifier = Modifier
-                    .fillMaxSize(),
-                screenRouteParams) {
+                modifier = Modifier.fillMaxSize()
+            ) {
                 navController.popBackStack()
             }
         }
     }
 }
-
-// Need to verify that user can interact with app and return true. Use this before you can popBackStack.
-// For more detailed explanation,
-// see https://medium.com/@daniel.atitienei/do-not-make-this-navigation-mistake-in-jetpack-compose-8ba2a1732357
-val NavHostController.canGoBack: Boolean
-    get() = this.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED
 
 @Composable
 fun BackPressHandler(
