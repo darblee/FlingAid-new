@@ -50,5 +50,5 @@ fun HomeScreen(
 @SuppressLint("UnrememberedMutableState")
 @Preview(name="Custom Dialog")
 @Composable
-fun MyDialogUIPreview(){
+private fun MyDialogUIPreview(){
 }

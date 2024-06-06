@@ -142,7 +142,7 @@ fun SolverScreen(
  * when it is searching for the solution.
  */
 @Composable
-fun Instruction_DynamicLogo(uiState: GameUiState,
+private fun Instruction_DynamicLogo(uiState: GameUiState,
                             onNavigateBack: () -> Unit)
 {
     val logoSize = 125.dp
@@ -221,7 +221,7 @@ fun Instruction_DynamicLogo(uiState: GameUiState,
 }
 
 @Composable
-fun ControlButtons(
+private fun ControlButtons(
     gameViewModel: GameViewModel = viewModel(),
     findWinnableMoveButtonEnabled: Boolean,
     showWinnableMoveToUser: Boolean,
@@ -298,7 +298,7 @@ fun ControlButtons(
 }
 
 @Composable
-fun DisplayNoWinnableMoveToast()
+private fun DisplayNoWinnableMoveToast()
 {
     val contextForToast = LocalContext.current
 
@@ -310,13 +310,13 @@ fun DisplayNoWinnableMoveToast()
 }
 
 /*
-    Draw the Fling Game Board:
-        - Grid
-        - all the balls
-        - winning arrow (if there is solution after "find winnable movable" submission
+ *  Draw the Fling Game Board:
+ *       - Grid
+ *       - all the balls
+ *       - winning arrow (if there is solution after "find winnable movable" submission
  */
 @Composable
-fun DrawFlingBoard(
+private fun DrawFlingBoard(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUiState)
@@ -416,7 +416,7 @@ fun DrawFlingBoard(
  *   Show direction arrow
  *   Animate the ball movement
  */
-fun showWinningMove(
+private fun showWinningMove(
     drawScope: DrawScope,
     gridSize: Float,
     uiState: GameUiState,
@@ -484,7 +484,7 @@ fun showWinningMove(
 }
 
 // Draw all the balls in the provided canvas
-fun drawBalls(
+private fun drawBalls(
     drawScope: DrawScope,
     gameViewModel: GameViewModel,
     gridSize: Float,
@@ -505,7 +505,7 @@ fun drawBalls(
     }
 }
 
-fun drawGrid(drawScope: DrawScope,
+private fun drawGrid(drawScope: DrawScope,
              gridSize: Float,
              lineColor: Color
 )
@@ -548,7 +548,7 @@ fun drawGrid(drawScope: DrawScope,
 }
 
 @Composable
-fun PlaySearchAnimation(modifier: Modifier)
+private fun PlaySearchAnimation(modifier: Modifier)
 {
 
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.find_animation))
@@ -562,7 +562,7 @@ fun PlaySearchAnimation(modifier: Modifier)
 
 @Composable
 @Preview(showBackground = true)
-fun SolverScreenPreview()
+private fun SolverScreenPreview()
 {
     Row(
         modifier = Modifier
