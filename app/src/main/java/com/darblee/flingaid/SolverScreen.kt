@@ -17,6 +17,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -79,6 +80,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -307,12 +309,14 @@ fun Instruction(uiState: GameUiState,
                         .align(Alignment.Center)
                 )
 
-                // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
+                //  Track two level processing = level #1: 4 direction x level 2: 4 directions = 16
                 val newPercentageValue: Float = (Global.ThinkingProgress.toFloat() /
                         (Global.totalProcessCount) * 100.0).toFloat()
                 val percentComplete =
                     String.format(Locale.getDefault(), "%.1f%%", newPercentageValue)
-                Text("Searching $percentComplete")
+
+                Text("Searching $percentComplete",
+                    style = MaterialTheme.typography.bodySmall)
             }
         }
         Column(Modifier.padding(5.dp)) {
@@ -325,23 +329,25 @@ fun Instruction(uiState: GameUiState,
                 "Add new balls on the grid",
                 "Solve the game with \"Find next\" button"
             )
-            val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 15.sp))
+            val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 10.sp))
             Text(
                 text =
                 buildAnnotatedString {
                     messages.forEach {
                         withStyle(style = paragraphStyle) {
                             append(bullet)
-                            append("\t\t")
+                            append("\t")
                             append(it)
                         }
                     }},
                 style = MaterialTheme.typography.bodySmall)
 
             Spacer(modifier = Modifier.padding(10.dp))
+
             Button(
-                onClick = { onNavigateBack.invoke() },
-                modifier = Modifier.defaultMinSize()
+                { onNavigateBack.invoke() }, Modifier
+                    .defaultMinSize()
+                    .align(Alignment.CenterHorizontally)
             ) {
                 Icon(painterResource(id = R.drawable.home_image), "Home")
                 Text(
@@ -778,14 +784,14 @@ fun SolverScreenPreview()
                 "Add new balls on the grid",
                 "Solve the game with \"Find next\" button"
             )
-            val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 15.sp))
+            val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 10.sp))
             Text(
                 text =
                 buildAnnotatedString {
                     messages.forEach {
                         withStyle(style = paragraphStyle) {
                             append(bullet)
-                            append("\t\t")
+                            append("\t")
                             append(it)
                         }
                     }},
@@ -795,7 +801,9 @@ fun SolverScreenPreview()
 
             Button(
                 onClick = { },
-                modifier = Modifier.defaultMinSize()
+                modifier = Modifier
+                    .defaultMinSize()
+                    .align(Alignment.CenterHorizontally)
             ) {
                 Icon(painterResource(id = R.drawable.home_image), "Home")
                 Text(
