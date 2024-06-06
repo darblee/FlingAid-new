@@ -234,6 +234,8 @@ fun MainViewImplementation(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
     currentTheme: ColorThemeOption)
 {
+    var currentScreenName by remember { mutableStateOf("Fling Aid") }
+
     // When doing back press on main screen, confirm with the user whether
     // it should exit the app or not
     val backPressed = remember { mutableStateOf(false) }
@@ -245,10 +247,9 @@ fun MainViewImplementation(
     val navController = rememberNavController()
 
     Scaffold (
-        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme) }
+        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme, currentScreenName) }
     ) { contentPadding ->
-
-        SetUpNavGraph(navController = navController, contentPadding)
+        SetUpNavGraph(navController = navController, contentPadding, onScreenChange = { newScreenTitle -> currentScreenName = newScreenTitle } )
     }
 }
 
@@ -324,7 +325,8 @@ fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) ->
 @Composable
 fun FlingAidTopAppBar(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
-    currentTheme: ColorThemeOption
+    currentTheme: ColorThemeOption,
+    screenTitle: String
 )
 {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -348,10 +350,9 @@ fun FlingAidTopAppBar(
         modifier = Modifier.height(48.dp),
         title =
         {
-            val appName = stringResource(id = R.string.app_name)
-            val titleText = if (currentPlayerName == "") appName else "$appName : $currentPlayerName"
+            val titleText = if (currentPlayerName == "") screenTitle else "$screenTitle : $currentPlayerName"
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(titleText)
+                Text(titleText, style = MaterialTheme.typography.titleLarge)
             }
         },
         actions = {

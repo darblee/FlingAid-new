@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -42,7 +43,8 @@ sealed class Screen {
 @Composable
 fun SetUpNavGraph(
     navController: NavHostController,
-    innerPadding: PaddingValues
+    innerPadding: PaddingValues,
+    onScreenChange: (screenTitle: String) -> Unit
 ) {
     // A surface container using the 'background' color from the theme
     NavHost(
@@ -50,6 +52,8 @@ fun SetUpNavGraph(
         startDestination = Screen.Home
     ) {
         composable<Screen.Home>{
+            val appName = stringResource(id = R.string.app_name)
+            onScreenChange.invoke(appName)
             HomeScreen (
                 modifier = Modifier
                     .fillMaxSize()
@@ -62,6 +66,7 @@ fun SetUpNavGraph(
         composable<Screen.Game>{navBackStackEntry ->
             // Need to pass parameters to Game screen
             val screenRouteParams = navBackStackEntry.toRoute<Screen.Game>()
+            onScreenChange.invoke("Game")
             GameScreen(screenRouteParams) {
                 navController.popBackStack()
             }
@@ -70,6 +75,7 @@ fun SetUpNavGraph(
         composable<Screen.Solver>{navBackStackEntry ->
             val screenRouteParams = navBackStackEntry.toRoute<Screen.Solver>()
             // Need to pass parameters to Solver screen
+            onScreenChange.invoke("Solver")
             SolverScreen(
                 modifier = Modifier
                     .fillMaxSize(),
@@ -85,7 +91,6 @@ fun SetUpNavGraph(
 // see https://medium.com/@daniel.atitienei/do-not-make-this-navigation-mistake-in-jetpack-compose-8ba2a1732357
 val NavHostController.canGoBack: Boolean
     get() = this.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED
-
 
 @Composable
 fun BackPressHandler(
