@@ -225,8 +225,7 @@ private fun ControlButtons(
     gameViewModel: GameViewModel = viewModel(),
     findWinnableMoveButtonEnabled: Boolean,
     showWinnableMoveToUser: Boolean,
-    uiState: GameUiState
-)
+    uiState: GameUiState)
 {
     val audio : MediaPlayer = MediaPlayer.create(LocalContext.current, R.raw.you_won)
 
@@ -422,8 +421,7 @@ private fun showWinningMove(
     uiState: GameUiState,
     animate: Animatable<Float, AnimationVector1D>,
     gWinningMoveCount: Int,
-    displayBallImage: ImageBitmap
-)
+    displayBallImage: ImageBitmap)
 {
     with (drawScope) {
         // Log.i(Global.debugPrefix, "Winning Move exist with winning direction:  ${uiState.foundWinningDirection}")
@@ -488,8 +486,7 @@ private fun drawBalls(
     drawScope: DrawScope,
     gameViewModel: GameViewModel,
     gridSize: Float,
-    displayBallImage: ImageBitmap
-)
+    displayBallImage: ImageBitmap)
 {
     // Draw all the balls
     with (drawScope) {
@@ -505,10 +502,10 @@ private fun drawBalls(
     }
 }
 
-private fun drawGrid(drawScope: DrawScope,
-             gridSize: Float,
-             lineColor: Color
-)
+private fun drawGrid(
+    drawScope: DrawScope,
+    gridSize: Float,
+    lineColor: Color)
 {
     with (drawScope) {
         // Draw horizontal lines
@@ -550,7 +547,6 @@ private fun drawGrid(drawScope: DrawScope,
 @Composable
 private fun PlaySearchAnimation(modifier: Modifier)
 {
-
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.find_animation))
 
     LottieAnimation(

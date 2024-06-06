@@ -21,8 +21,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
     navController: NavHostController,
-    innerPadding: PaddingValues
-)
+    innerPadding: PaddingValues)
 {
     Column(
         modifier = Modifier

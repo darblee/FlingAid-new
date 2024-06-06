@@ -235,7 +235,6 @@ private fun SetupAllBitMapImagesOnAppStart()
 @Composable
 private fun SetUpGameAudioOnAppStart()
 {
-//    gGameAudio =  MediaPlayer.create(applicationContext, R.raw.music)
     gGameAudio =  MediaPlayer.create(LocalContext.current, R.raw.music)
     gGameAudio.isLooping = true
 
@@ -278,8 +277,7 @@ private fun SetUpGameAudioOnAppStart()
 private fun FlingAidTopAppBar(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
     currentTheme: ColorThemeOption,
-    screenTitle: String
-)
+    screenTitle: String)
 {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialogBox by remember { mutableStateOf(false) }
@@ -673,7 +671,8 @@ private fun setGameMusic(on: Boolean)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
+private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit)
+{
     Dialog(
         onDismissRequest = { onDismiss() },
         properties = DialogProperties(

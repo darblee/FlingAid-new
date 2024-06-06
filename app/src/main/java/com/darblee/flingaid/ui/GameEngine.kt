@@ -11,7 +11,8 @@ class GameEngine {
         reset()
     }
 
-    private fun reset() {
+    private fun reset()
+    {
         repeat (Global.MaxRowSize) { row ->
             repeat(Global.MaxColSize) { col ->
                 flingGrid[row][col] = false
@@ -19,13 +20,15 @@ class GameEngine {
         }
     }
 
-    fun populateGrid(ballPositionList: SnapshotStateList<Pos>) {
+    fun populateGrid(ballPositionList: SnapshotStateList<Pos>)
+    {
         ballPositionList.forEach {pos ->
             flingGrid[pos.row][pos.col] = true
         }
     }
 
-    private fun duplicate() : GameEngine {
+    private fun duplicate() : GameEngine
+    {
         val tempBoard = GameEngine()
 
         // Clone the board
@@ -38,7 +41,8 @@ class GameEngine {
         return (tempBoard)
     }
 
-    fun foundWinningMove(totalBallCnt : Int, curSearchLevel : Int, thinkingDirectionOffset : Int): Triple<Direction, Int, Int> {
+    fun foundWinningMove(totalBallCnt : Int, curSearchLevel : Int, thinkingDirectionOffset : Int): Triple<Direction, Int, Int>
+    {
 
         var direction = Direction.NO_WINNING_DIRECTION
         var winningRow = -1
@@ -174,7 +178,8 @@ class GameEngine {
         return Triple(direction, winningRow, winningCol)
     }
 
-    private fun winnableByMovingUp(totalBallCnt : Int, curSearchLevel: Int, srcRow: Int, col : Int) : Boolean {
+    private fun winnableByMovingUp(totalBallCnt : Int, curSearchLevel: Int, srcRow: Int, col : Int) : Boolean
+    {
 
         /*
         var debugIndentation = ""
@@ -211,7 +216,8 @@ class GameEngine {
         return true
     }
 
-    private fun winnableByMovingDown(totalBallCnt : Int, curSearchLevel: Int, srcRow: Int, col : Int) : Boolean {
+    private fun winnableByMovingDown(totalBallCnt : Int, curSearchLevel: Int, srcRow: Int, col : Int) : Boolean
+    {
 
         val targetRow = findTargetRowOnMoveDown(srcRow, col)
 
@@ -240,7 +246,8 @@ class GameEngine {
         return true
     }
 
-    private fun winnableByMovingRight(totalBallCnt: Int, curSearchLevel: Int, row: Int, srcCol : Int) : Boolean {
+    private fun winnableByMovingRight(totalBallCnt: Int, curSearchLevel: Int, row: Int, srcCol : Int) : Boolean
+    {
 
         val targetCol = findTargetColOnMoveRight(row, srcCol)
 
@@ -269,8 +276,8 @@ class GameEngine {
         return true
     }
 
-    private fun winnableByMovingLeft(totalBallCnt : Int, curSearchLevel: Int, row: Int, srcCol : Int) : Boolean {
-
+    private fun winnableByMovingLeft(totalBallCnt : Int, curSearchLevel: Int, row: Int, srcCol : Int) : Boolean
+    {
         val targetCol = findTargetColOnMoveLeft(row, srcCol)
 
         if (targetCol == -1) {
@@ -365,7 +372,8 @@ class GameEngine {
 
     // Find the target Col, If it can not find one, then there is no move possible and it will
     // return -1
-    fun findTargetColOnMoveRight(row: Int, srcCol: Int) : Int {
+    fun findTargetColOnMoveRight(row: Int, srcCol: Int) : Int
+    {
 
         // If you are near the right of the grid, then you do not have any room to move right
         if (srcCol > (Global.MaxColSize - 3)) {
@@ -400,7 +408,8 @@ class GameEngine {
 
     // Find the target Col, If it can not find one, then there is no move possible and it will
     // return -1
-    fun findTargetColOnMoveLeft(row: Int, srcCol: Int) : Int {
+    fun findTargetColOnMoveLeft(row: Int, srcCol: Int) : Int
+    {
         // If you are near the left of the grid, then you do not have any room to move left
         if (srcCol < 2) {
             // Log.d("GM: Details", "     ==> No left move as it is near the left edge already. REJECT")
@@ -432,7 +441,8 @@ class GameEngine {
         return (targetCol)
     }
 
-    fun moveUp(srcRow : Int, targetRow : Int, col : Int) {
+    fun moveUp(srcRow : Int, targetRow : Int, col : Int)
+    {
         // Do the first move
         if (!flingGrid[srcRow][col]) error("Unexpected ball status. row=$srcRow, col=$col should be true")
         if (flingGrid[targetRow][col]) error("Unexpected ball status. row=$targetRow, col=$col should be false")
@@ -520,7 +530,8 @@ class GameEngine {
         return
     }
 
-    fun moveDown(srcRow : Int, targetRow : Int, col : Int) {
+    fun moveDown(srcRow : Int, targetRow : Int, col : Int)
+    {
         // Do the first move
         if (!flingGrid[srcRow][col]) error("Unexpected ball status. row=$srcRow, col=$col should be true")
         if (flingGrid[targetRow][col])  error("Unexpected ball status. row=$targetRow, col=$col should be false")
@@ -606,7 +617,8 @@ class GameEngine {
         return
     }
 
-    fun moveRight(srcCol : Int, targetCol : Int, row : Int) {
+    fun moveRight(srcCol : Int, targetCol : Int, row : Int)
+    {
         // Do the first move
         if (!flingGrid[row][srcCol]) error("Unexpected ball status. row=$row, col=$srcCol should be true")
         if (flingGrid[row][targetCol])  error("Unexpected ball status. row=$row, col=$targetCol should be false")
@@ -696,7 +708,8 @@ class GameEngine {
         return
     }
 
-    fun moveLeft(srcCol : Int, targetCol : Int, row : Int) {
+    fun moveLeft(srcCol : Int, targetCol : Int, row : Int)
+    {
         // Do the first move
         if (!flingGrid[row][srcCol]) error("Unexpected ball status. row=$row, col=$srcCol should be true")
         if (flingGrid[row][targetCol])  error("Unexpected ball status. row=$row, col=$targetCol should be false")
@@ -784,7 +797,8 @@ class GameEngine {
         return
     }
 
-    fun updateBallList(): SnapshotStateList<Pos> {
+    fun updateBallList(): SnapshotStateList<Pos>
+    {
         val ballList: SnapshotStateList<Pos> = SnapshotStateList<Pos>().apply {
 
             // Clone the board

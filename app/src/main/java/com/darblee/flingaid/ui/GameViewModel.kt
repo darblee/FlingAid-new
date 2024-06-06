@@ -61,7 +61,8 @@ class GameViewModel : ViewModel() {
         reset(file)
     }
 
-    fun saveBallPositions(file: File) {
+    fun saveBallPositions(file: File)
+    {
         val format = Json { prettyPrint = true }
         val ballList = mutableListOf<Pos>()
 
@@ -79,7 +80,8 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun loadBallPositions(file: File) {
+    fun loadBallPositions(file: File)
+    {
         try {
             val reader = FileReader(file)
             val data = reader.readText()
@@ -94,7 +96,6 @@ class GameViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.i(Global.debugPrefix, "An error occurred while reading the file: ${e.message}")
         }
-
     }
 
     fun getThinkingStatus(): GameState
@@ -102,7 +103,8 @@ class GameViewModel : ViewModel() {
         return (_uiState.value.state)
     }
 
-    fun reset(file: File?) {
+    fun reset(file: File?)
+    {
         _uiState.update {currentState ->
             currentState.copy(
                 state = GameState.NotThinking
@@ -151,7 +153,8 @@ class GameViewModel : ViewModel() {
     private var task2WinningRow = -1
     private var task2WinningCol = -1
 
-    fun findWinningMove(gameViewModel: GameViewModel) {
+    fun findWinningMove(gameViewModel: GameViewModel)
+    {
         _uiState.update {currentState ->
             currentState.copy(
                 state = GameState.Thinking
@@ -209,7 +212,8 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    private fun displayResult() {
+    private fun displayResult()
+    {
         Log.i(Global.debugPrefix, "DisplayResult after processing....")
         uiState.value.state = GameState.NotThinking
 
@@ -265,7 +269,8 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun noNeedToDisplayNoWinnableToastMessage() {
+    fun noNeedToDisplayNoWinnableToastMessage()
+    {
         _uiState.update {currentState ->
             currentState.copy(
                 needToDisplayNoWinnableToastMessage = false
@@ -273,8 +278,8 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    private fun processTask1(totalBallCnt :  Int) {
-
+    private fun processTask1(totalBallCnt :  Int)
+    {
         try {
             Log.i("${Global.debugPrefix} Task 1", "Task 1 has started")
             val game1 = GameEngine()
@@ -316,8 +321,8 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    private fun processTask2(totalBallCnt : Int) {
-
+    private fun processTask2(totalBallCnt : Int)
+    {
         try {
             Log.i("${Global.debugPrefix} Task 2", "Task 2 has started")
             val game2 = GameEngine()
@@ -357,7 +362,8 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    private fun showProcessingActivity() {
+    private fun showProcessingActivity()
+    {
         var i = 0
         var currentValue = 0.0F
         Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
@@ -386,7 +392,8 @@ class GameViewModel : ViewModel() {
         Log.i(Global.debugPrefix, "Finished thinking")
     }
     
-    fun ballPositionList() : SnapshotStateList<Pos> {
+    fun ballPositionList() : SnapshotStateList<Pos>
+    {
         return (_ballPositionList)
     }
 
@@ -395,7 +402,8 @@ class GameViewModel : ViewModel() {
         return (_uiState.value.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
     }
 
-    fun getWinningMoveCount(uiState: GameUiState): Int {
+    fun getWinningMoveCount(uiState: GameUiState): Int
+    {
         val game = GameEngine()
         game.populateGrid(_ballPositionList)
 
@@ -427,7 +435,8 @@ class GameViewModel : ViewModel() {
         return (winningMoveCount)
     }
 
-    fun makeWinningMove(uiState: GameUiState) {
+    fun makeWinningMove(uiState: GameUiState)
+    {
         val game = GameEngine()
         game.populateGrid(_ballPositionList)
 
