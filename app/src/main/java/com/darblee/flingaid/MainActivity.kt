@@ -98,7 +98,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
-
 // Declare these bitmaps once as it will be reused on every recompose
 lateinit var gUpArrowBitmap : Bitmap
 lateinit var gDownArrowBitmap : Bitmap
@@ -300,7 +299,7 @@ private fun FlingAidTopAppBar(
             titleContentColor = colorScheme.primary,
         ),
 
-        modifier = Modifier.height(48.dp),
+        modifier = Modifier.height(Global.TopAppBarHeight),
         title =
         {
             val titleText = if (currentPlayerName == "") screenTitle else "$screenTitle : $currentPlayerName"

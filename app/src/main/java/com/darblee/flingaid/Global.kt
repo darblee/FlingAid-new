@@ -1,5 +1,6 @@
 package com.darblee.flingaid
 
+import androidx.compose.ui.unit.dp
 import com.darblee.flingaid.ui.Direction
 
 object Global {
@@ -11,4 +12,5 @@ object Global {
     var totalProcessCount : Float = 0.0F
     const val debugPrefix = "Flinfo:"
     const val boardFileName = "Board.txt"
+    val TopAppBarHeight = 48.0.dp
 }

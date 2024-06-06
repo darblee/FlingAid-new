@@ -101,9 +101,7 @@ fun SolverScreen(
 {
     val gameViewModel: GameViewModel = viewModel()
     Column (
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 48.dp),  // Height of the TopAppBar
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -133,7 +131,7 @@ fun SolverScreen(
             showWinnableMoveToUser,
             uiState
         )
-        DrawFlingBoard(modifier, gameViewModel, uiState)
+        DrawFlingBoard(modifier = Modifier.fillMaxSize(), gameViewModel, uiState)
     }
 }
 

@@ -59,19 +59,23 @@ fun SetUpNavGraph(
         }
 
         composable<Screen.Game>{
-            onScreenChange.invoke("Game")
+            onScreenChange.invoke(stringResource(id = R.string.game_title))
             GameScreen(
                 modifier = Modifier
-                .fillMaxSize()) {
+                    .fillMaxSize()
+                    .padding(top = Global.TopAppBarHeight))  // Height of the TopAppBar
+            {
                 navController.popBackStack()
             }
         }
 
         composable<Screen.Solver>{
-            onScreenChange.invoke("Solver")
+            onScreenChange.invoke(stringResource(id = R.string.solver_title))
             SolverScreen(
-                modifier = Modifier.fillMaxSize()
-            ) {
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = Global.TopAppBarHeight))  // Height of the TopAppBar
+            {
                 navController.popBackStack()
             }
         }

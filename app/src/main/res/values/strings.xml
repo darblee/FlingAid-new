@@ -4,4 +4,6 @@
     <string name="player_name">Player Name</string>
     <string name="clear_name">Clear Name</string>
     <string name="back">Back</string>
+    <string name="solver_title">Solver</string>
+    <string name="game_title">Game</string>
 </resources>
