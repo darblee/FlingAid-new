@@ -35,10 +35,13 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -343,6 +346,9 @@ private fun FlingAidTopAppBar(
                 onDismissRequest = { menuExpanded = false },
             ) {
                 DropdownMenuItem(
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Filled.Info, contentDescription = "About")
+                    },
                     text = { Text(text = "About") },
                     onClick = {
                         showAboutDialogBox = true
@@ -350,6 +356,9 @@ private fun FlingAidTopAppBar(
                     }
                 )
                 DropdownMenuItem(
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
+                    },
                     text = { Text(text = "Setting...") },
                     onClick = {
                         showSettingDialogBox = true
@@ -357,6 +366,9 @@ private fun FlingAidTopAppBar(
                     }
                 )
                 DropdownMenuItem(
+                    leadingIcon = {
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Exit")
+                    },
                     text = { Text("Exit") },
                     onClick = {
                         menuExpanded = false
