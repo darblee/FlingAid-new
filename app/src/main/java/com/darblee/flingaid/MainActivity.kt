@@ -196,6 +196,30 @@ class MainActivity : ComponentActivity()
 }
 
 @Composable
+private fun MainViewImplementation(
+    onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
+    currentTheme: ColorThemeOption)
+{
+    var currentScreenName by remember { mutableStateOf("Fling Aid") }
+
+    // When doing back press on main screen, confirm with the user whether
+    // it should exit the app or not
+    val backPressed = remember { mutableStateOf(false) }
+    BackPressHandler(onBackPressed = { backPressed.value = true })
+
+    if (backPressed.value)
+        ExitAlertDialog(onDismiss = { backPressed.value = false}, onExit = { exitProcess(1)})
+
+    val navController = rememberNavController()
+
+    Scaffold (
+        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme, currentScreenName) }
+    ) { contentPadding ->
+        SetUpNavGraph(navController = navController, contentPadding, onScreenChange = { newScreenTitle -> currentScreenName = newScreenTitle } )
+    }
+}
+
+@Composable
 private fun SetupAllBitMapImagesOnAppStart()
 {
     gUpArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
@@ -374,30 +398,6 @@ private fun FlingAidTopAppBar(
             },
             gSoundOn
         )
-    }
-}
-
-@Composable
-private fun MainViewImplementation(
-    onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
-    currentTheme: ColorThemeOption)
-{
-    var currentScreenName by remember { mutableStateOf("Fling Aid") }
-
-    // When doing back press on main screen, confirm with the user whether
-    // it should exit the app or not
-    val backPressed = remember { mutableStateOf(false) }
-    BackPressHandler(onBackPressed = { backPressed.value = true })
-
-    if (backPressed.value)
-        ExitAlertDialog(onDismiss = { backPressed.value = false}, onExit = { exitProcess(1)})
-
-    val navController = rememberNavController()
-
-    Scaffold (
-        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme, currentScreenName) }
-    ) { contentPadding ->
-        SetUpNavGraph(navController = navController, contentPadding, onScreenChange = { newScreenTitle -> currentScreenName = newScreenTitle } )
     }
 }
 
