@@ -17,7 +17,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -80,7 +79,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -138,7 +136,7 @@ fun SolverScreen(
             gameViewModel.noNeedToDisplayNoWinnableToastMessage()
         }
 
-        Instruction(uiState, onNavigateBack)
+        Instruction_DynamicLogo(uiState, onNavigateBack)
         ControlButtons(
             gameViewModel,
             findWinnableMoveButtonEnabled,
@@ -279,9 +277,15 @@ fun DisplayNoWinnableMoveToast()
     ).show()
 }
 
+/*
+ * Provide instruction on how to play Solver Screen.
+ *
+ * Display the game logo. Game logo also change to animation
+ * when it is searching for the solution.
+ */
 @Composable
-fun Instruction(uiState: GameUiState,
-                onNavigateBack: () -> Unit)
+fun Instruction_DynamicLogo(uiState: GameUiState,
+                            onNavigateBack: () -> Unit)
 {
     val logoSize = 125.dp
     Row(
@@ -314,9 +318,9 @@ fun Instruction(uiState: GameUiState,
                         (Global.totalProcessCount) * 100.0).toFloat()
                 val percentComplete =
                     String.format(Locale.getDefault(), "%.1f%%", newPercentageValue)
-
                 Text("Searching $percentComplete",
-                    style = MaterialTheme.typography.bodySmall)
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.TopCenter))
             }
         }
         Column(Modifier.padding(5.dp)) {
