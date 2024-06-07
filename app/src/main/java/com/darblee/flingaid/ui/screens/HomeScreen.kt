@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -53,14 +54,16 @@ fun HomeScreen(
     ) {
         Card(
             modifier = Modifier
-                .wrapContentSize(),
+                .wrapContentSize()
+                .align(alignment = Alignment.CenterHorizontally)
+                .defaultMinSize(minWidth = 200.dp),
             elevation = CardDefaults.cardElevation(10.dp),
             colors = CardDefaults.cardColors(MaterialTheme.colorScheme.onSecondary),
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
-                modifier = Modifier.wrapContentSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.wrapContentSize()
+                    .align(Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.SpaceEvenly
             ) {
                 Image(
@@ -68,7 +71,9 @@ fun HomeScreen(
                     contentScale = ContentScale.Fit)
                 Button(
                     onClick = { navController.navigate(Screen.Game) },
-                    modifier = Modifier.padding(10.dp))
+                    modifier = Modifier.padding(bottom = 20.dp)
+                        .align(Alignment.CenterHorizontally)
+                    )
                 {
                     Text(text = "Game", style = MaterialTheme.typography.titleLarge)
                 }
@@ -76,13 +81,15 @@ fun HomeScreen(
         }
         Card(
             modifier = Modifier
-                .wrapContentSize(),
+                .wrapContentSize()
+                .defaultMinSize(minWidth = 200.dp),
             elevation = CardDefaults.cardElevation(10.dp),
             colors = CardDefaults.cardColors(MaterialTheme.colorScheme.onTertiary),
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
-                modifier = Modifier.wrapContentSize(),
+                modifier = Modifier.wrapContentSize()
+                    .align(Alignment.CenterHorizontally),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
@@ -90,7 +97,9 @@ fun HomeScreen(
                     contentScale = ContentScale.Fit)
                 Button(
                     onClick = { navController.navigate(Screen.Solver) },
-                    modifier = Modifier.padding(10.dp))
+                    modifier = Modifier.padding(bottom = 20.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
                 {
                     Text(text = "Solution Finder", style = MaterialTheme.typography.titleLarge)
                 }
@@ -102,7 +111,10 @@ fun HomeScreen(
             modifier = Modifier.padding(10.dp)
         )
         {
-            Icon(imageVector = Icons.AutoMirrored.Filled.ExitToApp, "Exit")
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                contentDescription = "Exit",
+                modifier = Modifier.padding(end = 5.dp))
             Text(text = "Exit", style = MaterialTheme.typography.titleLarge)
         }
     }

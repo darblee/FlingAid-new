@@ -421,43 +421,36 @@ private fun AboutDialogPopup(onDismissRequest: () -> Unit,
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(275.dp)
-                .padding(16.dp),
+                .padding(5.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.fling),
+                    painter = painterResource(id = R.drawable.ball),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .height(100.dp)
                 )
                 Text(
-                    text = stringResource(id = R.string.version) +
-                            " : " + BuildConfig.BUILD_TIME,
-                    fontSize = 10.sp,
-                    modifier = Modifier.padding(12.dp),
+                    text = stringResource(id = R.string.version) + " : " + BuildConfig.BUILD_TIME,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 10.dp, start = 5.dp, end = 5.dp)
                 )
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.wrapContentWidth(),
                     horizontalArrangement = Arrangement.Center,
                 ) {
                     Button(
-                        modifier = Modifier.width(100.dp),
-                        onClick = { onConfirmation() }
+                        onClick = { onConfirmation() },
+                        modifier = Modifier.padding(bottom = 10.dp)
                     ) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(
-                            text = stringResource(id = R.string.back )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.padding(end = 5.dp))
+                        Text(text = stringResource(id = R.string.back )
                         )
                     }
                 }
@@ -475,20 +468,19 @@ private fun SettingPopup(
     onPlayerNameUpdated: (newPlayerName: String) -> Unit,
     currentPlayerName: String,
     onSoundSettingUpdated: (soundOn : Boolean) -> Unit,
-    currentSoundSetting: Boolean
-)
+    currentSoundSetting: Boolean)
 {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
             modifier = Modifier
-                .width(275.dp)
+                .width(300.dp)
                 .wrapContentHeight()
-                .padding(8.dp),
+                .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -497,17 +489,15 @@ private fun SettingPopup(
                 ColorThemeSetting(onColorThemeUpdated, currentTheme)
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Button(
-                        modifier = Modifier.width(125.dp),
-                        onClick = { onConfirmation() },
-
-                        ) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        Spacer(modifier = Modifier.weight(1f))
+                    modifier = Modifier.wrapContentWidth(),
+                    horizontalArrangement = Arrangement.Center)
+                {
+                    Button(onClick = { onConfirmation() })
+                    {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            modifier = Modifier.padding(end = 5.dp))
                         Text(
                             text = stringResource(id = R.string.back ),
                             fontSize = 14.sp
@@ -568,7 +558,7 @@ private fun PlayerNameSetting(
 private fun MusicSetting(onSoundSettingUpdated: (soundOn: Boolean) -> Unit, currentSoundSetting: Boolean)
 {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.wrapContentWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
@@ -649,8 +639,7 @@ private fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOp
                                 onColorThemeUpdated(newSelectedTheme)
                             },
                         )
-                        .padding(horizontal = 8.dp)
-                        .fillMaxWidth(),  // Make the entire row selectable
+                        .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     RadioButton(
