@@ -156,10 +156,9 @@ private fun Instruction_DynamicLogo(uiState: GameUiState,
             if (uiState.state == GameState.NotThinking) {
                 val imageModifier = Modifier
                     .size(logoSize)
-                    .border(BorderStroke(1.dp, Color.Black))
-                    .background(Color.Black)
+                    .background(MaterialTheme.colorScheme.background)
                 Image(
-                    painter = painterResource(id = R.drawable.fling),
+                    painter = painterResource(id = R.drawable.ball),
                     contentDescription = stringResource(id = R.string.app_name),
                     contentScale = ContentScale.Fit,
                     modifier = imageModifier
@@ -207,9 +206,14 @@ private fun Instruction_DynamicLogo(uiState: GameUiState,
             Spacer(modifier = Modifier.padding(10.dp))
 
             Button(
-                { onNavigateBack.invoke() }, Modifier
+                onClick = { onNavigateBack.invoke() },
+                Modifier
                     .defaultMinSize()
-                    .align(Alignment.CenterHorizontally)
+                    .align(Alignment.CenterHorizontally),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.primaryContainer
+                ),
             ) {
                 Icon(painterResource(id = R.drawable.home_image), "Home")
                 Text(
@@ -234,7 +238,7 @@ private fun ControlButtons(
             .fillMaxWidth()
             .wrapContentHeight(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly,
+        horizontalArrangement = Arrangement.SpaceAround,
     ) {
         val context = LocalContext.current
         Button(
