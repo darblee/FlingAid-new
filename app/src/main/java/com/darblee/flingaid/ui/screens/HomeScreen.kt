@@ -8,17 +8,23 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,6 +45,7 @@ fun HomeScreen(
     Column(
         modifier = modifier
             .background(MaterialTheme.colorScheme.background)
+            .wrapContentSize()
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly,
@@ -46,49 +53,57 @@ fun HomeScreen(
     ) {
         Card(
             modifier = Modifier
-                .width(200.dp)
-                .height(200.dp),
+                .wrapContentSize(),
             elevation = CardDefaults.cardElevation(10.dp),
             colors = CardDefaults.cardColors(MaterialTheme.colorScheme.onSecondary),
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.wrapContentSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
             ) {
-                Image(painter = painterResource(id = R.drawable.ball), contentDescription = "Game")
-                Button(onClick = {
-                    navController.navigate(Screen.Game)
-                }) {
-                    Text(text = "Game")
+                Image(
+                    painter = painterResource(id = R.drawable.ball), contentDescription = "Game",
+                    contentScale = ContentScale.Fit)
+                Button(
+                    onClick = { navController.navigate(Screen.Game) },
+                    modifier = Modifier.padding(10.dp))
+                {
+                    Text(text = "Game", style = MaterialTheme.typography.titleLarge)
                 }
             }
         }
         Card(
             modifier = Modifier
-                .width(200.dp)
-                .height(200.dp),
+                .wrapContentSize(),
             elevation = CardDefaults.cardElevation(10.dp),
             colors = CardDefaults.cardColors(MaterialTheme.colorScheme.onTertiary),
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.wrapContentSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Image(painter = painterResource(id = R.drawable.ball), contentDescription = "Game")
-                Button(onClick = {
-                    navController.navigate(Screen.Solver)
-                }) {
-                    Text(text = "Solution Finder")
+                Image(
+                    painter = painterResource(id = R.drawable.ball), contentDescription = "Game",
+                    contentScale = ContentScale.Fit)
+                Button(
+                    onClick = { navController.navigate(Screen.Solver) },
+                    modifier = Modifier.padding(10.dp))
+                {
+                    Text(text = "Solution Finder", style = MaterialTheme.typography.titleLarge)
                 }
             }
         }
 
-        Button(onClick = {
-            exitProcess(1)
-        }) {
-            Text(text = "Exit")
+        Button(
+            onClick = { exitProcess(1) },
+            modifier = Modifier.padding(10.dp)
+        )
+        {
+            Icon(imageVector = Icons.AutoMirrored.Filled.ExitToApp, "Exit")
+            Text(text = "Exit", style = MaterialTheme.typography.titleLarge)
         }
     }
 }

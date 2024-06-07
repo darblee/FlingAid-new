@@ -150,12 +150,13 @@ private fun Instruction_DynamicLogo(uiState: GameUiState,
         modifier = Modifier
             .fillMaxWidth()
             .padding(5.dp),
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.SpaceAround
     ) {
         Box {
             if (uiState.state == GameState.NotThinking) {
                 val imageModifier = Modifier
                     .size(logoSize)
+                    .align(Alignment.Center)
                     .background(MaterialTheme.colorScheme.background)
                 Image(
                     painter = painterResource(id = R.drawable.ball),
