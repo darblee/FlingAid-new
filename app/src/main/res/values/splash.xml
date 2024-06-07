@@ -3,7 +3,7 @@
 <resources>
     <style name="Theme.SplashScreen.MySplash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#FFD0BCFF</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/fling</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ball</item>
         <item name="postSplashScreenTheme">@style/Theme.SplashScreen</item>
     </style>
 </resources>

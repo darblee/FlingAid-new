@@ -573,7 +573,7 @@ private fun SolverScreenPreview()
     ) {
         Box {
             Image(
-                painter = painterResource(id = R.drawable.fling),
+                painter = painterResource(id = R.drawable.ball),
                 contentDescription = stringResource(id = R.string.app_name),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(150.dp)
