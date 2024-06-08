@@ -89,6 +89,7 @@ import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUiState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.Pos
+import com.darblee.flingaid.ui.theme.md_theme_dark_background
 import java.io.File
 import java.util.Locale
 
@@ -176,8 +177,9 @@ private fun Instruction_DynamicLogo(uiState: GameUiState,
                         (Global.totalProcessCount) * 100.0).toFloat()
                 val percentComplete =
                     String.format(Locale.getDefault(), "%.1f%%", newPercentageValue)
-                Text("Searching $percentComplete",
+                Text("$percentComplete Complete",
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.align(Alignment.TopCenter))
             }
         }

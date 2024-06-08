@@ -421,7 +421,7 @@ private fun AboutDialogPopup(onDismissRequest: () -> Unit,
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
             modifier = Modifier
-                .padding(5.dp),
+                .padding(25.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
             Column(
@@ -436,7 +436,7 @@ private fun AboutDialogPopup(onDismissRequest: () -> Unit,
                 Text(
                     text = stringResource(id = R.string.version) + " : " + BuildConfig.BUILD_TIME,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 10.dp, start = 5.dp, end = 5.dp)
+                    modifier = Modifier.padding(bottom = 10.dp, start = 10.dp, end = 10.dp)
                 )
                 Row(
                     modifier = Modifier.wrapContentWidth(),
@@ -476,11 +476,11 @@ private fun SettingPopup(
             modifier = Modifier
                 .width(300.dp)
                 .wrapContentHeight()
-                .padding(16.dp),
+                .padding(25.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
             Column(
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -523,11 +523,11 @@ private fun PlayerNameSetting(
             value = rawText,
             onValueChange =
             { newRawText ->
-                rawText = newRawText
-                onPlayerNameUpdated(newRawText) // Call the lambda function to update new player name
+                rawText = newRawText.trimStart() // Remove leading spaces
+                onPlayerNameUpdated(rawText) // Call the lambda function to update new player name
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    preference.savePlayerNameToSetting(newRawText)
+                    preference.savePlayerNameToSetting(rawText)
                 }
             },
             label = { Text(text = stringResource(id = R.string.player_name))},
@@ -538,14 +538,14 @@ private fun PlayerNameSetting(
             },
             trailingIcon =
             {
-                IconButton(onClick =
-                {
-                    rawText = ""
-                    onPlayerNameUpdated("")
-                    CoroutineScope(Dispatchers.IO).launch {
-                        preference.savePlayerNameToSetting("")
-                    }
-                })
+                IconButton(
+                    onClick = {
+                        rawText = ""
+                        onPlayerNameUpdated("")
+                        CoroutineScope(Dispatchers.IO).launch {
+                            preference.savePlayerNameToSetting("")
+                        }
+                    })
                 {
                     Icon(imageVector = Icons.Filled.Clear, contentDescription = stringResource(id = R.string.clear_name))
                 }
@@ -564,6 +564,10 @@ private fun MusicSetting(onSoundSettingUpdated: (soundOn: Boolean) -> Unit, curr
     ) {
         Text("Music")
 
+        // add weight modifier to the row composable to ensure
+        // that the composable is measured after the other
+        // composable is measured. This create space between
+        // first item (left side) and second item (right side)
         Spacer(modifier = Modifier.weight(1f))
 
         var musicSwitch by remember {
@@ -614,6 +618,10 @@ private fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOp
             .padding(5.dp)
             .wrapContentWidth())
 
+        // add weight modifier to the row composable to ensure
+        // that the composable is measured after the other
+        // composable is measured. This create space between
+        // first item (left side) and second item (right side)
         Spacer(modifier = Modifier.weight(1f))
 
         Column(
