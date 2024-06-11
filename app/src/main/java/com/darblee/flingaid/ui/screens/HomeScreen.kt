@@ -33,13 +33,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.darblee.flingaid.R
 import com.darblee.flingaid.Screen
-import com.darblee.flingaid.ui.GameViewModel
+import com.darblee.flingaid.ui.SolverViewModel
 import kotlin.system.exitProcess
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    gameViewModel: GameViewModel = viewModel(),
+    solverViewModel: SolverViewModel = viewModel(),
     navController: NavHostController,
     innerPadding: PaddingValues)
 {

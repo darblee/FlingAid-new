@@ -11,11 +11,9 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -85,11 +83,10 @@ import com.darblee.flingaid.gLeftArrowBitmap
 import com.darblee.flingaid.gRightArrowBitmap
 import com.darblee.flingaid.gUpArrowBitmap
 import com.darblee.flingaid.ui.Direction
-import com.darblee.flingaid.ui.GameState
-import com.darblee.flingaid.ui.GameUiState
-import com.darblee.flingaid.ui.GameViewModel
-import com.darblee.flingaid.ui.Pos
-import com.darblee.flingaid.ui.theme.md_theme_dark_background
+import com.darblee.flingaid.ui.SolverState
+import com.darblee.flingaid.ui.SolverUiState
+import com.darblee.flingaid.ui.SolverViewModel
+import com.darblee.flingaid.ui.SolverGridPos
 import java.io.File
 import java.util.Locale
 
@@ -100,21 +97,21 @@ fun SolverScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit)
 {
-    val gameViewModel: GameViewModel = viewModel()
+    val solverViewModel: SolverViewModel = viewModel()
     Column (
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val uiState by gameViewModel.uiState.collectAsState()
+        val uiState by solverViewModel.uiState.collectAsState()
         Log.i(Global.debugPrefix, "MainViewImplementation : Thinking status: ${uiState.state}")
         gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
 
-        gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
+        solverViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
 
         var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
         findWinnableMoveButtonEnabled =
-            ((gameViewModel.ballCount() > 1) && (!gameViewModel.foundWinnableMove()))
+            ((solverViewModel.ballCount() > 1) && (!solverViewModel.foundWinnableMove()))
 
         var showWinnableMoveToUser by remember { mutableStateOf(false) }
         showWinnableMoveToUser =
@@ -122,17 +119,17 @@ fun SolverScreen(
 
         if (uiState.needToDisplayNoWinnableToastMessage) {
             DisplayNoWinnableMoveToast()
-            gameViewModel.noNeedToDisplayNoWinnableToastMessage()
+            solverViewModel.noNeedToDisplayNoWinnableToastMessage()
         }
 
         Instruction_DynamicLogo(uiState, onNavigateBack)
-        ControlButtons(
-            gameViewModel,
+        ControlButtonsForSolver(
+            solverViewModel,
             findWinnableMoveButtonEnabled,
             showWinnableMoveToUser,
             uiState
         )
-        DrawFlingBoard(modifier = Modifier.fillMaxSize(), gameViewModel, uiState)
+        DrawFlingBoard(modifier = Modifier.fillMaxSize(), solverViewModel, uiState)
     }
 }
 
@@ -143,8 +140,8 @@ fun SolverScreen(
  * when it is searching for the solution.
  */
 @Composable
-private fun Instruction_DynamicLogo(uiState: GameUiState,
-                            onNavigateBack: () -> Unit)
+private fun Instruction_DynamicLogo(uiState: SolverUiState,
+                                    onNavigateBack: () -> Unit)
 {
     val logoSize = 125.dp
     Row(
@@ -154,7 +151,7 @@ private fun Instruction_DynamicLogo(uiState: GameUiState,
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         Box {
-            if (uiState.state == GameState.NotThinking) {
+            if (uiState.state == SolverState.NotThinking) {
                 val imageModifier = Modifier
                     .size(logoSize)
                     .align(Alignment.Center)
@@ -228,11 +225,11 @@ private fun Instruction_DynamicLogo(uiState: GameUiState,
 }
 
 @Composable
-private fun ControlButtons(
-    gameViewModel: GameViewModel = viewModel(),
+private fun ControlButtonsForSolver(
+    solverViewModel: SolverViewModel = viewModel(),
     findWinnableMoveButtonEnabled: Boolean,
     showWinnableMoveToUser: Boolean,
-    uiState: GameUiState)
+    uiState: SolverUiState)
 {
     val audio : MediaPlayer = MediaPlayer.create(LocalContext.current, R.raw.you_won)
 
@@ -249,15 +246,15 @@ private fun ControlButtons(
                 Log.i(Global.debugPrefix, ">>> Starting thinking : Button Pressed")
                 if (showWinnableMoveToUser) {
                     // Make the actual move before find the next winnable move
-                    gameViewModel.makeWinningMove(uiState)
-                    gameViewModel.saveBallPositions(gBoardFile)
+                    solverViewModel.makeWinningMove(uiState)
+                    solverViewModel.saveBallPositions(gBoardFile)
                 }
-                if (gameViewModel.ballCount() == 1) {
+                if (solverViewModel.ballCount() == 1) {
                     audio.start()
                     Toast.makeText(context, "You won!", Toast.LENGTH_SHORT).show()
                 } else {
                     Log.i(Global.debugPrefix, ">>> Looking for winnable move")
-                    gameViewModel.findWinningMove(gameViewModel)
+                    solverViewModel.findWinningMove(solverViewModel)
                 }
             }, // OnClick
             shape = RoundedCornerShape(5.dp),
@@ -270,7 +267,7 @@ private fun ControlButtons(
                 .weight(3F)
                 .padding(5.dp),
             enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) &&
-                    (uiState.state == GameState.NotThinking))
+                    (uiState.state == SolverState.NotThinking))
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
@@ -283,7 +280,7 @@ private fun ControlButtons(
 
         Button(
             onClick = {
-                gameViewModel.reset(gBoardFile)
+                solverViewModel.reset(gBoardFile)
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -324,8 +321,8 @@ private fun DisplayNoWinnableMoveToast()
 @Composable
 private fun DrawFlingBoard(
     modifier: Modifier = Modifier,
-    gameViewModel: GameViewModel = viewModel(),
-    uiState: GameUiState)
+    solverViewModel: SolverViewModel = viewModel(),
+    uiState: SolverUiState)
 {
     var gridSize by rememberSaveable {
         mutableFloatStateOf(0f)
@@ -368,8 +365,8 @@ private fun DrawFlingBoard(
                     detectTapGestures(
                         onTap = { tapOffset ->
                             // For unknown reason, we can not use uiState.state
-                            val thinkingStatus = gameViewModel.getThinkingStatus()
-                            if (thinkingStatus == GameState.Thinking) {
+                            val thinkingStatus = solverViewModel.getThinkingStatus()
+                            if (thinkingStatus == SolverState.Thinking) {
                                 Toast
                                     .makeText(
                                         context,
@@ -381,9 +378,9 @@ private fun DrawFlingBoard(
                                 val row = (tapOffset.y / gridSize).toInt()
                                 val col = (tapOffset.x / gridSize).toInt()
                                 if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
-                                    gameViewModel.toggleBallPosition(Pos(row, col))
+                                    solverViewModel.toggleBallPosition(SolverGridPos(row, col))
                                     view.playSoundEffect(SoundEffectConstants.CLICK)
-                                    gameViewModel.saveBallPositions(gBoardFile)
+                                    solverViewModel.saveBallPositions(gBoardFile)
                                 }
                             } // if thinkingStatus != GameState.thinking
                         }, // onTap
@@ -404,12 +401,12 @@ private fun DrawFlingBoard(
             val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
                 ballSize, ballSize, false).asImageBitmap()
 
-            drawBalls(this, gameViewModel, gridSize, displayBallImage)
+            drawBalls(this, solverViewModel, gridSize, displayBallImage)
 
-            if (gameViewModel.ballCount() > 1) {
+            if (solverViewModel.ballCount() > 1) {
                 // Draw the winning arrow if there is a winning move identified
-                if (gameViewModel.foundWinnableMove()) {
-                    val moveCount = gameViewModel.getWinningMoveCount(uiState)
+                if (solverViewModel.foundWinnableMove()) {
+                    val moveCount = solverViewModel.getWinningMoveCount(uiState)
                     showWinningMove(this, gridSize, uiState, animate, moveCount, displayBallImage)
                 }
             }
@@ -425,7 +422,7 @@ private fun DrawFlingBoard(
 private fun showWinningMove(
     drawScope: DrawScope,
     gridSize: Float,
-    uiState: GameUiState,
+    uiState: SolverUiState,
     animate: Animatable<Float, AnimationVector1D>,
     gWinningMoveCount: Int,
     displayBallImage: ImageBitmap)
@@ -491,13 +488,13 @@ private fun showWinningMove(
 // Draw all the balls in the provided canvas
 private fun drawBalls(
     drawScope: DrawScope,
-    gameViewModel: GameViewModel,
+    solverViewModel: SolverViewModel,
     gridSize: Float,
     displayBallImage: ImageBitmap)
 {
     // Draw all the balls
     with (drawScope) {
-        gameViewModel.ballPositionList().forEach { pos ->
+        solverViewModel.ballPositionList().forEach { pos ->
             drawImage(
                 image = displayBallImage,
                 topLeft = Offset(

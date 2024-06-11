@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.darblee.flingaid.Global
 
-class GameEngine {
+class SolverEngine {
     private var flingGrid = Array(Global.MaxRowSize) { BooleanArray(Global.MaxColSize) }
 
     init {
@@ -20,16 +20,16 @@ class GameEngine {
         }
     }
 
-    fun populateGrid(ballPositionList: SnapshotStateList<Pos>)
+    fun populateGrid(ballPositionList: SnapshotStateList<SolverGridPos>)
     {
         ballPositionList.forEach {pos ->
             flingGrid[pos.row][pos.col] = true
         }
     }
 
-    private fun duplicate() : GameEngine
+    private fun duplicate() : SolverEngine
     {
-        val tempBoard = GameEngine()
+        val tempBoard = SolverEngine()
 
         // Clone the board
         repeat (Global.MaxRowSize) { curRow ->
@@ -797,16 +797,16 @@ class GameEngine {
         return
     }
 
-    fun updateBallList(): SnapshotStateList<Pos>
+    fun updateBallList(): SnapshotStateList<SolverGridPos>
     {
-        val ballList: SnapshotStateList<Pos> = SnapshotStateList<Pos>().apply {
+        val ballList: SnapshotStateList<SolverGridPos> = SnapshotStateList<SolverGridPos>().apply {
 
             // Clone the board
             repeat (Global.MaxRowSize) { curRow ->
                 repeat(Global.MaxColSize) { curCol ->
                     if (flingGrid[curRow][curCol]) {
-                        val pos = Pos(curRow,curCol)
-                        add(pos)
+                        val solverGridPos = SolverGridPos(curRow,curCol)
+                        add(solverGridPos)
                     }
                 }
             }

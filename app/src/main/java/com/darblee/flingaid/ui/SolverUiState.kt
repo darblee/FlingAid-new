@@ -2,7 +2,7 @@ package com.darblee.flingaid.ui
 
 import kotlinx.serialization.Serializable
 
-enum class GameState {
+enum class SolverState {
     Thinking,
     NotThinking,
 }
@@ -10,7 +10,7 @@ enum class GameState {
 enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
 
 @Serializable
-data class Pos(
+data class SolverGridPos(
     val row: Int,
     val col: Int,
 )
@@ -21,9 +21,9 @@ data class Pos(
 // It will be managed in a observable flow called "STateFlow"
 // Android composable will listen for it.
 
-data class GameUiState (
-    var state: GameState = GameState.NotThinking,
-    var winningPosition: Pos =  Pos(-1, -1),
+data class SolverUiState (
+    var state: SolverState = SolverState.NotThinking,
+    var winningPosition: SolverGridPos =  SolverGridPos(-1, -1),
     var foundWinningDirection : Direction = Direction.NO_WINNING_DIRECTION,
     val needToDisplayNoWinnableToastMessage: Boolean = false,
     val thinkingProgress: Float = 0.0F
