@@ -1,10 +1,11 @@
 package com.darblee.flingaid.ui.screens
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -30,9 +30,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,8 +48,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -62,7 +62,7 @@ import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
-import com.darblee.flingaid.ui.SolverState
+import kotlin.math.abs
 
 @Composable
 fun GameScreen(modifier: Modifier = Modifier,
@@ -79,10 +79,10 @@ fun GameScreen(modifier: Modifier = Modifier,
 
     //    gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
 
-        InstructionLogo(uiState, onNavigateBack)
+        InstructionLogo(onNavigateBack)
         GameControlButtonsForGame(gameViewModel, uiState)
 
-        DrawFlingBoardForGame(modifier = Modifier.fillMaxSize(), gameViewModel, uiState)
+        DrawGameBoard(modifier = Modifier.fillMaxSize(), gameViewModel, uiState)
     }
 }
 
@@ -93,9 +93,7 @@ fun GameScreen(modifier: Modifier = Modifier,
  * when it is searching for the solution.
  */
 @Composable
-private fun InstructionLogo(
-    uiState: GameUIState,
-    onNavigateBack: () -> Unit)
+private fun InstructionLogo(onNavigateBack: () -> Unit)
 {
     val logoSize = 125.dp
     Row(
@@ -198,9 +196,9 @@ private fun GameControlButtonsForGame(
                 .padding(5.dp),
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
-            Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Reset",
+            Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Undo",
                 modifier = Modifier.size(iconWidth))
-            Text("Reset")
+            Text("Undo")
         }
     }
 }
@@ -212,7 +210,7 @@ private fun GameControlButtonsForGame(
  *       - winning arrow (if there is solution after "find winnable movable" submission
  */
 @Composable
-private fun DrawFlingBoardForGame(
+private fun DrawGameBoard(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUIState
@@ -221,6 +219,10 @@ private fun DrawFlingBoardForGame(
     var gridSize by rememberSaveable {
         mutableFloatStateOf(0f)
     }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+    var row by remember { mutableIntStateOf(-1) }
+    var col by remember { mutableIntStateOf(-1) }
 
     Box(
         modifier = Modifier
@@ -234,20 +236,59 @@ private fun DrawFlingBoardForGame(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
-        val context = LocalContext.current
-        val view = LocalView.current
         val lineColor = MaterialTheme.colorScheme.outline
 
         val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
-
+        val minSwipeOffset = 100
         Canvas(
             modifier = modifier
                 .fillMaxSize()
                 .padding(15.dp)
                 .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = {},
-                    ) // detectTapGestures
+                    detectDragGestures(
+                        onDragStart = { offset: Offset ->
+                             row = (offset.y / gridSize).toInt()
+                             col = (offset.x / gridSize).toInt()
+                            Log.i(Global.debugPrefix, "Offset is row: $row, col: $col")
+                        },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetX += dragAmount.x
+                            offsetY += dragAmount.y
+                        },
+                        onDragEnd = {
+                            when {
+                                (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
+                                    Log.i(Global.debugPrefix, "Swipe left from $row, $col for length $offsetX")
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    row = -1
+                                    col = -1
+                                }
+                                (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
+                                    Log.i(Global.debugPrefix, "Swipe right from $row, $col for length $offsetX")
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    row = -1
+                                    col = -1
+                                }
+                                (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
+                                    Log.i(Global.debugPrefix, "Swipe Up from $row, $col for length $offsetY")
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    row = -1
+                                    col = -1
+                                }
+                                (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
+                                    Log.i(Global.debugPrefix, "Swipe down from $row, $col for length $offsetY")
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    row = -1
+                                    col = -1
+                                }
+                            }
+                        }
+                    )
                 } // .pointerInput
         ) {
             val canvasWidth = size.width
