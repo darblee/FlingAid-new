@@ -31,7 +31,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -221,8 +220,8 @@ private fun DrawGameBoard(
     }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
-    var row by remember { mutableIntStateOf(-1) }
-    var col by remember { mutableIntStateOf(-1) }
+    var dragRow by remember { mutableIntStateOf(-1) }
+    var dragCol by remember { mutableIntStateOf(-1) }
 
     Box(
         modifier = Modifier
@@ -239,7 +238,8 @@ private fun DrawGameBoard(
         val lineColor = MaterialTheme.colorScheme.outline
 
         val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
-        val minSwipeOffset = 100
+
+        val minSwipeOffset = gridSize
         Canvas(
             modifier = modifier
                 .fillMaxSize()
@@ -247,9 +247,9 @@ private fun DrawGameBoard(
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { offset: Offset ->
-                             row = (offset.y / gridSize).toInt()
-                             col = (offset.x / gridSize).toInt()
-                            Log.i(Global.debugPrefix, "Offset is row: $row, col: $col")
+                             dragRow = (offset.y / gridSize).toInt()
+                             dragCol = (offset.x / gridSize).toInt()
+                            Log.i(Global.debugPrefix, "Offset is row: $dragRow, col: $dragCol")
                         },
                         onDrag = { change, dragAmount ->
                             change.consume()
@@ -259,36 +259,36 @@ private fun DrawGameBoard(
                         onDragEnd = {
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Log.i(Global.debugPrefix, "Swipe left from $row, $col for length $offsetX")
+                                    Log.i(Global.debugPrefix, "Swipe left from $dragRow, $dragCol for length $offsetX")
                                     offsetX = 0F
                                     offsetY = 0F
-                                    row = -1
-                                    col = -1
+                                    dragRow = -1
+                                    dragCol = -1
                                 }
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Log.i(Global.debugPrefix, "Swipe right from $row, $col for length $offsetX")
+                                    Log.i(Global.debugPrefix, "Swipe right from $dragRow, $dragCol for length $offsetX")
                                     offsetX = 0F
                                     offsetY = 0F
-                                    row = -1
-                                    col = -1
+                                    dragRow = -1
+                                    dragCol = -1
                                 }
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Log.i(Global.debugPrefix, "Swipe Up from $row, $col for length $offsetY")
+                                    Log.i(Global.debugPrefix, "Swipe Up from $dragRow, $dragCol for length $offsetY")
                                     offsetX = 0F
                                     offsetY = 0F
-                                    row = -1
-                                    col = -1
+                                    dragRow = -1
+                                    dragCol = -1
                                 }
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Log.i(Global.debugPrefix, "Swipe down from $row, $col for length $offsetY")
+                                    Log.i(Global.debugPrefix, "Swipe down from $dragRow, $dragCol for length $offsetY")
                                     offsetX = 0F
                                     offsetY = 0F
-                                    row = -1
-                                    col = -1
+                                    dragRow = -1
+                                    dragCol = -1
                                 }
                             }
                         }
-                    )
+                    ) // detectDragGestures
                 } // .pointerInput
         ) {
             val canvasWidth = size.width

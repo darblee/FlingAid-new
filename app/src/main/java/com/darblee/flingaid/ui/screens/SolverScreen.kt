@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -89,6 +91,7 @@ import com.darblee.flingaid.ui.SolverViewModel
 import com.darblee.flingaid.ui.SolverGridPos
 import java.io.File
 import java.util.Locale
+import kotlin.math.abs
 
 lateinit var gBoardFile : File
 
@@ -357,6 +360,13 @@ private fun DrawFlingBoard(
 
         val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
 
+        var offsetX by remember { mutableFloatStateOf(0f) }
+        var offsetY by remember { mutableFloatStateOf(0f) }
+        var dragRow by remember { mutableIntStateOf(-1) }
+        var dragCol by remember { mutableIntStateOf(-1) }
+
+        val minSwipeOffset = gridSize
+
         Canvas(
             modifier = modifier
                 .fillMaxSize()
@@ -386,6 +396,53 @@ private fun DrawFlingBoard(
                         }, // onTap
                     ) // detectTapGestures
                 } // .pointerInput
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset: Offset ->
+                            dragRow = (offset.y / gridSize).toInt()
+                            dragCol = (offset.x / gridSize).toInt()
+                            Log.i(Global.debugPrefix, "Offset is row: $dragRow, col: $dragCol")
+                        },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetX += dragAmount.x
+                            offsetY += dragAmount.y
+                        },
+                        onDragEnd = {
+                            when {
+                                (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
+                                    Log.i(Global.debugPrefix, "Swipe left from $dragRow, $dragCol for length $offsetX")
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    dragRow = -1
+                                    dragCol = -1
+                                }
+                                (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
+                                    Log.i(Global.debugPrefix, "Swipe right from $dragRow, $dragCol for length $offsetX")
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    dragRow = -1
+                                    dragCol = -1
+                                }
+                                (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
+                                    Log.i(Global.debugPrefix, "Swipe Up from $dragRow, $dragCol for length $offsetY")
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    dragRow = -1
+                                    dragCol = -1
+                                }
+                                (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
+                                    Log.i(Global.debugPrefix, "Swipe down from $dragRow, $dragCol for length $offsetY")
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    dragRow = -1
+                                    dragCol = -1
+                                }
+                            }
+                        }
+                    ) // detectDragGestures
+                } // .pointerInput
+
         ) {
             val canvasWidth = size.width
             val canvasHeight = size.height
