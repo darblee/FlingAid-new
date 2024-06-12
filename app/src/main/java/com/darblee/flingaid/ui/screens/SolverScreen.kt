@@ -7,7 +7,7 @@ import android.view.SoundEffectConstants
 import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
@@ -335,10 +335,10 @@ private fun DrawFlingBoard(
 
     LaunchedEffect(Unit){
         animate.animateTo(targetValue = 1f, animationSpec =
-        infiniteRepeatable(
-            animation = tween(1000,easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        )
+            infiniteRepeatable(
+                animation = tween(1000,easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Restart
+            )
         )
     }
 
