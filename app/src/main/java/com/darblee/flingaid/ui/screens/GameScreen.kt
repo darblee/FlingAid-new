@@ -252,6 +252,13 @@ private fun DrawGameBoard(
                             Log.i(Global.debugPrefix, "Offset is row: $dragRow, col: $dragCol")
                         },
                         onDrag = { change, dragAmount ->
+
+                            /*
+                             * Need to consume this event, so that its parent knows not to react to
+                             * it anymore. What change.consume() does is it prevent pointerInput
+                             * above it to receive events by returning PointerInputChange.positionChange()
+                             * Offset.Zero PointerInputChange.isConsumed true.
+                             */
                             change.consume()
                             offsetX += dragAmount.x
                             offsetY += dragAmount.y
