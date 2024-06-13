@@ -132,7 +132,7 @@ fun SolverScreen(
             showWinnableMoveToUser,
             uiState
         )
-        DrawFlingBoard(modifier = Modifier.fillMaxSize(), solverViewModel, uiState)
+        DrawSolverBoard(modifier = Modifier.fillMaxSize(), solverViewModel, uiState)
     }
 }
 
@@ -316,21 +316,17 @@ private fun DisplayNoWinnableMoveToast()
 }
 
 /*
- *  Draw the Fling Game Board:
+ *  Draw the Solver Game Board:
  *       - Grid
  *       - all the balls
  *       - winning arrow (if there is solution after "find winnable movable" submission
  */
 @Composable
-private fun DrawFlingBoard(
+private fun DrawSolverBoard(
     modifier: Modifier = Modifier,
     solverViewModel: SolverViewModel = viewModel(),
     uiState: SolverUiState)
 {
-    var gridSize by rememberSaveable {
-        mutableFloatStateOf(0f)
-    }
-
     val animate = remember { Animatable(initialValue = 0f) }
 
     LaunchedEffect(Unit){
@@ -357,6 +353,9 @@ private fun DrawFlingBoard(
         val context = LocalContext.current
         val view = LocalView.current
         val lineColor = MaterialTheme.colorScheme.outline
+        var gridSize by rememberSaveable {
+            mutableFloatStateOf(0f)
+        }
 
         val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
 
@@ -465,7 +464,7 @@ private fun DrawFlingBoard(
             val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
                 ballSize, ballSize, false).asImageBitmap()
 
-            drawBalls(this, solverViewModel, gridSize, displayBallImage)
+            drawSolverBalls(this, solverViewModel, gridSize, displayBallImage)
 
             if (solverViewModel.ballCount() > 1) {
                 // Draw the winning arrow if there is a winning move identified
@@ -550,7 +549,7 @@ private fun showWinningMove(
 }
 
 // Draw all the balls in the provided canvas
-private fun drawBalls(
+private fun drawSolverBalls(
     drawScope: DrawScope,
     solverViewModel: SolverViewModel,
     gridSize: Float,

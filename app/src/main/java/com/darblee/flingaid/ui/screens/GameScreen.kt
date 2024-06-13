@@ -203,10 +203,9 @@ private fun GameControlButtonsForGame(
 }
 
 /*
- *  Draw the Fling Game Board:
+ *  Draw the  Game Board:
  *       - Grid
  *       - all the balls
- *       - winning arrow (if there is solution after "find winnable movable" submission
  */
 @Composable
 private fun DrawGameBoard(
@@ -215,14 +214,6 @@ private fun DrawGameBoard(
     uiState: GameUIState
 )
 {
-    var gridSize by rememberSaveable {
-        mutableFloatStateOf(0f)
-    }
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
-    var dragRow by remember { mutableIntStateOf(-1) }
-    var dragCol by remember { mutableIntStateOf(-1) }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -236,10 +227,19 @@ private fun DrawGameBoard(
         contentAlignment = Alignment.Center,
     ) {
         val lineColor = MaterialTheme.colorScheme.outline
+        var gridSize by rememberSaveable {
+            mutableFloatStateOf(0f)
+        }
 
         val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
 
+        var offsetX by remember { mutableFloatStateOf(0f) }
+        var offsetY by remember { mutableFloatStateOf(0f) }
+        var dragRow by remember { mutableIntStateOf(-1) }
+        var dragCol by remember { mutableIntStateOf(-1) }
+
         val minSwipeOffset = gridSize
+
         Canvas(
             modifier = modifier
                 .fillMaxSize()
@@ -312,7 +312,7 @@ private fun DrawGameBoard(
             val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
                 ballSize, ballSize, false).asImageBitmap()
 
-            drawBallsForGame(this, gameViewModel, gridSize, displayBallImage)
+            drawGameBalls(this, gameViewModel, gridSize, displayBallImage)
         }
     }
 }
@@ -361,7 +361,7 @@ private fun drawGridForGame(
 }
 
 // Draw all the balls in the provided canvas
-private fun drawBallsForGame(
+private fun drawGameBalls(
     drawScope: DrawScope,
     gameViewModel: GameViewModel,
     gridSize: Float,
