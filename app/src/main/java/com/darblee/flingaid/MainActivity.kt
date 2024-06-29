@@ -6,6 +6,9 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
@@ -107,10 +110,6 @@ lateinit var gDownArrowBitmap : Bitmap
 lateinit var gLeftArrowBitmap : Bitmap
 lateinit var gRightArrowBitmap : Bitmap
 
-private lateinit var gGameAudio : MediaPlayer
-
-private var gSoundOn = false
-
 class MainActivity : ComponentActivity()
 {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,7 +122,10 @@ class MainActivity : ComponentActivity()
             val splashScreen = installSplashScreen()
 
             SetupAllBitMapImagesOnAppStart()
-            SetUpGameAudioOnAppStart()
+
+            // Audio manager instance to manage or handle the audio interruptions
+            val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+            SetUpGameAudioOnAppStart(audioManager)
 
             var colorTheme by remember {
                 mutableStateOf(ColorThemeOption.System)
@@ -146,7 +148,13 @@ class MainActivity : ComponentActivity()
                 colorTheme = PreferenceStore(applicationContext).readColorModeFromSetting()
 
                 gSoundOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
-                if (gSoundOn) gGameAudio.start()
+
+
+                if (gSoundOn) {
+                    if (gAudioFocusRequest == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                        gAudio_gameMusic.start()
+                    }
+                }
 
                 keepSplashOnScreen = false // End the splash screen
             }
@@ -260,10 +268,47 @@ private fun SetupAllBitMapImagesOnAppStart()
 }
 
 @Composable
-private fun SetUpGameAudioOnAppStart()
+private fun SetUpGameAudioOnAppStart(audioManager: AudioManager)
 {
-    gGameAudio =  MediaPlayer.create(LocalContext.current, R.raw.music)
-    gGameAudio.isLooping = true
+    // Media player is handled according to the change in the focus which Android system grants for
+    val audioFocusChangeListener =
+        AudioManager.OnAudioFocusChangeListener { focusChange ->
+            if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+                gAudio_gameMusic.start()
+                gAudio_youWon.start()
+            } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                gAudio_gameMusic.pause()
+                gAudio_gameMusic.seekTo(0)
+                gAudio_youWon.pause()
+                gAudio_youWon.seekTo(0)
+            } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+                gAudio_gameMusic.release()
+                gAudio_youWon.release()
+            }
+        }
+
+    // Audio attributes instance to set the playback attributes for the media player instance
+    // these attributes specify what type of media is to be played and used to callback the
+    // audioFocusChangeListener
+    val playbackAttributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_GAME)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build()
+
+    // set the playback attributes for the focus requester
+    val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+        .setAudioAttributes(playbackAttributes!!)
+        .setAcceptsDelayedFocusGain(true)
+        .setOnAudioFocusChangeListener(audioFocusChangeListener)
+        .build()
+
+    // Request the audio focus and store it in the int variable
+    gAudioFocusRequest = audioManager.requestAudioFocus(focusRequest)
+
+    // Initiate the media player instance with the media file from the raw folder
+    gAudio_youWon = MediaPlayer.create(LocalContext.current, R.raw.you_won)
+    gAudio_gameMusic =  MediaPlayer.create(LocalContext.current, R.raw.music)
+    gAudio_gameMusic.isLooping = true
 
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
@@ -274,13 +319,21 @@ private fun SetUpGameAudioOnAppStart()
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> {
-                    if (gSoundOn) gGameAudio.start()
+                    if (gSoundOn) {
+                        if (gAudioFocusRequest == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                            gAudio_gameMusic.start()
+                        }
+                    }
                 }
                 Lifecycle.Event.ON_RESUME -> {
-                    if (gSoundOn) gGameAudio.start()
+                    if (gSoundOn) {
+                        if (gAudioFocusRequest == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                            gAudio_gameMusic.start()
+                        }
+                    }
                 }
                 Lifecycle.Event.ON_STOP -> {
-                    gGameAudio.pause()
+                    gAudio_gameMusic.pause()
                     Log.i(Global.debugPrefix, "Music paused")
                 }
                 else -> {
@@ -670,11 +723,13 @@ private fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOp
 private fun setGameMusic(on: Boolean)
 {
     if (on) {
-        if (!gGameAudio.isPlaying) {
-            gGameAudio.start()
+        if (!gAudio_gameMusic.isPlaying) {
+            if (gAudioFocusRequest == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                gAudio_gameMusic.start()
+            }
         }
     } else {
-        gGameAudio.pause()
+        gAudio_gameMusic.pause()
     }
 }
 

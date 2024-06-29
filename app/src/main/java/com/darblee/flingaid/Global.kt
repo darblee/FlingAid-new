@@ -1,7 +1,14 @@
 package com.darblee.flingaid
 
+import android.media.MediaPlayer
 import androidx.compose.ui.unit.dp
-import com.darblee.flingaid.ui.Direction
+
+enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
+
+lateinit var gAudio_gameMusic : MediaPlayer
+lateinit var gAudio_youWon : MediaPlayer
+var gAudioFocusRequest : Int = 0
+var gSoundOn = false
 
 object Global {
     var task2_WinningDirection = Direction.NO_WINNING_DIRECTION
