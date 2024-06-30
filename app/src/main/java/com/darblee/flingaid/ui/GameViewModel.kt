@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class GameViewModel : ViewModel() {
     private var _ballPositionList = mutableStateListOf<Pos>()
@@ -50,4 +51,14 @@ class GameViewModel : ViewModel() {
         return (_ballPositionList)
     }
 
+    fun MoveBallPos(row:Int, col:Int)
+    {
+        _uiState.update { currentState ->
+            currentState.copy(
+                state = GameState.MoveBall,
+                moveFromRow = row,
+                moveFromCol = col,
+            )
+        }
+    }
 }

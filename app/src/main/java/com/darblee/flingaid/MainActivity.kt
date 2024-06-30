@@ -308,6 +308,7 @@ private fun SetUpGameAudioOnAppStart(audioManager: AudioManager)
     // Initiate the media player instance with the media file from the raw folder
     gAudio_youWon = MediaPlayer.create(LocalContext.current, R.raw.you_won)
     gAudio_gameMusic =  MediaPlayer.create(LocalContext.current, R.raw.music)
+
     gAudio_gameMusic.isLooping = true
 
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current

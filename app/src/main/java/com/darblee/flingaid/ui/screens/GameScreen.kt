@@ -2,6 +2,11 @@ package com.darblee.flingaid.ui.screens
 
 import android.graphics.Bitmap
 import android.util.Log
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.repeatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,10 +32,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -45,6 +52,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
@@ -61,6 +69,7 @@ import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
+import kotlinx.coroutines.delay
 import kotlin.math.abs
 
 @Composable
@@ -74,6 +83,10 @@ fun GameScreen(modifier: Modifier = Modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
           val uiState by gameViewModel.uiState.collectAsState()
+
+        var animateBalls by remember {
+            mutableStateOf(false)
+        }
     //    gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
 
     //    gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
@@ -81,7 +94,16 @@ fun GameScreen(modifier: Modifier = Modifier,
         InstructionLogo(onNavigateBack)
         GameControlButtonsForGame(gameViewModel, uiState)
 
-        DrawGameBoard(modifier = Modifier.fillMaxSize(), gameViewModel, uiState)
+        if (!animateBalls) {
+            DrawGameBoard(modifier = Modifier.fillMaxSize(), gameViewModel, uiState, onSwipeBall = {needToAnimate -> animateBalls = needToAnimate }  )
+        } else {
+            animateBalls(
+                uiState = uiState,
+                modifier = Modifier.fillMaxSize(),
+                gameViewModel = gameViewModel,
+                onSwipeBall = {needToAnimate: Boolean -> animateBalls = needToAnimate }
+            )
+        }
     }
 }
 
@@ -202,18 +224,52 @@ private fun GameControlButtonsForGame(
     }
 }
 
-/*
- *  Draw the  Game Board:
- *       - Grid
- *       - all the balls
- */
+
 @Composable
-private fun DrawGameBoard(
+private fun animateBalls(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
-    uiState: GameUIState
+    uiState: GameUIState,
+    onSwipeBall: (animateBalls: Boolean) -> Unit
 )
 {
+    Log.i(Global.debugPrefix, "Rcompose animateBalls  grid xxxxxxxxxxxxxxxxxxxxx")
+
+    val animate1 = remember { Animatable(initialValue = 0f) }
+    val animate2 = remember { Animatable(initialValue = 0f) }
+    val animate3 = remember { Animatable(initialValue = 0f) }
+
+    var sX1 = 2
+    var sY1 = 2
+
+    val sX2 = 3
+    val sY2 = 3
+
+    LaunchedEffect(Unit){
+        animate1.animateTo(targetValue = 1f, animationSpec =
+            repeatable(
+                iterations = 1,
+                animation = tween(500,easing = FastOutLinearInEasing),
+            )
+        )
+        animate2.animateTo(
+            targetValue = 1f, animationSpec =
+            repeatable(
+                iterations = 1,
+                animation = tween(500, easing = FastOutLinearInEasing),
+            )
+        )
+        animate3.animateTo(
+            targetValue = 1f, animationSpec =
+            repeatable(
+                iterations = 1,
+                animation = tween(500, easing = FastOutSlowInEasing),
+            )
+        )
+        delay(300)
+        onSwipeBall.invoke(false)
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -226,6 +282,7 @@ private fun DrawGameBoard(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
+        Log.i(Global.debugPrefix, "REcompose box grid xxxxxxxxxxxxxxxxxxxxx")
         val lineColor = MaterialTheme.colorScheme.outline
         var gridSize by rememberSaveable {
             mutableFloatStateOf(0f)
@@ -247,8 +304,8 @@ private fun DrawGameBoard(
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { offset: Offset ->
-                             dragRow = (offset.y / gridSize).toInt()
-                             dragCol = (offset.x / gridSize).toInt()
+                            dragRow = (offset.y / gridSize).toInt()
+                            dragCol = (offset.x / gridSize).toInt()
                             Log.i(Global.debugPrefix, "Offset is row: $dragRow, col: $dragCol")
                         },
                         onDrag = { change, dragAmount ->
@@ -266,28 +323,43 @@ private fun DrawGameBoard(
                         onDragEnd = {
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Log.i(Global.debugPrefix, "Swipe left from $dragRow, $dragCol for length $offsetX")
+                                    Log.i(
+                                        Global.debugPrefix,
+                                        "Swipe left from $dragRow, $dragCol for length $offsetX"
+                                    )
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
                                     dragCol = -1
                                 }
+
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Log.i(Global.debugPrefix, "Swipe right from $dragRow, $dragCol for length $offsetX")
+                                    Log.i(
+                                        Global.debugPrefix,
+                                        "Swipe right from $dragRow, $dragCol for length $offsetX"
+                                    )
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
                                     dragCol = -1
                                 }
+
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Log.i(Global.debugPrefix, "Swipe Up from $dragRow, $dragCol for length $offsetY")
+                                    Log.i(
+                                        Global.debugPrefix,
+                                        "Swipe Up from $dragRow, $dragCol for length $offsetY"
+                                    )
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
                                     dragCol = -1
                                 }
+
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Log.i(Global.debugPrefix, "Swipe down from $dragRow, $dragCol for length $offsetY")
+                                    Log.i(
+                                        Global.debugPrefix,
+                                        "Swipe down from $dragRow, $dragCol for length $offsetY"
+                                    )
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -298,6 +370,7 @@ private fun DrawGameBoard(
                     ) // detectDragGestures
                 } // .pointerInput
         ) {
+            Log.i(Global.debugPrefix, "REcompose canvas")
             val canvasWidth = size.width
             val canvasHeight = size.height
 
@@ -306,13 +379,222 @@ private fun DrawGameBoard(
 
             gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
-            drawGridForGame(this, gridSize, lineColor)
+            val gridDrawScope = this
+            drawGridForGame(gridDrawScope, gridSize, lineColor)
 
             val ballSize =  (gridSize * 1.10).toInt()
             val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
                 ballSize, ballSize, false).asImageBitmap()
 
-            drawGameBalls(this, gameViewModel, gridSize, displayBallImage)
+            drawGameBalls(gridDrawScope, gameViewModel, gridSize, displayBallImage)
+
+            var xOffset = 0 * gridSize
+            var yOffset = 4 * gridSize
+
+            translate(
+                (xOffset) * animate1.value,
+                (yOffset) * animate1.value
+            ) {
+                drawImage(
+                    image = displayBallImage,
+                    topLeft = Offset(
+                        x = sX1 * gridSize,
+                        y = sY1 * gridSize
+                    )
+                )
+            }
+
+             xOffset = 0 * gridSize
+             yOffset = 4 * gridSize
+
+            translate(
+                (xOffset) * animate2.value,
+                (yOffset) * animate2.value
+            ) {
+                drawImage(
+                    image = displayBallImage,
+                    topLeft = Offset(
+                        x = sX2 * gridSize,
+                        y = sY2 * gridSize
+                    )
+                )
+            }
+        }
+    }
+}
+
+/*
+ *  Draw the  Game Board:
+ *       - Grid
+ *       - all the balls
+ */
+@Composable
+private fun DrawGameBoard(
+    modifier: Modifier = Modifier,
+    gameViewModel: GameViewModel = viewModel(),
+    uiState: GameUIState,
+    onSwipeBall: (animateBalls: Boolean) -> Unit
+)
+{
+    Log.i(Global.debugPrefix, "Recompose drawGame grid xxxxxxxxxxxxxxxxxxxxx")
+    /*
+     * Launch the animation only once when it enters the composition. It will animate infinitely
+     * until it is removed from the composition
+     */
+    val animate1 = remember { Animatable(initialValue = 0f) }
+    val animate2 = remember { Animatable(initialValue = 0f) }
+    val animate3 = remember { Animatable(initialValue = 0f) }
+
+    var processSwipe by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit){
+        animate1.animateTo(targetValue = 1f, animationSpec =
+            repeatable(
+                iterations = 1,
+                animation = tween(1000,easing = FastOutSlowInEasing),
+            )
+        )
+        animate2.animateTo(
+            targetValue = 1f, animationSpec =
+            repeatable(
+                iterations = 1,
+                animation = tween(1000, easing = FastOutSlowInEasing),
+            )
+        )
+        animate3.animateTo(
+            targetValue = 1f, animationSpec =
+            repeatable(
+                iterations = 1,
+                animation = tween(1000, easing = FastOutSlowInEasing),
+            )
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .aspectRatio(Global.MaxColSize.toFloat() / Global.MaxRowSize.toFloat())
+            .shadow(
+                elevation = 10.dp,
+                shape = RoundedCornerShape(20.dp)
+            )
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center,
+    ) {
+        Log.i(Global.debugPrefix, "REcompose box grid xxxxxxxxxxxxxxxxxxxxx")
+        val lineColor = MaterialTheme.colorScheme.outline
+        var gridSize by rememberSaveable {
+            mutableFloatStateOf(0f)
+        }
+
+        val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
+
+        var offsetX by remember { mutableFloatStateOf(0f) }
+        var offsetY by remember { mutableFloatStateOf(0f) }
+        var dragRow by remember { mutableIntStateOf(-1) }
+        var dragCol by remember { mutableIntStateOf(-1) }
+
+        val minSwipeOffset = gridSize
+
+        Canvas(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(15.dp)
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { offset: Offset ->
+                            dragRow = (offset.y / gridSize).toInt()
+                            dragCol = (offset.x / gridSize).toInt()
+                            Log.i(Global.debugPrefix, "Offset is row: $dragRow, col: $dragCol")
+                        },
+                        onDrag = { change, dragAmount ->
+
+                            /*
+                             * Need to consume this event, so that its parent knows not to react to
+                             * it anymore. What change.consume() does is it prevent pointerInput
+                             * above it to receive events by returning PointerInputChange.positionChange()
+                             * Offset.Zero PointerInputChange.isConsumed true.
+                             */
+                            change.consume()
+                            offsetX += dragAmount.x
+                            offsetY += dragAmount.y
+                        },
+                        onDragEnd = {
+                            when {
+                                (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
+                                    Log.i(
+                                        Global.debugPrefix,
+                                        "Swipe left from $dragRow, $dragCol for length $offsetX"
+                                    )
+                                    gameViewModel.MoveBallPos(1, 1)
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    dragRow = -1
+                                    dragCol = -1
+                                    onSwipeBall.invoke(true)
+                                }
+
+                                (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
+                                    Log.i(
+                                        Global.debugPrefix,
+                                        "Swipe right from $dragRow, $dragCol for length $offsetX"
+                                    )
+                                    gameViewModel.MoveBallPos(1, 2)
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    dragRow = -1
+                                    dragCol = -1
+                                    onSwipeBall.invoke(true)
+                                }
+
+                                (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
+                                    Log.i(
+                                        Global.debugPrefix,
+                                        "Swipe Up from $dragRow, $dragCol for length $offsetY"
+                                    )
+                                    gameViewModel.MoveBallPos(1, 3)
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    dragRow = -1
+                                    dragCol = -1
+                                    onSwipeBall.invoke(true)
+                                }
+
+                                (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
+                                    Log.i(
+                                        Global.debugPrefix,
+                                        "Swipe down from $dragRow, $dragCol for length $offsetY"
+                                    )
+                                    gameViewModel.MoveBallPos(1, 4)
+                                    offsetX = 0F
+                                    offsetY = 0F
+                                    dragRow = -1
+                                    dragCol = -1
+                                    onSwipeBall.invoke(true)
+                                }
+                            }
+                        }
+                    ) // detectDragGestures
+                } // .pointerInput
+        ) {
+            Log.i(Global.debugPrefix, "REcompose canvas")
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+
+            val gridSizeWidth = (canvasWidth / (Global.MaxColSize))
+            val gridSizeHeight = (canvasHeight / (Global.MaxRowSize))
+
+            gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
+
+            val gridDrawScope = this
+            drawGridForGame(gridDrawScope, gridSize, lineColor)
+
+            val ballSize =  (gridSize * 1.10).toInt()
+            val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
+                ballSize, ballSize, false).asImageBitmap()
+
+            drawGameBalls(gridDrawScope, gameViewModel, gridSize, displayBallImage)
         }
     }
 }

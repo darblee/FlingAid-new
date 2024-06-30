@@ -2,6 +2,7 @@ package com.darblee.flingaid.ui
 
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 
 class SolverEngine {
@@ -180,7 +181,6 @@ class SolverEngine {
 
     private fun winnableByMovingUp(totalBallCnt : Int, curSearchLevel: Int, srcRow: Int, col : Int) : Boolean
     {
-
         /*
         var debugIndentation = ""
         val indentationLoop = curSearchLevel - 1
@@ -218,7 +218,6 @@ class SolverEngine {
 
     private fun winnableByMovingDown(totalBallCnt : Int, curSearchLevel: Int, srcRow: Int, col : Int) : Boolean
     {
-
         val targetRow = findTargetRowOnMoveDown(srcRow, col)
 
         if (targetRow == -1) {

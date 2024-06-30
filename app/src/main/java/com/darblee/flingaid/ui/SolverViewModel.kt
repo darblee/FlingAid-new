@@ -1,11 +1,14 @@
 package com.darblee.flingaid.ui
 
 import android.util.Log
+import android.widget.Space
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
+import com.darblee.flingaid.ui.screens.gBoardFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,6 +58,8 @@ class SolverViewModel : ViewModel() {
      */
     internal var uiState : StateFlow<SolverUiState> = _uiState.asStateFlow()
         private set  // Public getter (read-only access from outside) and private setter (only internally modifiable)
+
+
 
     init {
         val file : File? = null
@@ -120,7 +125,6 @@ class SolverViewModel : ViewModel() {
     {
         return _ballPositionList.count()
     }
-
 
     // If the position is blank, then place the ball.
     // If ball already exist on that location, then remove the ball
@@ -473,5 +477,250 @@ class SolverViewModel : ViewModel() {
 
         // Erase the arrow
         _uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
+
+        saveBallPositions(gBoardFile)
     }
+
+    fun makeManualMove(direction: Direction, pos: SolverGridPos) {
+
+        val game = SolverEngine()
+        game.populateGrid(_ballPositionList)
+
+        var targetRow: Int
+        var targetCol: Int
+
+        /*
+        when (direction) {
+            Direction.UP -> {
+                targetRow = game.findTargetRowOnMoveUp(pos.row, pos.col)
+                game.moveUp(pos.row, targetRow, pos.col)
+                _ballPositionList.clear()
+                _ballPositionList = game.updateBallList()
+            }
+
+            Direction.DOWN -> {
+                targetRow = game.findTargetRowOnMoveDown(pos.row, pos.col)
+                game.moveDown(pos.row, targetRow, pos.col)
+                _ballPositionList.clear()
+                _ballPositionList = game.updateBallList()
+            }
+
+            Direction.LEFT -> {
+                targetCol = game.findTargetColOnMoveLeft(pos.row, pos.col)
+                game.moveLeft(pos.row, targetCol, pos.col)
+                _ballPositionList.clear()
+                _ballPositionList = game.updateBallList()
+            }
+
+            Direction.RIGHT -> {
+                targetCol = game.findTargetColOnMoveRight(pos.row, pos.col)
+                game.moveRight(pos.row, targetCol, pos.col)
+                _ballPositionList.clear()
+                _ballPositionList = game.updateBallList()
+            }
+
+            else -> {
+                assert(true) { "Got unexpected direction during manual move"}
+            }
+        }
+
+        saveBallPositions(gBoardFile)
+
+         */
+
+        _uiState.update {currentState ->
+            currentState.copy(
+                movingChain = listOf(),
+                movingDirection = direction,
+                state = SolverState.NotThinking
+            )
+        }
+    }
+
+    fun setupMovingChain(row: Int, col: Int, direction: Direction )
+    {
+        if (!(_ballPositionList.contains(SolverGridPos(row, col)))) return
+
+        when (direction) {
+            Direction.UP -> {
+                val movingChain = buildMovingChain(row, col, direction)
+
+                if (movingChain.isEmpty()) return
+
+                printChain(direction, movingChain)
+                _uiState.update {currentState ->
+                    currentState.copy(
+                        movingDirection = Direction.UP,
+                        movingChain = movingChain
+                    )
+                }
+            }
+            Direction.DOWN -> {
+                val movingChain = buildMovingChain(row, col, direction)
+
+                if (movingChain.isEmpty()) return
+
+                printChain(direction, movingChain)
+
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        movingDirection = Direction.DOWN,
+                        movingChain = movingChain
+                    )
+                }
+            }
+            Direction.RIGHT -> {
+                val movingChain = buildMovingChain(row, col, direction)
+                if (movingChain.isEmpty()) return
+
+                printChain(direction, movingChain)
+
+                _uiState.update {currentState ->
+                    currentState.copy(
+                        movingDirection = Direction.RIGHT,
+                        movingChain = movingChain
+                    )
+                }
+            }
+            Direction.LEFT -> {
+                val movingChain = buildMovingChain(row, col, direction)
+                if (movingChain.isEmpty()) return
+
+                printChain(direction, movingChain)
+
+                _uiState.update {currentState ->
+                    currentState.copy(
+                        movingDirection = Direction.LEFT,
+                        movingChain = movingChain
+                    )
+                }
+            }
+            else -> {
+                assert(true) {"Got unexpected direction value"}
+            }
+        }
+    }
+
+    fun needBallAnimation() : Boolean
+    {
+        return (_uiState.value.movingChain.isNotEmpty())
+    }
+
+    private fun printChain(direction: Direction, movingList: List<MovingRec>) {
+        Log.i(Global.debugPrefix, "===============")
+        movingList.forEach {rec ->
+            val gridPos = rec.pos
+            Log.i(Global.debugPrefix, "Mov Pos: ${gridPos.row}, ${gridPos.col}, distance= ${rec.distance} ${direction}")
+        }
+        Log.i(Global.debugPrefix, "===============")
+    }
+
+    private fun buildMovingChain(initialRow: Int, initialCol: Int, direction: Direction) : List<MovingRec>
+    {
+        val movingList = mutableListOf<MovingRec>()
+
+        var chainRecInfo = findFreeSpaceCount(initialRow, initialCol, direction, firstMove = true)
+        var movingDistance = chainRecInfo.first
+        var nextSourcePos = chainRecInfo.second
+
+        // For the first ball in chain, we must have at least one free space to move
+        if (movingDistance == 0) return movingList
+
+        movingList.add(MovingRec(SolverGridPos(initialRow,initialCol), movingDistance))
+
+        // For subsequent ball in the chain, it is fine to have zero distance
+        var fallenOffEdge = false
+        while (!fallenOffEdge) {
+            if (nextSourcePos == null) {
+                fallenOffEdge = true
+            } else {
+                val currentSourcePos = nextSourcePos
+                chainRecInfo =
+                    findFreeSpaceCount(currentSourcePos.row, currentSourcePos.col, direction, firstMove = false)
+                movingDistance = chainRecInfo.first
+                nextSourcePos = chainRecInfo.second
+                movingList.add(MovingRec(currentSourcePos, movingDistance))
+            }
+        }
+
+        return (movingList)
+    }
+
+    private fun findFreeSpaceCount(row: Int, col: Int, direction: Direction, firstMove: Boolean) : Pair <Int, SolverGridPos?>
+    {
+        var xOffset = 0
+        var yOffset = 0
+        var sourceRow = row
+        var sourceCol = col
+
+        when (direction) {
+            Direction.RIGHT -> yOffset = 1
+            Direction.LEFT -> yOffset = -1
+            Direction.UP -> xOffset = -1
+            Direction.DOWN -> xOffset = 1
+            else -> assert(true) {"Got unexpected direction value"}
+        }
+
+        if ((direction == Direction.LEFT) && (col == 0)) {
+            if (firstMove) return (Pair(0, null ))
+            return (Pair(2, null ))
+        }
+
+        if ((direction == Direction.RIGHT) && (col == Global.MaxColSize)) {
+            if (firstMove) return (Pair(0, null ))
+            return (Pair(2, null ))
+        }
+
+        if ((direction == Direction.UP) && (row == 0)) {
+            if (firstMove) return (Pair(0, null ))
+            return (Pair(2, null ))
+        }
+
+        if ((direction == Direction.DOWN) && (row == Global.MaxRowSize)) {
+            if (firstMove) return (Pair(0, null ))
+            return (Pair(2, null ))
+        }
+
+        var newRow : Int
+        var newCol : Int
+
+        var distance = 0
+        var hitWall = false
+
+        var nextSourcePos : SolverGridPos? = null
+
+        while (!hitWall) {
+            newRow = sourceRow + xOffset
+            newCol = sourceCol + yOffset
+
+            if ((newRow == -1) || (newRow == Global.MaxRowSize) ||
+                (newCol == -1) || (newCol == Global.MaxColSize)) {
+                distance++ // Add two to make it fall off the edge
+                distance++
+                hitWall = true
+            } else {
+                if (_ballPositionList.contains(SolverGridPos(newRow, newCol))) {
+                    nextSourcePos = SolverGridPos(newRow, newCol)
+                    hitWall = true
+                } else {
+                    distance++
+                    sourceRow = newRow
+                    sourceCol = newCol
+                }
+            }
+        }
+
+        return (Pair(distance, nextSourcePos))
+    }
+
+    fun ballMovementAnimationComplete()
+    {
+        val direction = _uiState.value.movingDirection
+        val pos = _uiState.value.movingChain[0].pos
+
+        Log.i(Global.debugPrefix, "Making manual move: $direction, ${pos.row} ${pos.col}")
+        makeManualMove(direction, pos)
+    }
+
 }
+

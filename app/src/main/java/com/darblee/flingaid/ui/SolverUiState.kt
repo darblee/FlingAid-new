@@ -1,5 +1,6 @@
 package com.darblee.flingaid.ui
 
+import com.darblee.flingaid.Direction
 import kotlinx.serialization.Serializable
 
 enum class SolverState {
@@ -7,12 +8,16 @@ enum class SolverState {
     NotThinking,
 }
 
-enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
-
 @Serializable
 data class SolverGridPos(
     val row: Int,
     val col: Int,
+)
+
+@Serializable
+data class MovingRec(
+    val pos: SolverGridPos,
+    val distance: Int
 )
 
 // These UI state data needs to be preserved in the event there is a configuration change
@@ -26,5 +31,7 @@ data class SolverUiState (
     var winningPosition: SolverGridPos =  SolverGridPos(-1, -1),
     var foundWinningDirection : Direction = Direction.NO_WINNING_DIRECTION,
     val needToDisplayNoWinnableToastMessage: Boolean = false,
-    val thinkingProgress: Float = 0.0F
+    val thinkingProgress: Float = 0.0F,
+    val movingDirection: Direction = Direction.INCOMPLETE,
+    val movingChain: List<MovingRec> = listOf()
 )

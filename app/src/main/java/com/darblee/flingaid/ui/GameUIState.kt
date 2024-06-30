@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 enum class GameState {
     Won,
     Playing,
+    MoveBall,
 }
 
 @Serializable
@@ -20,5 +21,7 @@ data class Pos(
 // Android composable will listen for it.
 
 data class GameUIState(
-    var state: GameState = GameState.Playing
+    var state: GameState = GameState.Playing,
+    var moveFromRow: Int = 0,
+    var moveFromCol: Int = 0,
 )
