@@ -340,8 +340,6 @@ private fun DrawSolverBoard(
     uiState: SolverUiState
     )
 {
-    val context = LocalContext.current
-
     /*
      * Launch the animation only once when it enters the composition. It will animate infinitely
      * until it is removed from the composition
