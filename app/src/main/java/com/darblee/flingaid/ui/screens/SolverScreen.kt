@@ -338,6 +338,25 @@ private fun DrawSolverBoard(
     uiState: SolverUiState
     )
 {
+    val context = LocalContext.current
+    var youWonAnnouncement = remember { mutableStateOf(false) }
+
+    if (youWonAnnouncement.value) {
+        if (solverViewModel.ballCount() == 1) {
+            if (gAudioFocusRequest == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                gAudio_youWon.start()
+            }
+            Toast
+                .makeText(
+                    context,
+                    "You won",
+                    Toast.LENGTH_SHORT
+                )
+                .show()
+        }
+        youWonAnnouncement.value = false
+    }
+
     /*
      * Launch the animation only once when it enters the composition. It will animate infinitely
      * until it is removed from the composition
@@ -391,9 +410,7 @@ private fun DrawSolverBoard(
             }
 
             if (solverViewModel.ballCount() == 1) {
-                if (gAudioFocusRequest == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                    gAudio_youWon.start()
-                }
+                youWonAnnouncement.value = true
             }
         }
     }
@@ -410,7 +427,6 @@ private fun DrawSolverBoard(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
-        val context = LocalContext.current
         val view = LocalView.current
         val lineColor = MaterialTheme.colorScheme.outline
         var gridSize by rememberSaveable {
@@ -476,10 +492,13 @@ private fun DrawSolverBoard(
                         onDragEnd = {
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Toast.makeText(context,
-                                        "Use \"Find next\" button to move the ball",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Use \"Find next\" button to move the ball",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        .show()
 
                                     offsetX = 0F
                                     offsetY = 0F
@@ -488,10 +507,13 @@ private fun DrawSolverBoard(
                                 }
 
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Toast.makeText(context,
-                                        "Use \"Find next\" button to move the ball",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Use \"Find next\" button to move the ball",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        .show()
 
                                     offsetX = 0F
                                     offsetY = 0F
@@ -500,10 +522,13 @@ private fun DrawSolverBoard(
                                 }
 
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Toast.makeText(context,
-                                        "Use \"Find next\" button to move the ball",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Use \"Find next\" button to move the ball",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        .show()
 
                                     offsetX = 0F
                                     offsetY = 0F
@@ -512,10 +537,13 @@ private fun DrawSolverBoard(
                                 }
 
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Toast.makeText(context,
-                                        "Use \"Find next\" button to move the ball",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Use \"Find next\" button to move the ball",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        .show()
 
                                     offsetX = 0F
                                     offsetY = 0F
