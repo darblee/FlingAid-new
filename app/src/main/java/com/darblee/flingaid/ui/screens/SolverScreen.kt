@@ -94,7 +94,6 @@ import com.darblee.flingaid.ui.SolverState
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
 import com.darblee.flingaid.ui.SolverGridPos
-import kotlinx.coroutines.delay
 import java.io.File
 import java.util.Locale
 import kotlin.math.abs
@@ -252,23 +251,22 @@ private fun ControlButtonsForSolver(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceAround,
     ) {
-        val context = LocalContext.current
         Button(
             onClick = {
                 Log.i(Global.debugPrefix, ">>> Starting thinking : Button Pressed")
                 if (showWinnableMoveToUser) {
-                    // Make the actual move before find the next winnable move
-                    solverViewModel.makeWinningMove(uiState)
-                }
-                if (solverViewModel.ballCount() == 1) {
-
-                    if (gAudioFocusRequest == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                        gAudio_youWon.start()
-                    }
-
-                    Toast.makeText(context, "You won!", Toast.LENGTH_SHORT).show()
+                    // After moving the ball, we need to find the next move and show the hint right away.
+                    //
+                    // When setting up the moving chain, it will start a new LaunchEffect thread
+                    // that will call animation complete at the end, which will in turn
+                    // make the actual ball movement
+                    val winningDirection = uiState.foundWinningDirection
+                    val winningPos = uiState.winningPosition
+                    solverViewModel.setupMovingChain(winningPos.row, winningPos.col, winningDirection)
                 } else {
-                    Log.i(Global.debugPrefix, ">>> Looking for winnable move")
+                    // In this case, we did not move the ball as we did not show hint yet.
+                    // We need to find the winning move.
+                    Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
                     solverViewModel.findWinningMove(solverViewModel)
                 }
             }, // OnClick
@@ -345,10 +343,11 @@ private fun DrawSolverBoard(
      * until it is removed from the composition
      */
     val animateWinningMove = remember { Animatable(initialValue = 0f) }
-    LaunchedEffect(Unit){
-        animateWinningMove.animateTo(targetValue = 1f, animationSpec =
+    LaunchedEffect(Unit) {
+        animateWinningMove.animateTo(
+            targetValue = 1f, animationSpec =
             infiniteRepeatable(
-                animation = tween(1000,easing = FastOutSlowInEasing),
+                animation = tween(1000, easing = FastOutSlowInEasing),
                 repeatMode = RepeatMode.Restart
             )
         )
@@ -381,11 +380,21 @@ private fun DrawSolverBoard(
                     animation = tween(250, easing = FastOutLinearInEasing),
                 )
             )
-            delay(300)
             animate1.snapTo(0F)
             animate2.snapTo(0F)
             animate3.snapTo(0F)
             solverViewModel.ballMovementAnimationComplete()
+            solverViewModel.makeWinningMove(uiState)
+            if (solverViewModel.ballCount() > 1) {
+                Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
+                solverViewModel.findWinningMove(solverViewModel)
+            }
+
+            if (solverViewModel.ballCount() == 1) {
+                if (gAudioFocusRequest == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                    gAudio_youWon.start()
+                }
+            }
         }
     }
 
@@ -472,8 +481,6 @@ private fun DrawSolverBoard(
                                         Toast.LENGTH_SHORT
                                     ).show()
 
-                                    // if able to set swipable, then a new uistate will be modified, which will trigger recompose at the top level.
-                                    // solverViewModel.setupMovingChain(dragRow, dragCol, Direction.LEFT)
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -486,7 +493,6 @@ private fun DrawSolverBoard(
                                         Toast.LENGTH_SHORT
                                     ).show()
 
-                                    // solverViewModel.setupMovingChain(dragRow, dragCol, Direction.RIGHT)
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -498,7 +504,7 @@ private fun DrawSolverBoard(
                                         "Use \"Find next\" button to move the ball",
                                         Toast.LENGTH_SHORT
                                     ).show()
-                                    // solverViewModel.setupMovingChain(dragRow, dragCol, Direction.UP)
+
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -510,7 +516,7 @@ private fun DrawSolverBoard(
                                         "Use \"Find next\" button to move the ball",
                                         Toast.LENGTH_SHORT
                                     ).show()
-                                    // solverViewModel.setupMovingChain(dragRow, dragCol, Direction.DOWN)
+
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -541,13 +547,20 @@ private fun DrawSolverBoard(
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage, ballsToErase)
             } else {
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage)
-            }
 
-            if (solverViewModel.ballCount() > 1) {
-                // Draw the winning arrow if there is a winning move identified
-                if (solverViewModel.foundWinnableMove()) {
-                    val moveCount = solverViewModel.getWinningMoveCount(uiState)
-                    showWinningMove(this, gridSize, uiState, animateWinningMove, moveCount, displayBallImage)
+                if (solverViewModel.ballCount() > 1) {
+                    // Draw the winning arrow if there is a winning move identified
+                    if (solverViewModel.foundWinnableMove()) {
+                        val moveCount = solverViewModel.getWinningMoveCount(uiState)
+                        showWinningMove(
+                            this,
+                            gridSize,
+                            uiState,
+                            animateWinningMove,
+                            moveCount,
+                            displayBallImage
+                        )
+                    }
                 }
             }
 

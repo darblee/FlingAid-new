@@ -1,7 +1,6 @@
 package com.darblee.flingaid.ui
 
 import android.util.Log
-import android.widget.Space
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
@@ -481,62 +480,6 @@ class SolverViewModel : ViewModel() {
         saveBallPositions(gBoardFile)
     }
 
-    fun makeManualMove(direction: Direction, pos: SolverGridPos) {
-
-        val game = SolverEngine()
-        game.populateGrid(_ballPositionList)
-
-        var targetRow: Int
-        var targetCol: Int
-
-        /*
-        when (direction) {
-            Direction.UP -> {
-                targetRow = game.findTargetRowOnMoveUp(pos.row, pos.col)
-                game.moveUp(pos.row, targetRow, pos.col)
-                _ballPositionList.clear()
-                _ballPositionList = game.updateBallList()
-            }
-
-            Direction.DOWN -> {
-                targetRow = game.findTargetRowOnMoveDown(pos.row, pos.col)
-                game.moveDown(pos.row, targetRow, pos.col)
-                _ballPositionList.clear()
-                _ballPositionList = game.updateBallList()
-            }
-
-            Direction.LEFT -> {
-                targetCol = game.findTargetColOnMoveLeft(pos.row, pos.col)
-                game.moveLeft(pos.row, targetCol, pos.col)
-                _ballPositionList.clear()
-                _ballPositionList = game.updateBallList()
-            }
-
-            Direction.RIGHT -> {
-                targetCol = game.findTargetColOnMoveRight(pos.row, pos.col)
-                game.moveRight(pos.row, targetCol, pos.col)
-                _ballPositionList.clear()
-                _ballPositionList = game.updateBallList()
-            }
-
-            else -> {
-                assert(true) { "Got unexpected direction during manual move"}
-            }
-        }
-
-        saveBallPositions(gBoardFile)
-
-         */
-
-        _uiState.update {currentState ->
-            currentState.copy(
-                movingChain = listOf(),
-                movingDirection = direction,
-                state = SolverState.NotThinking
-            )
-        }
-    }
-
     fun setupMovingChain(row: Int, col: Int, direction: Direction )
     {
         if (!(_ballPositionList.contains(SolverGridPos(row, col)))) return
@@ -610,7 +553,7 @@ class SolverViewModel : ViewModel() {
         Log.i(Global.debugPrefix, "===============")
         movingList.forEach {rec ->
             val gridPos = rec.pos
-            Log.i(Global.debugPrefix, "Mov Pos: ${gridPos.row}, ${gridPos.col}, distance= ${rec.distance} ${direction}")
+            Log.i(Global.debugPrefix, "Mov Pos: ${gridPos.row}, ${gridPos.col}, distance= ${rec.distance} $direction")
         }
         Log.i(Global.debugPrefix, "===============")
     }
@@ -715,12 +658,12 @@ class SolverViewModel : ViewModel() {
 
     fun ballMovementAnimationComplete()
     {
-        val direction = _uiState.value.movingDirection
-        val pos = _uiState.value.movingChain[0].pos
-
-        Log.i(Global.debugPrefix, "Making manual move: $direction, ${pos.row} ${pos.col}")
-        makeManualMove(direction, pos)
+        _uiState.update { currentState ->
+            currentState.copy(
+                movingDirection = Direction.NO_WINNING_DIRECTION,
+                movingChain = mutableListOf()
+            )
+        }
     }
-
 }
 
