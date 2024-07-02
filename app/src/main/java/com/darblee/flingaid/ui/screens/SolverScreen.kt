@@ -83,7 +83,6 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
-import com.darblee.flingaid.gAudioFocusRequest
 import com.darblee.flingaid.gAudio_youWon
 import com.darblee.flingaid.gDownArrowBitmap
 import com.darblee.flingaid.gLeftArrowBitmap
@@ -343,9 +342,7 @@ private fun DrawSolverBoard(
 
     if (youWonAnnouncement.value) {
         if (solverViewModel.ballCount() == 1) {
-            if (gAudioFocusRequest == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 gAudio_youWon.start()
-            }
             Toast
                 .makeText(
                     context,

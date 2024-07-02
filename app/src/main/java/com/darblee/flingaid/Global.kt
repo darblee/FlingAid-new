@@ -7,7 +7,6 @@ enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
 
 lateinit var gAudio_gameMusic : MediaPlayer
 lateinit var gAudio_youWon : MediaPlayer
-var gAudioFocusRequest : Int = 0
 var gSoundOn = false
 
 object Global {
