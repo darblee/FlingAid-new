@@ -3,6 +3,7 @@ package com.darblee.flingaid.ui.screens
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -56,7 +57,10 @@ fun HomeScreen(
             modifier = Modifier
                 .wrapContentSize()
                 .align(alignment = Alignment.CenterHorizontally)
-                .defaultMinSize(minWidth = 200.dp),
+                .defaultMinSize(minWidth = 200.dp)
+                .clickable {
+                    navController.navigate(Screen.Game)
+                },
             elevation = CardDefaults.cardElevation(10.dp),
             colors = CardDefaults.cardColors(MaterialTheme.colorScheme.onSecondary),
             shape = RoundedCornerShape(12.dp)
@@ -64,25 +68,23 @@ fun HomeScreen(
             Column(
                 modifier = Modifier.wrapContentSize()
                     .align(Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.SpaceEvenly
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ball), contentDescription = "Game",
                     contentScale = ContentScale.Fit)
-                Button(
-                    onClick = { navController.navigate(Screen.Game) },
-                    modifier = Modifier.padding(bottom = 20.dp)
-                        .align(Alignment.CenterHorizontally)
-                    )
-                {
-                    Text(text = "Game", style = MaterialTheme.typography.titleLarge)
-                }
+                Text(text = "Game", style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 20.dp))
             }
         }
         Card(
             modifier = Modifier
                 .wrapContentSize()
-                .defaultMinSize(minWidth = 200.dp),
+                .defaultMinSize(minWidth = 200.dp)
+                .align(alignment = Alignment.CenterHorizontally)
+                .clickable {
+                    navController.navigate(Screen.Solver)
+                },
             elevation = CardDefaults.cardElevation(10.dp),
             colors = CardDefaults.cardColors(MaterialTheme.colorScheme.onTertiary),
             shape = RoundedCornerShape(12.dp)
@@ -95,14 +97,8 @@ fun HomeScreen(
                 Image(
                     painter = painterResource(id = R.drawable.ball), contentDescription = "Game",
                     contentScale = ContentScale.Fit)
-                Button(
-                    onClick = { navController.navigate(Screen.Solver) },
-                    modifier = Modifier.padding(bottom = 20.dp)
-                        .align(Alignment.CenterHorizontally)
-                )
-                {
-                    Text(text = "Solution Finder", style = MaterialTheme.typography.titleLarge)
-                }
+                Text(text = "Solution Finder", style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 20.dp))
             }
         }
 

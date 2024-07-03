@@ -481,7 +481,7 @@ private fun SettingPopup(
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
             modifier = Modifier
-                .width(300.dp)
+                .width(350.dp)
                 .wrapContentHeight()
                 .padding(25.dp),
             shape = RoundedCornerShape(16.dp),

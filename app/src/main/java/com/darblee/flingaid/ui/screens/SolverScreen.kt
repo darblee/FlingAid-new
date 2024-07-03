@@ -334,10 +334,10 @@ private fun DisplayNoWinnableMoveToast()
 private fun DrawSolverBoard(
     modifier: Modifier = Modifier,
     solverViewModel: SolverViewModel = viewModel(),
-    uiState: SolverUiState
-    ) {
+    uiState: SolverUiState)
+{
     val context = LocalContext.current
-    val youWonAnnouncement = remember { mutableStateOf(false) }
+    val youWonAnnouncement = rememberSaveable() { mutableStateOf(false) }
 
     if (youWonAnnouncement.value) {
         if (solverViewModel.ballCount() == 1) {
@@ -391,10 +391,13 @@ private fun DrawSolverBoard(
                             // For unknown reason, we can not use uiState.state
                             val thinkingStatus = solverViewModel.getThinkingStatus()
                             if (thinkingStatus == SolverState.Thinking) {
-                                Toast.makeText(context,
-                                    "Unable to modify board while still searching",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                Toast
+                                    .makeText(
+                                        context,
+                                        "Unable to modify board while still searching",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                    .show()
                             } else {
                                 val row = (tapOffset.y / gridSize).toInt()
                                 val col = (tapOffset.x / gridSize).toInt()
@@ -425,12 +428,15 @@ private fun DrawSolverBoard(
                         },
                         onDragEnd = {
                             if ((abs(offsetX) > minSwipeOffset) ||
-                                (abs(offsetY) > minSwipeOffset))
-                            {
-                                Toast.makeText(context,
-                                    "Use \"Find next\" button to move the ball",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                (abs(offsetY) > minSwipeOffset)
+                            ) {
+                                Toast
+                                    .makeText(
+                                        context,
+                                        "Use \"Find next\" button to move the ball",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                    .show()
                             }
                         } // onDragEnd
                     ) // detectDragGestures
@@ -472,8 +478,8 @@ private fun DrawSolverBoard(
                     this, solverViewModel, gridSize,
                     displayBallImage, animateBallMovementChain)
             }  // if needToAnimateMovingBall
-        }
-    }
+        } // Canvas
+    } // Box
 }
 
 /*
