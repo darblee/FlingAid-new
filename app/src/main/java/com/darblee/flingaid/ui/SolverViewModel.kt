@@ -665,5 +665,10 @@ class SolverViewModel : ViewModel() {
             )
         }
     }
+
+    fun movingChainSize(): Int
+    {
+        return _uiState.value.movingChain.size
+    }
 }
 

@@ -1,7 +1,6 @@
 package com.darblee.flingaid.ui.screens
 
 import android.graphics.Bitmap
-import android.media.AudioManager
 import android.util.Log
 import android.view.SoundEffectConstants
 import android.widget.Toast
@@ -41,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -335,81 +335,28 @@ private fun DrawSolverBoard(
     modifier: Modifier = Modifier,
     solverViewModel: SolverViewModel = viewModel(),
     uiState: SolverUiState
-    )
-{
+    ) {
     val context = LocalContext.current
-    var youWonAnnouncement = remember { mutableStateOf(false) }
+    val youWonAnnouncement = remember { mutableStateOf(false) }
 
     if (youWonAnnouncement.value) {
         if (solverViewModel.ballCount() == 1) {
-                gAudio_youWon.start()
-            Toast
-                .makeText(
-                    context,
-                    "You won",
-                    Toast.LENGTH_SHORT
-                )
-                .show()
+            gAudio_youWon.start()
+            Toast.makeText(context, "You won", Toast.LENGTH_SHORT).show()
         }
         youWonAnnouncement.value = false
     }
 
-    /*
-     * Launch the animation only once when it enters the composition. It will animate infinitely
+    /* Launch the animation only once when it enters the composition. It will animate infinitely
      * until it is removed from the composition
      */
     val animateWinningMove = remember { Animatable(initialValue = 0f) }
-    LaunchedEffect(Unit) {
-        animateWinningMove.animateTo(
-            targetValue = 1f, animationSpec =
-            infiniteRepeatable(
-                animation = tween(1000, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Restart
-            )
-        )
-    }
+    AnimateWinningMoveSpec(animateWinningMove)
 
-    val animate1 = remember { Animatable(initialValue = 0f) }
-    val animate2 = remember { Animatable(initialValue = 0f) }
-    val animate3 = remember { Animatable(initialValue = 0f) }
+    val animateBallMovementChain = mutableListOf<Animatable<Float,AnimationVector1D>>()
 
     if (solverViewModel.needBallAnimation()) {
-        LaunchedEffect(Unit) {
-            animate1.animateTo(
-                targetValue = 1f, animationSpec =
-                repeatable(
-                    iterations = 1,
-                    animation = tween(250, easing = FastOutLinearInEasing),
-                )
-            )
-            animate2.animateTo(
-                targetValue = 1f, animationSpec =
-                repeatable(
-                    iterations = 1,
-                    animation = tween(250, easing = FastOutLinearInEasing),
-                )
-            )
-            animate3.animateTo(
-                targetValue = 1f, animationSpec =
-                repeatable(
-                    iterations = 1,
-                    animation = tween(250, easing = FastOutLinearInEasing),
-                )
-            )
-            animate1.snapTo(0F)
-            animate2.snapTo(0F)
-            animate3.snapTo(0F)
-            solverViewModel.ballMovementAnimationComplete()
-            solverViewModel.makeWinningMove(uiState)
-            if (solverViewModel.ballCount() > 1) {
-                Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
-                solverViewModel.findWinningMove(solverViewModel)
-            }
-
-            if (solverViewModel.ballCount() == 1) {
-                youWonAnnouncement.value = true
-            }
-        }
+        AnimateBallMovementsSpec(solverViewModel, uiState, youWonAnnouncement, animateBallMovementChain)
     }
 
     Box(
@@ -449,13 +396,10 @@ private fun DrawSolverBoard(
                             // For unknown reason, we can not use uiState.state
                             val thinkingStatus = solverViewModel.getThinkingStatus()
                             if (thinkingStatus == SolverState.Thinking) {
-                                Toast
-                                    .makeText(
-                                        context,
-                                        "Unable to modify board while still searching",
-                                        Toast.LENGTH_SHORT
-                                    )
-                                    .show()
+                                Toast.makeText(context,
+                                    "Unable to modify board while still searching",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             } else {
                                 val row = (tapOffset.y / gridSize).toInt()
                                 val col = (tapOffset.x / gridSize).toInt()
@@ -475,9 +419,7 @@ private fun DrawSolverBoard(
                             dragCol = (offset.x / gridSize).toInt()
                         },
                         onDrag = { change, dragAmount ->
-
-                            /*
-                             * Need to consume this event, so that its parent knows not to react to
+                            /* Need to consume this event, so that its parent knows not to react to
                              * it anymore. What change.consume() does is it prevent pointerInput
                              * above it to receive events by returning PointerInputChange.positionChange()
                              * Offset.Zero PointerInputChange.isConsumed true.
@@ -487,71 +429,17 @@ private fun DrawSolverBoard(
                             offsetY += dragAmount.y
                         },
                         onDragEnd = {
-                            when {
-                                (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "Use \"Find next\" button to move the ball",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
-
-                                (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "Use \"Find next\" button to move the ball",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
-
-                                (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "Use \"Find next\" button to move the ball",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
-
-                                (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "Use \"Find next\" button to move the ball",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
+                            if ((abs(offsetX) > minSwipeOffset) ||
+                                (abs(offsetY) > minSwipeOffset))
+                            {
+                                Toast.makeText(context,
+                                    "Use \"Find next\" button to move the ball",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
-                        }
+                        } // onDragEnd
                     ) // detectDragGestures
                 } // .pointerInput
-
         ) {
             val canvasWidth = size.width
             val canvasHeight = size.height
@@ -577,116 +465,40 @@ private fun DrawSolverBoard(
                     // Draw the winning arrow if there is a winning move identified
                     if (solverViewModel.foundWinnableMove()) {
                         val moveCount = solverViewModel.getWinningMoveCount(uiState)
-                        showWinningMove(
-                            this,
-                            gridSize,
-                            uiState,
-                            animateWinningMove,
-                            moveCount,
-                            displayBallImage
+                        animateWinningMovePerform(this, gridSize, uiState, animateWinningMove,
+                            moveCount, displayBallImage
                         )
                     }
                 }
             }
 
             if (solverViewModel.needBallAnimation()) {
-                val movingDirection = solverViewModel.uiState.value.movingDirection
-                val movingChain = solverViewModel.uiState.value.movingChain
-
-                var movingSourcePos = movingChain[0].pos
-                var offset = setOffsets(movingDirection, movingChain[0].distance, gridSize)
-                var xOffset = offset.first
-                var yOffset = offset.second
-
-                translate(
-                    (xOffset) * animate1.value,
-                    (yOffset) * animate1.value
-                ) {
-                    drawImage(
-                        image = displayBallImage,
-                        topLeft = Offset(
-                            x = movingSourcePos.col * gridSize,
-                            y = movingSourcePos.row * gridSize
-                        )
-                    )
-                }
-
-                if (movingChain.size > 1) {
-                    movingSourcePos = movingChain[1].pos
-                    offset = setOffsets(movingDirection, movingChain[1].distance, gridSize)
-                    xOffset = offset.first
-                    yOffset = offset.second
-
-                    translate(
-                        (xOffset) * animate2.value,
-                        (yOffset) * animate2.value
-                    ) {
-                        drawImage(
-                            image = displayBallImage,
-                            topLeft = Offset(
-                                x = movingSourcePos.col * gridSize,
-                                y = movingSourcePos.row * gridSize
-                            )
-                        ) // drawImage
-                    } // DrawScope
-
-                    if (movingChain.size > 2) {
-                        movingSourcePos = movingChain[2].pos
-                        offset = setOffsets(movingDirection, movingChain[2].distance, gridSize)
-                        xOffset = offset.first
-                        yOffset = offset.second
-
-                        translate(
-                            (xOffset) * animate3.value,
-                            (yOffset) * animate3.value
-                        ) {
-                            drawImage(
-                                image = displayBallImage,
-                                topLeft = Offset(
-                                    x = movingSourcePos.col * gridSize,
-                                    y = movingSourcePos.row * gridSize
-                                )
-                            ) // drawImage
-                        } // DrawScope
-                    }
-                }   // if (movingChain size > 1
+                animateBallMovementsPerformNew(
+                    this, solverViewModel, gridSize,
+                    displayBallImage, animateBallMovementChain)
             }  // if needToAnimateMovingBall
         }
     }
 }
 
-private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pair<Float, Float>
+/*
+ * Animate upcoming ball movement that will lead to winning solution
+ *
+ *  AnimateWinningMoveSpec : Set-up the specification
+ *  animateWinningMovePerform : Perform the actual animation
+ */
+@Composable
+private fun AnimateWinningMoveSpec(animateWinningMove: Animatable<Float, AnimationVector1D>)
 {
-    var xOffset = -1F
-    var yOffset = -1F
-
-    when (direction) {
-        Direction.UP -> {
-            xOffset = 0 * gridSize
-            yOffset = -1 * distance * gridSize
-        }
-
-        Direction.DOWN -> {
-            xOffset = 0 * gridSize
-            yOffset = distance * gridSize
-        }
-
-        Direction.LEFT -> {
-            xOffset = -1 * distance * gridSize
-            yOffset = 0 * gridSize
-        }
-
-        Direction.RIGHT -> {
-            xOffset = distance * gridSize
-            yOffset = 0 * gridSize
-        }
-
-        else -> {
-            assert(true) { "Got unexpected direction during animation" }
-        }
+    LaunchedEffect(Unit) {
+        animateWinningMove.animateTo(
+            targetValue = 1f, animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Restart
+            )
+        )
     }
-
-    return(Pair(xOffset, yOffset))
 }
 
 /*
@@ -694,7 +506,7 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
  *   Show direction arrow
  *   Animate the ball movement
  */
-private fun showWinningMove(
+private fun animateWinningMovePerform(
     drawScope: DrawScope,
     gridSize: Float,
     uiState: SolverUiState,
@@ -759,6 +571,130 @@ private fun showWinningMove(
         }
     }
 }
+
+/*
+ * Animate next move. Multiple ball movements will be chained together
+ *
+ *  AnimateBallMovementsSpec : Set-up the specification. It is chained of multiple ball movements
+ *  animateBallMovementsPerform : Perform the actual animation
+ */
+@Composable
+fun AnimateBallMovementsSpec(
+    solverViewModel: SolverViewModel,
+    uiState: SolverUiState,
+    youWonAnnouncement: MutableState<Boolean>,
+    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>
+)
+{
+    repeat(solverViewModel.movingChainSize())
+    {
+        val animateBallMovement = remember { Animatable(initialValue = 0f) }
+        animateBallMovementChain.add(animateBallMovement)
+    }
+
+    LaunchedEffect(Unit) {
+        animateBallMovementChain.forEach { animateBallMovementChain ->
+            animateBallMovementChain.animateTo(
+                targetValue = 1f, animationSpec =
+                repeatable(
+                    iterations = 1,
+                    animation = tween(250, easing = FastOutLinearInEasing)
+                )
+            )
+        }
+
+        animateBallMovementChain.forEach { animateBallMovementChain ->
+            animateBallMovementChain.snapTo(0F)
+        }
+
+        solverViewModel.ballMovementAnimationComplete()
+        solverViewModel.makeWinningMove(uiState)
+        if (solverViewModel.ballCount() > 1) {
+            Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
+            solverViewModel.findWinningMove(solverViewModel)
+        }
+
+        // Trigger a re-compose to announce that "you won"
+        if (solverViewModel.ballCount() == 1) youWonAnnouncement.value = true
+    }
+}
+
+fun animateBallMovementsPerformNew(
+    drawScope: DrawScope,
+    solverViewModel: SolverViewModel,
+    gridSize: Float,
+    displayBallImage: ImageBitmap,
+    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>
+)
+{
+    with (drawScope) {
+        val movingDirection = solverViewModel.uiState.value.movingDirection
+        val movingChain = solverViewModel.uiState.value.movingChain
+
+        var movingSourcePos: SolverGridPos
+        var offset : Pair<Float, Float>
+        var xOffset: Float
+        var yOffset: Float
+
+        for ((index, currentMovement) in movingChain.withIndex()) {
+            movingSourcePos = currentMovement.pos
+
+            offset = setOffsets(movingDirection, movingChain[index].distance, gridSize)
+            xOffset = offset.first
+            yOffset = offset.second
+
+            translate(
+                (xOffset) * ((animateBallMovementChain[index]).value),
+                (yOffset) * ((animateBallMovementChain[index]).value)
+            ) {
+                drawImage(
+                    image = displayBallImage,
+                    topLeft = Offset(
+                        x = movingSourcePos.col * gridSize,
+                        y = movingSourcePos.row * gridSize
+                    )
+                ) // drawImage
+            } // translate
+        }
+    }
+}
+
+
+private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pair<Float, Float>
+{
+    var xOffset = -1F
+    var yOffset = -1F
+
+    when (direction) {
+        Direction.UP -> {
+            xOffset = 0 * gridSize
+            yOffset = -1 * distance * gridSize
+        }
+
+        Direction.DOWN -> {
+            xOffset = 0 * gridSize
+            yOffset = distance * gridSize
+        }
+
+        Direction.LEFT -> {
+            xOffset = -1 * distance * gridSize
+            yOffset = 0 * gridSize
+        }
+
+        Direction.RIGHT -> {
+            xOffset = distance * gridSize
+            yOffset = 0 * gridSize
+        }
+
+        else -> {
+            assert(true) { "Got unexpected direction during animation" }
+        }
+    }
+
+    return(Pair(xOffset, yOffset))
+}
+
+
 
 // Draw all the balls in the provided canvas
 //
