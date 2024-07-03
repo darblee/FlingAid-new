@@ -363,19 +363,14 @@ private fun DrawSolverBoard(
         modifier = Modifier
             .fillMaxSize()
             .aspectRatio(Global.MaxColSize.toFloat() / Global.MaxRowSize.toFloat())
-            .shadow(
-                elevation = 10.dp,
-                shape = RoundedCornerShape(20.dp)
-            )
+            .shadow(elevation = 10.dp, shape = RoundedCornerShape(20.dp))
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
         val view = LocalView.current
         val lineColor = MaterialTheme.colorScheme.outline
-        var gridSize by rememberSaveable {
-            mutableFloatStateOf(0f)
-        }
+        var gridSize by rememberSaveable { mutableFloatStateOf(0f) }
 
         val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
 
@@ -473,7 +468,7 @@ private fun DrawSolverBoard(
             }
 
             if (solverViewModel.needBallAnimation()) {
-                animateBallMovementsPerformNew(
+                animateBallMovementsPerform(
                     this, solverViewModel, gridSize,
                     displayBallImage, animateBallMovementChain)
             }  // if needToAnimateMovingBall
@@ -619,7 +614,7 @@ fun AnimateBallMovementsSpec(
     }
 }
 
-fun animateBallMovementsPerformNew(
+fun animateBallMovementsPerform(
     drawScope: DrawScope,
     solverViewModel: SolverViewModel,
     gridSize: Float,
