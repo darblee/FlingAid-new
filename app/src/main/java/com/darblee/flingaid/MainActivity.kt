@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.Matrix
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
@@ -76,11 +74,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -101,12 +96,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
-// Declare these bitmaps once as it will be reused on every recompose
-lateinit var gUpArrowBitmap : Bitmap
-lateinit var gDownArrowBitmap : Bitmap
-lateinit var gLeftArrowBitmap : Bitmap
-lateinit var gRightArrowBitmap : Bitmap
-
 class MainActivity : ComponentActivity()
 {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -118,7 +107,6 @@ class MainActivity : ComponentActivity()
 
             val splashScreen = installSplashScreen()
 
-            SetupAllBitMapImagesOnAppStart()
             SetUpGameAudioOnAppStart()
 
             var colorTheme by remember {
@@ -220,43 +208,6 @@ private fun MainViewImplementation(
     ) { contentPadding ->
         SetUpNavGraph(navController = navController, contentPadding, onScreenChange = { newScreenTitle -> currentScreenName = newScreenTitle } )
     }
-}
-
-@Composable
-private fun SetupAllBitMapImagesOnAppStart()
-{
-    gUpArrowBitmap = ImageBitmap.imageResource(R.drawable.up).asAndroidBitmap()
-
-    val matrix = Matrix()
-    matrix.postRotate(90F)
-
-    gRightArrowBitmap = Bitmap.createBitmap(
-        gUpArrowBitmap,
-        0,
-        0,
-        gUpArrowBitmap.width,
-        gUpArrowBitmap.height,
-        matrix,
-        true
-    )
-    gDownArrowBitmap = Bitmap.createBitmap(
-        gRightArrowBitmap,
-        0,
-        0,
-        gRightArrowBitmap.width,
-        gRightArrowBitmap.height,
-        matrix,
-        true
-    )
-    gLeftArrowBitmap = Bitmap.createBitmap(
-        gDownArrowBitmap,
-        0,
-        0,
-        gDownArrowBitmap.width,
-        gDownArrowBitmap.height,
-        matrix,
-        true
-    )
 }
 
 @Composable

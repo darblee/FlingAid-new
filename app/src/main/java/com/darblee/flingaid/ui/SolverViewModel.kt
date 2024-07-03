@@ -56,9 +56,9 @@ class SolverViewModel : ViewModel() {
 
      */
     internal var uiState : StateFlow<SolverUiState> = _uiState.asStateFlow()
-        private set  // Public getter (read-only access from outside) and private setter (only internally modifiable)
-
-
+    // Public getter (read-only access from outside) and private setter (only internally modifiable)
+    // This ensure all information flow in one direction.
+    private set
 
     init {
         val file : File? = null

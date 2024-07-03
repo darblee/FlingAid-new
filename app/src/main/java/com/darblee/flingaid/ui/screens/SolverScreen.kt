@@ -84,10 +84,6 @@ import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_youWon
-import com.darblee.flingaid.gDownArrowBitmap
-import com.darblee.flingaid.gLeftArrowBitmap
-import com.darblee.flingaid.gRightArrowBitmap
-import com.darblee.flingaid.gUpArrowBitmap
 import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.SolverState
 import com.darblee.flingaid.ui.SolverUiState
@@ -358,7 +354,6 @@ private fun DrawSolverBoard(
     if (solverViewModel.needBallAnimation()) {
         AnimateBallMovementsSpec(solverViewModel, uiState, youWonAnnouncement, animateBallMovementChain)
     }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -455,6 +450,7 @@ private fun DrawSolverBoard(
             val ballSize =  (gridSize * 1.10).toInt()
             val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
                 ballSize, ballSize, false).asImageBitmap()
+            displayBallImage.prepareToDraw()   // cache it
 
             if (solverViewModel.needBallAnimation()) {
                 val ballsToErase = solverViewModel.uiState.value.movingChain
@@ -465,6 +461,7 @@ private fun DrawSolverBoard(
                 if (solverViewModel.ballCount() > 1) {
                     // Draw the winning arrow if there is a winning move identified
                     if (solverViewModel.foundWinnableMove()) {
+
                         val moveCount = solverViewModel.getWinningMoveCount(uiState)
                         animateWinningMovePerform(this, gridSize, uiState, animateWinningMove,
                             moveCount, displayBallImage
@@ -519,22 +516,18 @@ private fun animateWinningMovePerform(
         var xOffset = 0
         var yOffset = 0
 
-        val displayArrowBitMap = when (uiState.foundWinningDirection) {
+        when (uiState.foundWinningDirection) {
             Direction.UP -> {
                 yOffset = -1 * gridSize.toInt() * gWinningMoveCount
-                gUpArrowBitmap
             }
             Direction.DOWN -> {
                 yOffset = 1 * gridSize.toInt() * gWinningMoveCount
-                gDownArrowBitmap
             }
             Direction.LEFT -> {
                 xOffset = -1 * gridSize.toInt() * gWinningMoveCount
-                gLeftArrowBitmap
             }
             Direction.RIGHT -> {
                 xOffset = 1 * gridSize.toInt() * gWinningMoveCount
-                gRightArrowBitmap
             }
 
             // NOTE: bitmap configuration describes how pixels are stored. This affects the quality
@@ -547,17 +540,6 @@ private fun animateWinningMovePerform(
             }
         }
 
-        // Reduce size of arrow to fit inside the grid
-        val displayArrow = Bitmap.createScaledBitmap(displayArrowBitMap, gridSize.toInt(),
-            gridSize.toInt(), false).asImageBitmap()
-
-        drawImage(
-            displayArrow,
-            topLeft = Offset(
-                x = ((uiState.winningPosition.col) * gridSize),
-                y = ((uiState.winningPosition.row * gridSize)))
-        )
-
         translate(
             (xOffset) * animate.value,
             (yOffset) * animate.value
@@ -567,7 +549,8 @@ private fun animateWinningMovePerform(
                 topLeft = Offset(
                     x = ((uiState.winningPosition.col) * gridSize),
                     y = ((uiState.winningPosition.row * gridSize))
-                )
+                ),
+                alpha = 0.4F
             )
         }
     }
