@@ -666,9 +666,9 @@ class SolverViewModel : ViewModel() {
         }
     }
 
-    fun movingChainSize(): Int
+    fun getMovingChain() : List<MovingRec>
     {
-        return _uiState.value.movingChain.size
+        return _uiState.value.movingChain
     }
 }
 

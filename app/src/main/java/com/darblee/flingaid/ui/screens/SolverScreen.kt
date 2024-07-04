@@ -5,11 +5,14 @@ import android.util.Log
 import android.view.SoundEffectConstants
 import android.widget.Toast
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.repeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -333,7 +336,7 @@ private fun DrawSolverBoard(
     uiState: SolverUiState)
 {
     val context = LocalContext.current
-    val youWonAnnouncement = rememberSaveable() { mutableStateOf(false) }
+    val youWonAnnouncement = rememberSaveable { mutableStateOf(false) }
 
     if (youWonAnnouncement.value) {
         if (solverViewModel.ballCount() == 1) {
@@ -556,6 +559,20 @@ private fun animateWinningMovePerform(
     }
 }
 
+private val shakeKeyFrames: AnimationSpec<Float> = keyframes {
+    durationMillis = 100
+
+    // Generate 4 keyframes
+    for (i in 1..3) {
+        val x = when (i%3) {
+            0 -> 5f
+            1 ->  0f
+            else -> 0f
+        } // when
+        x at durationMillis / 10 * i using LinearEasing
+    }
+}
+
 /*
  * Animate next move. Multiple ball movements will be chained together
  *
@@ -570,21 +587,31 @@ fun AnimateBallMovementsSpec(
     animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>
 )
 {
-    repeat(solverViewModel.movingChainSize())
-    {
+    val movingChain = solverViewModel.getMovingChain()
+
+    movingChain.forEach { currentMovingRec ->
         val animateBallMovement = remember { Animatable(initialValue = 0f) }
         animateBallMovementChain.add(animateBallMovement)
     }
 
     LaunchedEffect(Unit) {
-        animateBallMovementChain.forEach { animateBallMovementChain ->
-            animateBallMovementChain.animateTo(
-                targetValue = 1f, animationSpec =
-                repeatable(
-                    iterations = 1,
-                    animation = tween(250, easing = FastOutLinearInEasing)
+        movingChain.forEachIndexed() { index, currentMovingRec ->
+            if (currentMovingRec.distance > 0) {
+                Log.i(Global.debugPrefix, "Ball movement :- normal")
+                animateBallMovementChain[index].animateTo(
+                    targetValue = 1f, animationSpec =
+                    repeatable(
+                        iterations = 1,
+                        animation = tween(250, easing = FastOutLinearInEasing)
+                    )
                 )
-            )
+            } else {
+                // Distance is zero. Need to set-up the "wiggle" effect
+                Log.i(Global.debugPrefix, "Ball movement - Bump effect")
+                animateBallMovementChain[index].animateTo(
+                    targetValue = 0f, animationSpec = shakeKeyFrames
+                )
+            } // if-else currentMovingRec.distance
         }
 
         animateBallMovementChain.forEach { animateBallMovementChain ->
@@ -626,6 +653,17 @@ fun animateBallMovementsPerform(
             offset = setOffsets(movingDirection, movingChain[index].distance, gridSize)
             xOffset = offset.first
             yOffset = offset.second
+
+            // Define shaking direction if theere is no ball movement
+            if (currentMovement.distance == 0) {
+                when (movingDirection) {
+                    Direction.UP -> yOffset = 1f
+                    Direction.DOWN -> yOffset = -1f
+                    Direction.LEFT -> xOffset = 1f
+                    Direction.RIGHT -> xOffset = -1f
+                    else -> assert(true) { "Unexpected direction value on animate ball movement"}
+                }
+            }
 
             translate(
                 (xOffset) * ((animateBallMovementChain[index]).value),
