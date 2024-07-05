@@ -99,6 +99,13 @@ import kotlin.math.abs
 
 lateinit var gBoardFile : File
 
+/**
+ *  The main Solver Game Screen
+ *
+ *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
+ *  elements
+ *  @param onNavigateBack lambda function that goes back to the previous screen
+ */
 @Composable
 fun SolverScreen(
     modifier: Modifier = Modifier,
@@ -145,11 +152,14 @@ fun SolverScreen(
     }
 }
 
-/*
+/**
  * Provide instruction on how to play Solver Screen.
  *
  * Display the game logo. Game logo also change to animation
  * when it is searching for the solution.
+ *
+ * @param uiState Current state of the solver gae
+ * @param onNavigateBack lambda function to navigate back to the previous screen
  */
 @Composable
 private fun Instruction_DynamicLogo(uiState: SolverUiState,
@@ -238,6 +248,10 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState,
     } // Row
 }
 
+ /**
+ * Show all the control buttons on top of the screen. These buttons
+ * are "find the solution" button and "reset" button
+ */
 @Composable
 private fun ControlButtonsForSolver(
     solverViewModel: SolverViewModel = viewModel(),
@@ -259,17 +273,22 @@ private fun ControlButtonsForSolver(
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
                 Log.i(Global.debugPrefix, ">>> Starting thinking : Button Pressed")
                 if (showWinnableMoveToUser) {
-                    // After moving the ball, we need to find the next move and show the hint right away.
-                    //
-                    // When setting up the moving chain, it will start a new LaunchEffect thread
-                    // that will call animation complete at the end, which will in turn
-                    // make the actual ball movement
+                    /**
+                     *  After moving the ball, we need to find the next move and show the hint right
+                     *  away.
+                     *
+                     *  When setting up the moving chain, it will start a new LaunchEffect thread
+                     *  that will call animation complete at the end, which will in turn
+                     *  make the actual ball movement
+                     */
                     val winningDirection = uiState.foundWinningDirection
                     val winningPos = uiState.winningPosition
                     solverViewModel.setupMovingChain(winningPos.row, winningPos.col, winningDirection)
                 } else {
-                    // In this case, we did not move the ball as we did not show hint yet.
-                    // We need to find the winning move.
+                    /**
+                     * In this case, we did not move the ball as we did not show hint yet.
+                     * We need to find the winning move.
+                     */
                     Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
                     solverViewModel.findWinningMove(solverViewModel)
                 }
@@ -318,6 +337,9 @@ private fun ControlButtonsForSolver(
     }
 }
 
+/**
+ * Display the toast message indicating there is no winnable move
+ */
 @Composable
 private fun DisplayNoWinnableMoveToast()
 {
@@ -330,11 +352,16 @@ private fun DisplayNoWinnableMoveToast()
     ).show()
 }
 
-/*
+/**
  *  Draw the Solver Game Board:
- *       - Grid
- *       - all the balls
- *       - winning arrow (if there is solution after "find winnable movable" submission
+ *       Draw the Grid
+ *       Place all the balls
+ *       Handle all the input (drag, click on grid to place the ball)
+ *       Handle all the ball animations (show next move, move the actual ball)
+ *
+ *   @see drawGrid
+ *   @see drawSolverBalls
+ *
  */
 @Composable
 private fun DrawSolverBoard(
@@ -353,8 +380,9 @@ private fun DrawSolverBoard(
         youWonAnnouncement.value = false
     }
 
-    /* Launch the animation only once when it enters the composition. It will animate infinitely
-     * until it is removed from the composition */
+    /** Launch the animation only once when it enters the composition. It will animate infinitely
+     * until it is removed from the composition
+     */
     val animateWinningMove = remember { Animatable(initialValue = 0f) }
     AnimateWinningMoveSetup(animateWinningMove)
 
@@ -424,7 +452,8 @@ private fun DrawSolverBoard(
                             dragCol = (offset.x / gridSize).toInt()
                         },
                         onDrag = { change, dragAmount ->
-                            /* Need to consume this event, so that its parent knows not to react to
+                            /**
+                             * Need to consume this event, so that its parent knows not to react to
                              * it anymore. What change.consume() does is it prevent pointerInput
                              * above it to receive events by returning PointerInputChange.positionChange()
                              * Offset.Zero PointerInputChange.isConsumed true.
@@ -491,7 +520,7 @@ private fun DrawSolverBoard(
     } // Box
 }
 
-/*
+/**
  * Animate upcoming ball movement that will lead to winning solution
  *
  *  AnimateWinningMoveSetup : Set-up the specification
@@ -511,9 +540,13 @@ private fun AnimateWinningMoveSetup(animateWinningMove: Animatable<Float, Animat
     }
 }
 
-/*
- * Show Winning Move
- *   Animate the shadowed ball movement
+/**
+ * Show Winning Move. Animate the shadowed ball movement
+ *
+ * @param drawScope : Draws cope to do the drawing on
+ * @param gridSize : width or height of the grid in dp unit
+ * @param uiState : The current state of the Solver Game
+ *
  */
 private fun animateWinningMovePerform(
     drawScope: DrawScope,
@@ -553,21 +586,31 @@ private fun animateWinningMovePerform(
     }
 }
 
-/*
- * Animate next move. Multiple ball movements will be chained together
+/**
+ *  Ball movement animation routines. It contain a chain of ball animated movements in sequential
+ *  order.
  *
- *  Various AnimationSpec
- *  AnimateBallMovementsSetup : Set-up the specification. It is chained of multiple ball movements
- *  animateBallMovementsPerform : Perform the actual animation
+ *  All the animation specs:
+ *  @see straightBallMovementAnimatedSpec
+ *  @see wiggleBallAnimatedSpec
+ *
+ *  Animation Set-up:
+ *  @see AnimateBallMovementsSetup
+ *
+ *  Perform the actual animation:
+ *  @see animateBallMovementsPerform
  */
 
 private val straightBallMovementAnimatedSpec = keyframes {
-    durationMillis = 350
-    0f.at(30) using LinearOutSlowInEasing
-    1.05f.at(320) using FastOutLinearInEasing
-    1.0f.at(350) using EaseOut
+    durationMillis = 900
+    0f.at(50) using LinearOutSlowInEasing      // from 0 to 50 ms
+    1.01f.at(850) using FastOutLinearInEasing  // From 50 ms to 850 ms
+    1.0f.at(900) using EaseOut                 // From 850 ms to 900 ms
 }
 
+/**
+ * Animated specification to wiggle the ball
+ */
 private val wiggleBallAnimatedSpec = keyframes {
     durationMillis = 80
     0f.at( 10) using LinearEasing   // from 0 ms to 10 ms
@@ -664,7 +707,13 @@ fun animateBallMovementsPerform(
     }   // with (DrawScope)
 }
 
-
+/**
+ * Set the actual row and column length in Offset record.
+ *
+ * @return both pair of values (row length and column length)
+ * @sample Offset a = setOffsets(Direction.Up, 3, 100)
+ *
+ */
 private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pair<Float, Float>
 {
     var xOffset = -1F

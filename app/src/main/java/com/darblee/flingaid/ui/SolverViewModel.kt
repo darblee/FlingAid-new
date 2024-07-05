@@ -27,33 +27,31 @@ class SolverViewModel : ViewModel() {
 
     private var _ballPositionList = mutableStateListOf<SolverGridPos>()
 
-    /*
-        SnapshotList:
-        - The composable will automatically update when that state changes
-        - Values can change
-        - Other functions will be notified of the changes
-        Ref: https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn
+    /**
+     * Contain the UI state of the solver game. This is used by the game screens to display
+     * proper UI elements. Various composable will automatically update when that state changes
+     *
+     * For reference, see [ https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn ]
      */
-
-    // Game UI state
     private val _uiState = MutableStateFlow(SolverUiState())
 
-    /*
-        Developer's note:
-        StateFlow is a data holder observable flow that emits the current and new state updates.
-        Its value property reflects the current state value. To update state and send it to the flow,
-        assign a new value to the value property of the MutableStateFlow class.
-
-        In Android, StateFlow works well with classes that must maintain an observable immutable state.
-        A StateFlow can be exposed from the GameUiState so that the composable can listen for UI state
-        updates and make the screen state survive configuration changes.
-
-        In the GameViewModel class, add the following _uiState property.
-
-        "internal" means it will only be visible within that module. A module is a set of Kotlin
-        files that are compiled together e.g. a library or application. It provides real
-        encapsulation for the implementation details
-
+    /**
+     * Holds the [_uiState] as a state flow.
+     *
+     * Developer's note:
+     * StateFlow is a data holder observable flow that emits the current and new state updates.
+     * Its value property reflects the current state value. To update state and send it to the flow,
+     * assign a new value to the value property of the MutableStateFlow class.
+     *
+     * In Android, StateFlow works well with classes that must maintain an observable immutable state.
+     * A StateFlow can be exposed from the GameUiState so that the composable can listen for UI state
+     * updates and make the screen state survive configuration changes.
+     *
+     * In the GameViewModel class, add the following [_uiState] property.
+     *
+     * "internal" means it will only be visible within that module. A module is a set of Kotlin
+     * files that are compiled together e.g. a library or application. It provides real
+     * encapsulation for the implementation details
      */
     internal var uiState : StateFlow<SolverUiState> = _uiState.asStateFlow()
     // Public getter (read-only access from outside) and private setter (only internally modifiable)
@@ -125,8 +123,13 @@ class SolverViewModel : ViewModel() {
         return _ballPositionList.count()
     }
 
-    // If the position is blank, then place the ball.
-    // If ball already exist on that location, then remove the ball
+    /**
+     * If the position is blank, then place the ball.
+     * If ball already exist on that location, then remove the ball
+     *
+     * @param solverGridPos The position of the ball
+     * @return Unit (nothing)
+     */
     fun toggleBallPosition(solverGridPos: SolverGridPos)
     {
         if (_ballPositionList.contains(solverGridPos)) {
@@ -143,8 +146,10 @@ class SolverViewModel : ViewModel() {
         }
     }
 
-    // Volatile is used to ensure each thread is reading exact same value
-    // (from memory instead of from cpu-cache)
+    /**
+     * Volatile is used to ensure each thread is reading exact same [gMultipleThread] value
+     * from memory instead of from cpu-cache.
+     */
     @Volatile var gMultipleThread = false
 
     private lateinit var gThinkingThread1 : Thread
@@ -156,6 +161,12 @@ class SolverViewModel : ViewModel() {
     private var task2WinningRow = -1
     private var task2WinningCol = -1
 
+    /**
+     * Find the winning move.
+     *
+     * @param solverViewModel The ViewModel instance
+     * @return Unit (nothing)
+     */
     fun findWinningMove(solverViewModel: SolverViewModel)
     {
         _uiState.update {currentState ->
@@ -181,13 +192,13 @@ class SolverViewModel : ViewModel() {
                 Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
                 cyclicBarrier = CyclicBarrier(2) {
                     Log.i(Global.debugPrefix, "Reached a converged point between 2 parallel tasks")
-                    displayResult()
+                    recordThinkingResult()
                 }
             } else {
                 gMultipleThread = false
                 cyclicBarrier = CyclicBarrier(1) {
                     Log.i(Global.debugPrefix, "Reached a converged point. One thread")
-                    displayResult()
+                    recordThinkingResult()
                 }
             }
 
@@ -215,7 +226,12 @@ class SolverViewModel : ViewModel() {
         }
     }
 
-    private fun displayResult()
+    /**
+     * Update the [_uiState] with the result of the thinking task(s).
+     *
+     * @return Unit (nothing)
+     */
+    private fun recordThinkingResult()
     {
         Log.i(Global.debugPrefix, "DisplayResult after processing....")
         uiState.value.state = SolverState.NotThinking
@@ -365,6 +381,11 @@ class SolverViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Show the thinking processing activity.
+     *
+     * @return Unit (nothing)
+     */
     private fun showProcessingActivity()
     {
         var i = 0
@@ -385,8 +406,10 @@ class SolverViewModel : ViewModel() {
                 }
             }
 
-            // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
-            // loop breakout when it has finished thinking
+            /**
+             * Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
+             * loop breakout when it has finished thinking
+             */
             if (_uiState.value.state == SolverState.Thinking) Thread.sleep(500)
             if (_uiState.value.state == SolverState.Thinking) Thread.sleep(500)
             if (_uiState.value.state == SolverState.Thinking) Thread.sleep(500)
@@ -589,6 +612,23 @@ class SolverViewModel : ViewModel() {
         return (movingList)
     }
 
+    /**
+     *  FInd the number of free space in front of the ball doing on a specific direction. If the
+     *  ball is on the edge, then automatically provide 2 free spaces. The caller [buildMovingChain]
+     *  will send the ball off the grid. We need to see it fall off the edge of the phone screen, which is why
+     *  two space is provided instead of one space.
+     *
+     *  @param row Row of existing ball
+     *  @param col Column of existing ball
+     *  @param direction Direction to look for free space
+     *  @param firstMove If this is the first move, we need to do special check when the ball is
+     *  on the edge of the grid.
+     *
+     *  @see buildMovingChain
+     *  @return Pair<Int, SolverGridPos?> where the first element is the number of free space and
+     *  second element is the position of the next ball
+     *
+     */
     private fun findFreeSpaceCount(row: Int, col: Int, direction: Direction, firstMove: Boolean) : Pair <Int, SolverGridPos?>
     {
         var xOffset = 0

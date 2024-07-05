@@ -233,7 +233,7 @@ private fun animateBalls(
     onSwipeBall: (animateBalls: Boolean) -> Unit
 )
 {
-    Log.i(Global.debugPrefix, "Rcompose animateBalls  grid xxxxxxxxxxxxxxxxxxxxx")
+    Log.i(Global.debugPrefix, "Recompose animateBalls  grid ")
 
     val animate1 = remember { Animatable(initialValue = 0f) }
     val animate2 = remember { Animatable(initialValue = 0f) }
@@ -282,7 +282,7 @@ private fun animateBalls(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
-        Log.i(Global.debugPrefix, "REcompose box grid xxxxxxxxxxxxxxxxxxxxx")
+        Log.i(Global.debugPrefix, "Recompose box grid")
         val lineColor = MaterialTheme.colorScheme.outline
         var gridSize by rememberSaveable {
             mutableFloatStateOf(0f)
@@ -370,7 +370,7 @@ private fun animateBalls(
                     ) // detectDragGestures
                 } // .pointerInput
         ) {
-            Log.i(Global.debugPrefix, "REcompose canvas")
+            Log.i(Global.debugPrefix, "Recompose canvas")
             val canvasWidth = size.width
             val canvasHeight = size.height
 
@@ -436,7 +436,7 @@ private fun DrawGameBoard(
     onSwipeBall: (animateBalls: Boolean) -> Unit
 )
 {
-    Log.i(Global.debugPrefix, "Recompose drawGame grid xxxxxxxxxxxxxxxxxxxxx")
+    Log.i(Global.debugPrefix, "Recompose drawGame grid")
     /*
      * Launch the animation only once when it enters the composition. It will animate infinitely
      * until it is removed from the composition
@@ -482,7 +482,7 @@ private fun DrawGameBoard(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
-        Log.i(Global.debugPrefix, "REcompose box grid xxxxxxxxxxxxxxxxxxxxx")
+        Log.i(Global.debugPrefix, "Recompose box grid ")
         val lineColor = MaterialTheme.colorScheme.outline
         var gridSize by rememberSaveable {
             mutableFloatStateOf(0f)
@@ -578,7 +578,7 @@ private fun DrawGameBoard(
                     ) // detectDragGestures
                 } // .pointerInput
         ) {
-            Log.i(Global.debugPrefix, "REcompose canvas")
+            Log.i(Global.debugPrefix, "Recompose canvas")
             val canvasWidth = size.width
             val canvasHeight = size.height
 
@@ -662,4 +662,3 @@ private fun drawGameBalls(
         }
     }
 }
-
