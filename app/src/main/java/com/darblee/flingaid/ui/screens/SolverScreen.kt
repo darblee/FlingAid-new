@@ -2,6 +2,7 @@ package com.darblee.flingaid.ui.screens
 
 import android.graphics.Bitmap
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import android.view.SoundEffectConstants
 import android.widget.Toast
 import androidx.compose.animation.core.Animatable
@@ -155,6 +156,8 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState,
                                     onNavigateBack: () -> Unit)
 {
     val logoSize = 125.dp
+    val view = LocalView.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -217,7 +220,9 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState,
             Spacer(modifier = Modifier.padding(10.dp))
 
             Button(
-                onClick = { onNavigateBack.invoke() },
+                onClick = {
+                    view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                    onNavigateBack.invoke() },
                 Modifier
                     .defaultMinSize()
                     .align(Alignment.CenterHorizontally),
@@ -242,6 +247,8 @@ private fun ControlButtonsForSolver(
     showWinnableMoveToUser: Boolean,
     uiState: SolverUiState)
 {
+    val view = LocalView.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -251,6 +258,7 @@ private fun ControlButtonsForSolver(
     ) {
         Button(
             onClick = {
+                view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
                 Log.i(Global.debugPrefix, ">>> Starting thinking : Button Pressed")
                 if (showWinnableMoveToUser) {
                     // After moving the ball, we need to find the next move and show the hint right away.
@@ -291,6 +299,7 @@ private fun ControlButtonsForSolver(
 
         Button(
             onClick = {
+                view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
                 solverViewModel.reset(gBoardFile)
             },
             shape = RoundedCornerShape(5.dp),
@@ -347,8 +356,7 @@ private fun DrawSolverBoard(
     }
 
     /* Launch the animation only once when it enters the composition. It will animate infinitely
-     * until it is removed from the composition
-     */
+     * until it is removed from the composition */
     val animateWinningMove = remember { Animatable(initialValue = 0f) }
     AnimateWinningMoveSpec(animateWinningMove)
 
@@ -387,6 +395,9 @@ private fun DrawSolverBoard(
                     detectTapGestures(
                         onTap = { tapOffset ->
                             // For unknown reason, we can not use uiState.state
+
+                            view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+
                             val thinkingStatus = solverViewModel.getThinkingStatus()
                             if (thinkingStatus == SolverState.Thinking) {
                                 Toast
@@ -559,19 +570,7 @@ private fun animateWinningMovePerform(
     }
 }
 
-private val shakeKeyFrames: AnimationSpec<Float> = keyframes {
-    durationMillis = 100
 
-    // Generate 4 keyframes
-    for (i in 1..3) {
-        val x = when (i%3) {
-            0 -> 5f
-            1 ->  0f
-            else -> 0f
-        } // when
-        x at durationMillis / 10 * i using LinearEasing
-    }
-}
 
 /*
  * Animate next move. Multiple ball movements will be chained together
@@ -579,6 +578,17 @@ private val shakeKeyFrames: AnimationSpec<Float> = keyframes {
  *  AnimateBallMovementsSpec : Set-up the specification. It is chained of multiple ball movements
  *  animateBallMovementsPerform : Perform the actual animation
  */
+private val straightBallMovementAnimatedSpec: AnimationSpec<Float> = repeatable(
+    iterations = 1,
+    animation = tween(250, easing = FastOutLinearInEasing)
+)
+
+private val wiggleBallAnimatedSpec = keyframes {
+    durationMillis = 80
+    0f.at( 10) using LinearEasing   // from 0 ms to 10 ms
+    5f.at(20) using LinearEasing    // from 10 ms to 20 ms
+}
+
 @Composable
 fun AnimateBallMovementsSpec(
     solverViewModel: SolverViewModel,
@@ -589,7 +599,7 @@ fun AnimateBallMovementsSpec(
 {
     val movingChain = solverViewModel.getMovingChain()
 
-    movingChain.forEach { currentMovingRec ->
+    movingChain.forEach { _ ->
         val animateBallMovement = remember { Animatable(initialValue = 0f) }
         animateBallMovementChain.add(animateBallMovement)
     }
@@ -597,19 +607,13 @@ fun AnimateBallMovementsSpec(
     LaunchedEffect(Unit) {
         movingChain.forEachIndexed() { index, currentMovingRec ->
             if (currentMovingRec.distance > 0) {
-                Log.i(Global.debugPrefix, "Ball movement :- normal")
                 animateBallMovementChain[index].animateTo(
-                    targetValue = 1f, animationSpec =
-                    repeatable(
-                        iterations = 1,
-                        animation = tween(250, easing = FastOutLinearInEasing)
-                    )
+                    targetValue = 1f, animationSpec = straightBallMovementAnimatedSpec
                 )
             } else {
                 // Distance is zero. Need to set-up the "wiggle" effect
-                Log.i(Global.debugPrefix, "Ball movement - Bump effect")
                 animateBallMovementChain[index].animateTo(
-                    targetValue = 0f, animationSpec = shakeKeyFrames
+                    targetValue = 0f, animationSpec = wiggleBallAnimatedSpec
                 )
             } // if-else currentMovingRec.distance
         }
@@ -657,10 +661,10 @@ fun animateBallMovementsPerform(
             // Define shaking direction if theere is no ball movement
             if (currentMovement.distance == 0) {
                 when (movingDirection) {
-                    Direction.UP -> yOffset = 1f
-                    Direction.DOWN -> yOffset = -1f
-                    Direction.LEFT -> xOffset = 1f
-                    Direction.RIGHT -> xOffset = -1f
+                    Direction.UP -> yOffset = -1f
+                    Direction.DOWN -> yOffset = 1f
+                    Direction.LEFT -> xOffset = -1f
+                    Direction.RIGHT -> xOffset = 1f
                     else -> assert(true) { "Unexpected direction value on animate ball movement"}
                 }
             }
