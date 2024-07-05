@@ -6,15 +6,15 @@ import android.view.HapticFeedbackConstants
 import android.view.SoundEffectConstants
 import android.widget.Toast
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.repeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -193,7 +193,7 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.align(Alignment.TopCenter))
             }
-        }
+        }  // Box
         Column(Modifier.padding(5.dp)) {
             Text(text = "Instruction:",
                 style = MaterialTheme.typography.titleSmall)
@@ -232,12 +232,10 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState,
                 ),
             ) {
                 Icon(painterResource(id = R.drawable.home_image), "Home")
-                Text(
-                    text = "Back to Home"
-                )
-            }
-        }
-    }
+                Text(text = "Back to Home")
+            }  // Button
+        } // Column
+    } // Row
 }
 
 @Composable
@@ -358,12 +356,12 @@ private fun DrawSolverBoard(
     /* Launch the animation only once when it enters the composition. It will animate infinitely
      * until it is removed from the composition */
     val animateWinningMove = remember { Animatable(initialValue = 0f) }
-    AnimateWinningMoveSpec(animateWinningMove)
+    AnimateWinningMoveSetup(animateWinningMove)
 
     val animateBallMovementChain = mutableListOf<Animatable<Float,AnimationVector1D>>()
 
     if (solverViewModel.needBallAnimation()) {
-        AnimateBallMovementsSpec(solverViewModel, uiState, youWonAnnouncement, animateBallMovementChain)
+        AnimateBallMovementsSetup(solverViewModel, uiState, youWonAnnouncement, animateBallMovementChain)
     }
     Box(
         modifier = Modifier
@@ -496,11 +494,11 @@ private fun DrawSolverBoard(
 /*
  * Animate upcoming ball movement that will lead to winning solution
  *
- *  AnimateWinningMoveSpec : Set-up the specification
+ *  AnimateWinningMoveSetup : Set-up the specification
  *  animateWinningMovePerform : Perform the actual animation
  */
 @Composable
-private fun AnimateWinningMoveSpec(animateWinningMove: Animatable<Float, AnimationVector1D>)
+private fun AnimateWinningMoveSetup(animateWinningMove: Animatable<Float, AnimationVector1D>)
 {
     LaunchedEffect(Unit) {
         animateWinningMove.animateTo(
@@ -515,8 +513,7 @@ private fun AnimateWinningMoveSpec(animateWinningMove: Animatable<Float, Animati
 
 /*
  * Show Winning Move
- *   Show direction arrow
- *   Animate the ball movement
+ *   Animate the shadowed ball movement
  */
 private fun animateWinningMovePerform(
     drawScope: DrawScope,
@@ -531,26 +528,12 @@ private fun animateWinningMovePerform(
         var yOffset = 0
 
         when (uiState.foundWinningDirection) {
-            Direction.UP -> {
-                yOffset = -1 * gridSize.toInt() * gWinningMoveCount
-            }
-            Direction.DOWN -> {
-                yOffset = 1 * gridSize.toInt() * gWinningMoveCount
-            }
-            Direction.LEFT -> {
-                xOffset = -1 * gridSize.toInt() * gWinningMoveCount
-            }
-            Direction.RIGHT -> {
-                xOffset = 1 * gridSize.toInt() * gWinningMoveCount
-            }
-
-            // NOTE: bitmap configuration describes how pixels are stored. This affects the quality
-            // (color depth) as well as the ability to display transparent/translucent colors.
-            // "Bitmap.Config.ARGB_8888" indicates the maximum flexibility
+            Direction.UP -> { yOffset = -1 * gridSize.toInt() * gWinningMoveCount }
+            Direction.DOWN -> { yOffset = 1 * gridSize.toInt() * gWinningMoveCount }
+            Direction.LEFT -> { xOffset = -1 * gridSize.toInt() * gWinningMoveCount }
+            Direction.RIGHT -> { xOffset = 1 * gridSize.toInt() * gWinningMoveCount }
             else -> {
-                Log.e(Global.debugPrefix, "Got unexpected Direction value: ${uiState.foundWinningDirection}")
-                assert(true)
-                (Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888))
+                assert(true) { "Got unexpected Direction value: ${uiState.foundWinningDirection}"}
             }
         }
 
@@ -570,18 +553,20 @@ private fun animateWinningMovePerform(
     }
 }
 
-
-
 /*
  * Animate next move. Multiple ball movements will be chained together
  *
- *  AnimateBallMovementsSpec : Set-up the specification. It is chained of multiple ball movements
+ *  Various AnimationSpec
+ *  AnimateBallMovementsSetup : Set-up the specification. It is chained of multiple ball movements
  *  animateBallMovementsPerform : Perform the actual animation
  */
-private val straightBallMovementAnimatedSpec: AnimationSpec<Float> = repeatable(
-    iterations = 1,
-    animation = tween(250, easing = FastOutLinearInEasing)
-)
+
+private val straightBallMovementAnimatedSpec = keyframes {
+    durationMillis = 350
+    0f.at(30) using LinearOutSlowInEasing
+    1.05f.at(320) using FastOutLinearInEasing
+    1.0f.at(350) using EaseOut
+}
 
 private val wiggleBallAnimatedSpec = keyframes {
     durationMillis = 80
@@ -590,12 +575,11 @@ private val wiggleBallAnimatedSpec = keyframes {
 }
 
 @Composable
-fun AnimateBallMovementsSpec(
+fun AnimateBallMovementsSetup(
     solverViewModel: SolverViewModel,
     uiState: SolverUiState,
     youWonAnnouncement: MutableState<Boolean>,
-    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>
-)
+    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>)
 {
     val movingChain = solverViewModel.getMovingChain()
 
@@ -605,7 +589,7 @@ fun AnimateBallMovementsSpec(
     }
 
     LaunchedEffect(Unit) {
-        movingChain.forEachIndexed() { index, currentMovingRec ->
+        movingChain.forEachIndexed { index, currentMovingRec ->
             if (currentMovingRec.distance > 0) {
                 animateBallMovementChain[index].animateTo(
                     targetValue = 1f, animationSpec = straightBallMovementAnimatedSpec
@@ -616,10 +600,6 @@ fun AnimateBallMovementsSpec(
                     targetValue = 0f, animationSpec = wiggleBallAnimatedSpec
                 )
             } // if-else currentMovingRec.distance
-        }
-
-        animateBallMovementChain.forEach { animateBallMovementChain ->
-            animateBallMovementChain.snapTo(0F)
         }
 
         solverViewModel.ballMovementAnimationComplete()
@@ -639,8 +619,7 @@ fun animateBallMovementsPerform(
     solverViewModel: SolverViewModel,
     gridSize: Float,
     displayBallImage: ImageBitmap,
-    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>
-)
+    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>)
 {
     with (drawScope) {
         val movingDirection = solverViewModel.uiState.value.movingDirection
@@ -658,7 +637,7 @@ fun animateBallMovementsPerform(
             xOffset = offset.first
             yOffset = offset.second
 
-            // Define shaking direction if theere is no ball movement
+            // Define shaking direction if there is no ball movement
             if (currentMovement.distance == 0) {
                 when (movingDirection) {
                     Direction.UP -> yOffset = -1f
@@ -681,8 +660,8 @@ fun animateBallMovementsPerform(
                     )
                 ) // drawImage
             } // translate
-        }
-    }
+        }  // for
+    }   // with (DrawScope)
 }
 
 
@@ -720,18 +699,17 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
     return(Pair(xOffset, yOffset))
 }
 
-
-
-// Draw all the balls in the provided canvas
-//
-// During ball animation, we need to temporarily erase the animation ball
+/*
+ * Draw all the balls in the provided canvas
+ *
+ * During ball animation, we need to temporarily erase the animation ball
+ */
 private fun drawSolverBalls(
     drawScope: DrawScope,
     solverViewModel: SolverViewModel,
     gridSize: Float,
     displayBallImage: ImageBitmap,
-    eraseAnimatedBallPositions: List<MovingRec> = listOf()
-)
+    eraseAnimatedBallPositions: List<MovingRec> = listOf())
 {
     // Draw all the balls
     with (drawScope) {
