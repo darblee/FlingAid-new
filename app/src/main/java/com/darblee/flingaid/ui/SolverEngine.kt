@@ -49,11 +49,6 @@ class SolverEngine {
         var winningRow = -1
         var winningCol = -1
 
-        /*
-        var debugIndentation = ""
-        val indentationLoop = curSearchLevel - 1
-        repeat (indentationLoop) { debugIndentation += "  " }
-        */
         val startRow: Int
         val exceededRow: Int
         val startColumn: Int
@@ -181,20 +176,12 @@ class SolverEngine {
 
     private fun winnableByMovingUp(totalBallCnt : Int, curSearchLevel: Int, srcRow: Int, col : Int) : Boolean
     {
-        /*
-        var debugIndentation = ""
-        val indentationLoop = curSearchLevel - 1
-        repeat (indentationLoop) { debugIndentation += "  " }
-        val methodName = ((Throwable().fillInStackTrace()).stackTrace)[0].methodName
-         */
-
         val targetRow = findTargetRowOnMoveUp(srcRow, col)
 
         if (targetRow == -1) {
             return false
         }
 
-        // Log.d("GM: $curSearchLevel","$debugIndentation $methodName: UP move. From $srcRow, $col to $targetRow, $col")
         // Now we will make the move. So let's create a temporary board to handle the move
         val tempBoard = this.duplicate() // Clone the board
 
@@ -224,8 +211,6 @@ class SolverEngine {
             return false
         }
 
-        // Log.d("GM: $curSearchLevel", "$debugIndentation $methodName: DOWN move. From $srcRow, $col to $targetRow, $col")
-        // Now we will make the move. So let's create a temporary board to handle the move
         val tempBoard = this.duplicate() // Clone the board
 
         // Make the actual move
@@ -302,8 +287,15 @@ class SolverEngine {
         return true
     }
 
-    // Find the target Row, If it can not find one, then there is no move possible and it will
-    // return -1
+    /**
+     * Find the target Row above it. If it can not find one, then there is no move possible and it will
+     * return -1
+     *
+     * @param srcRow Source row
+     * @param col Current column
+     *
+     * @return Return the number of row it can move to. If it can not find any room, it will return -1
+     */
     fun findTargetRowOnMoveUp(srcRow: Int, col: Int) : Int {
         // If you are near the top of the grid, then you do not have any room to move up
         if (srcRow <= 1) {
@@ -336,8 +328,15 @@ class SolverEngine {
         return (targetRow)
     }
 
-    // Find the target Row, If it can not find one, then there is no move possible and it will
-    // return -1
+    /**
+     * Find the target Row below it. If it can not find one, then there is no move possible and it will
+     * return -1
+     *
+     * @param srcRow Source row
+     * @param col Current column
+     *
+     * @return Return the number of row it can move to. If it can not find any room, it will return -1
+     */
     fun findTargetRowOnMoveDown(srcRow: Int, col: Int) : Int {
         // If you are near the bottom of the grid, then you do not have any room to move down
         if (srcRow > (Global.MaxRowSize - 3)) {
@@ -369,8 +368,15 @@ class SolverEngine {
         return (targetRow)
     }
 
-    // Find the target Col, If it can not find one, then there is no move possible and it will
-    // return -1
+    /**
+     * Find the target column to its right. If it can not find one, then there is no move possible and it will
+     * return -1
+     *
+     * @param row Current row
+     * @param srcCol Source column
+     *
+     * @return Return the number of column it can move to. If it can not find any room, it will return -1
+     */
     fun findTargetColOnMoveRight(row: Int, srcCol: Int) : Int
     {
 
@@ -405,8 +411,15 @@ class SolverEngine {
         return (targetCol)
     }
 
-    // Find the target Col, If it can not find one, then there is no move possible and it will
-    // return -1
+    /**
+     * Find the target column to its left. If it can not find one, then there is no move possible and it will
+     * return -1
+     *
+     * @param row Current row
+     * @param srcCol Source column
+     *
+     * @return Return the number of column it can move to. If it can not find any room, it will return -1
+     */
     fun findTargetColOnMoveLeft(row: Int, srcCol: Int) : Int
     {
         // If you are near the left of the grid, then you do not have any room to move left
@@ -453,8 +466,7 @@ class SolverEngine {
         var nextSrcRow = targetRow - 1
         if (!(flingGrid[nextSrcRow][col])) error("Unexpected grid value. This adjacent box must have a ball, i.e. true")
 
-        // Handle the edge first
-        // If the next row is already at the top, then just move it out of the grid and you're done
+        // Handle the edge first. If the next row is already at the top, then just move it out of the grid and you're done
         if (nextSrcRow == 0) {
             flingGrid[0][col] = false // Fell of the edge. One less ball
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
@@ -497,9 +509,11 @@ class SolverEngine {
 
         nextSrcRow = indexRow + 1
 
-        // If there is space, then need to check if there is any more ball above it
-        // If no ball above it, then remove this ball from grid and you are done.
-        // Otherwise, we need re-iterate the process in the next chain
+        /**
+         * If there is space, then need to check if there is any more ball above it
+         * If no ball above it, then remove this ball from grid and you are done.
+         * Otherwise, we need re-iterate the process in the next chain
+         */
         var foundBallBeforeEdge = false
         indexRow = nextSrcRow - 1
 

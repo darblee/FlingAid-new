@@ -97,7 +97,7 @@ fun GameScreen(modifier: Modifier = Modifier,
         if (!animateBalls) {
             DrawGameBoard(modifier = Modifier.fillMaxSize(), gameViewModel, uiState, onSwipeBall = {needToAnimate -> animateBalls = needToAnimate }  )
         } else {
-            animateBalls(
+            AnimateBalls(
                 uiState = uiState,
                 modifier = Modifier.fillMaxSize(),
                 gameViewModel = gameViewModel,
@@ -226,7 +226,7 @@ private fun GameControlButtonsForGame(
 
 
 @Composable
-private fun animateBalls(
+private fun AnimateBalls(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUIState,
@@ -437,7 +437,7 @@ private fun DrawGameBoard(
 )
 {
     Log.i(Global.debugPrefix, "Recompose drawGame grid")
-    /*
+    /**
      * Launch the animation only once when it enters the composition. It will animate infinitely
      * until it is removed from the composition
      */

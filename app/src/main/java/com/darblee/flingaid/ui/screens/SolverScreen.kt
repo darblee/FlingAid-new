@@ -380,7 +380,8 @@ private fun DrawSolverBoard(
         youWonAnnouncement.value = false
     }
 
-    /** Launch the animation only once when it enters the composition. It will animate infinitely
+    /**
+     * Launch the animation only once when it enters the composition. It will animate infinitely
      * until it is removed from the composition
      */
     val animateWinningMove = remember { Animatable(initialValue = 0f) }
@@ -546,7 +547,6 @@ private fun AnimateWinningMoveSetup(animateWinningMove: Animatable<Float, Animat
  * @param drawScope : Draws cope to do the drawing on
  * @param gridSize : width or height of the grid in dp unit
  * @param uiState : The current state of the Solver Game
- *
  */
 private fun animateWinningMovePerform(
     drawScope: DrawScope,
@@ -748,7 +748,7 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
     return(Pair(xOffset, yOffset))
 }
 
-/*
+/**
  * Draw all the balls in the provided canvas
  *
  * During ball animation, we need to temporarily erase the animation ball

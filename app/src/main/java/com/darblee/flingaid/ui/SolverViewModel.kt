@@ -613,7 +613,7 @@ class SolverViewModel : ViewModel() {
     }
 
     /**
-     *  FInd the number of free space in front of the ball doing on a specific direction. If the
+     *  Find the number of free space in front of the ball doing on a specific direction. If the
      *  ball is on the edge, then automatically provide 2 free spaces. The caller [buildMovingChain]
      *  will send the ball off the grid. We need to see it fall off the edge of the phone screen, which is why
      *  two space is provided instead of one space.
