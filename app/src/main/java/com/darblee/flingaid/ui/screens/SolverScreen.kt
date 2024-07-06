@@ -574,14 +574,7 @@ private fun animateWinningMovePerform(
             (xOffset) * animate.value,
             (yOffset) * animate.value
         ) {
-            drawImage(
-                image = displayBallImage,
-                topLeft = Offset(
-                    x = ((uiState.winningPosition.col) * gridSize),
-                    y = ((uiState.winningPosition.row * gridSize))
-                ),
-                alpha = 0.4F
-            )
+            drawBall(drawScope, gridSize, uiState.winningPosition, displayBallImage, alpha = 0.4F)
         }
     }
 }
@@ -603,9 +596,9 @@ private fun animateWinningMovePerform(
 
 private val straightBallMovementAnimatedSpec = keyframes {
     durationMillis = 900
-    0f.at(50) using LinearOutSlowInEasing      // from 0 to 50 ms
-    1.01f.at(850) using FastOutLinearInEasing  // From 50 ms to 850 ms
-    1.0f.at(900) using EaseOut                 // From 850 ms to 900 ms
+    0f.at(30) using LinearOutSlowInEasing      // from 0 to 30 ms
+    1.02f.at(880) using FastOutLinearInEasing  // From 30 ms to 880 ms
+    1.0f.at(900) using EaseOut                 // From 880 ms to 900 ms
 }
 
 /**
@@ -695,13 +688,7 @@ fun animateBallMovementsPerform(
                 (xOffset) * ((animateBallMovementChain[index]).value),
                 (yOffset) * ((animateBallMovementChain[index]).value)
             ) {
-                drawImage(
-                    image = displayBallImage,
-                    topLeft = Offset(
-                        x = movingSourcePos.col * gridSize,
-                        y = movingSourcePos.row * gridSize
-                    )
-                ) // drawImage
+                drawBall(drawScope, gridSize, movingSourcePos, displayBallImage)
             } // translate
         }  // for
     }   // with (DrawScope)
@@ -761,24 +748,44 @@ private fun drawSolverBalls(
     eraseAnimatedBallPositions: List<MovingRec> = listOf())
 {
     // Draw all the balls
-    with (drawScope) {
-        solverViewModel.ballPositionList().forEach { pos ->
-            var skipDraw = false
-            eraseAnimatedBallPositions.forEach { eraseRec ->
-                if ((eraseRec.pos.col == pos.col) && (eraseRec.pos.row == pos.row))
-                    skipDraw = true
-            }
-
-            if (!skipDraw) {
-                drawImage(
-                    image = displayBallImage,
-                    topLeft = Offset(
-                        (pos.col * gridSize),
-                        (pos.row * gridSize)
-                    )
-                )
-            }
+    solverViewModel.ballPositionList().forEach { pos ->
+        var skipDraw = false
+        eraseAnimatedBallPositions.forEach { eraseRec ->
+            if ((eraseRec.pos.col == pos.col) && (eraseRec.pos.row == pos.row))
+                skipDraw = true
         }
+
+        if (!skipDraw) drawBall(drawScope, gridSize, pos, displayBallImage)
+    }
+}
+
+/**
+ * Draw the ball in a specific position (e,g, row, col) in the board room
+ *
+ * @param drawScope
+ * @param gridSize Size the dimension of the grid
+ * @param pos Specific position (row, colume)
+ * @param displayBallImage Actual image bitmap of the ball
+ * @param alpha amount of transparency
+ */
+private fun drawBall(
+    drawScope: DrawScope,
+    gridSize: Float,
+    pos: SolverGridPos,
+    displayBallImage: ImageBitmap,
+    alpha: Float = 1.0F )
+{
+    val offsetAdjustment = (gridSize / 2) - (displayBallImage.width / 2)
+
+    with (drawScope) {
+        drawImage(
+            image = displayBallImage,
+            topLeft = Offset(
+                (pos.col * gridSize) + offsetAdjustment,
+                (pos.row * gridSize) + offsetAdjustment
+            ),
+            alpha = alpha
+        )
     }
 }
 
