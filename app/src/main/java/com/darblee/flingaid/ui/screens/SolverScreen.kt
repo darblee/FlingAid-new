@@ -495,7 +495,7 @@ private fun DrawSolverBoard(
 
             drawGrid(this, gridSize, lineColor)
 
-            val ballSize =  (gridSize * 1.10).toInt()
+            val ballSize =  (gridSize * 1.2).toInt()
             val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
                 ballSize, ballSize, false).asImageBitmap()
             displayBallImage.prepareToDraw()   // cache it
