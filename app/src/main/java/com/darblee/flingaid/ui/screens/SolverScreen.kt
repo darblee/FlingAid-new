@@ -467,13 +467,19 @@ private fun DrawSolverBoard(
                             if ((abs(offsetX) > minSwipeOffset) ||
                                 (abs(offsetY) > minSwipeOffset)
                             ) {
-                                Toast
-                                    .makeText(
+                                if (solverViewModel.ballCount() > 1) {
+                                    Toast.makeText(
                                         context,
                                         "Use \"Find next\" button to move the ball",
                                         Toast.LENGTH_SHORT
-                                    )
-                                    .show()
+                                    ).show()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "No need to move the last ball",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
                         } // onDragEnd
                     ) // detectDragGestures
@@ -501,7 +507,6 @@ private fun DrawSolverBoard(
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage)
 
                 if (solverViewModel.ballCount() > 1) {
-                    // Draw the winning arrow if there is a winning move identified
                     if (solverViewModel.foundWinnableMove()) {
 
                         val moveCount = solverViewModel.getWinningMoveCount(uiState)
