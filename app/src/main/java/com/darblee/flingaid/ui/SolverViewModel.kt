@@ -38,7 +38,7 @@ class SolverViewModel : ViewModel() {
     /**
      * Holds the [_uiState] as a state flow.
      *
-     * Developer's note:
+     * __Developer's note__:
      * StateFlow is a data holder observable flow that emits the current and new state updates.
      * Its value property reflects the current state value. To update state and send it to the flow,
      * assign a new value to the value property of the MutableStateFlow class.
@@ -49,13 +49,14 @@ class SolverViewModel : ViewModel() {
      *
      * In the GameViewModel class, add the following [_uiState] property.
      *
-     * "internal" means it will only be visible within that module. A module is a set of Kotlin
+     * `internal` means it will only be visible within that module. A module is a set of Kotlin
      * files that are compiled together e.g. a library or application. It provides real
      * encapsulation for the implementation details
+     *
+     * `private set` this is internally modifiable and read-only access from the outside.
+     * This ensure information flow in one direction from the view model to the UI
      */
     internal var uiState : StateFlow<SolverUiState> = _uiState.asStateFlow()
-    // Public getter (read-only access from outside) and private setter (only internally modifiable)
-    // This ensure all information flow in one direction.
     private set
 
     init {

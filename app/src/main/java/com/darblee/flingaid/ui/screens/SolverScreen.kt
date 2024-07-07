@@ -1,5 +1,6 @@
 package com.darblee.flingaid.ui.screens
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.HapticFeedbackConstants
@@ -10,6 +11,7 @@ import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.KeyframesSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -93,6 +95,7 @@ import com.darblee.flingaid.ui.SolverState
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
 import com.darblee.flingaid.ui.SolverGridPos
+import com.darblee.flingaid.utilities.gameToast
 import java.io.File
 import java.util.Locale
 import kotlin.math.abs
@@ -104,7 +107,7 @@ lateinit var gBoardFile : File
  *
  *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
- *  @param onNavigateBack lambda function that goes back to the previous screen
+ *  @param onNavigateBack lambda function that navigates back to the previous screen
  */
 @Composable
 fun SolverScreen(
@@ -138,10 +141,10 @@ fun SolverScreen(
 
         Instruction_DynamicLogo(uiState, onNavigateBack)
         ControlButtonsForSolver(
-            solverViewModel,
-            findWinnableMoveButtonEnabled,
-            showWinnableMoveToUser,
-            uiState
+            solverViewModel = solverViewModel,
+            findWinnableMoveButtonEnabled = findWinnableMoveButtonEnabled,
+            showWinnableMoveToUser = showWinnableMoveToUser,
+            uiState = uiState
         )
 
         DrawSolverBoard(
@@ -158,7 +161,7 @@ fun SolverScreen(
  * Display the game logo. Game logo also change to animation
  * when it is searching for the solution.
  *
- * @param uiState Current state of the solver gae
+ * @param uiState Current UI state of the solver game
  * @param onNavigateBack lambda function to navigate back to the previous screen
  */
 @Composable
@@ -249,9 +252,16 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState,
 }
 
  /**
- * Show all the control buttons on top of the screen. These buttons
- * are "find the solution" button and "reset" button
- */
+  * Show all the control buttons on top of the screen. These buttons
+  * are "find the solution" button and "reset" button
+  *
+  * @param solverViewModel Solver Game View model
+  * @param findWinnableMoveButtonEnabled Determine whether the "Find move" button needs to be
+  * enabled or disabled
+  * @param showWinnableMoveToUser Determine whether to show the preview of the next winnable
+  * move or not
+  * @param uiState Current UI state of the solver game
+  */
 @Composable
 private fun ControlButtonsForSolver(
     solverViewModel: SolverViewModel = viewModel(),
@@ -359,8 +369,13 @@ private fun DisplayNoWinnableMoveToast()
  *       Handle all the input (drag, click on grid to place the ball)
  *       Handle all the ball animations (show next move, move the actual ball)
  *
- *   @see drawGrid
- *   @see drawSolverBalls
+ *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
+ *  elements
+ *  @param solverViewModel Solver game view model
+ *  @param uiState Current UI state of the solver game
+ *
+ *  @see drawGrid
+ *  @see drawSolverBalls
  *
  */
 @Composable
@@ -375,7 +390,7 @@ private fun DrawSolverBoard(
     if (youWonAnnouncement.value) {
         if (solverViewModel.ballCount() == 1) {
             gAudio_youWon.start()
-            Toast.makeText(context, "You won", Toast.LENGTH_SHORT).show()
+            gameToast(context, "You won")
         }
         youWonAnnouncement.value = false
     }
@@ -468,17 +483,9 @@ private fun DrawSolverBoard(
                                 (abs(offsetY) > minSwipeOffset)
                             ) {
                                 if (solverViewModel.ballCount() > 1) {
-                                    Toast.makeText(
-                                        context,
-                                        "Use \"Find next\" button to move the ball",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    gameToast(context, "Use \"Find next\" button to move the ball",)
                                 } else {
-                                    Toast.makeText(
-                                        context,
-                                        "No need to move the last ball",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    gameToast(context, "No need to move the last ball",)
                                 }
                             }
                         } // onDragEnd
@@ -529,8 +536,9 @@ private fun DrawSolverBoard(
 /**
  * Animate upcoming ball movement that will lead to winning solution
  *
- *  AnimateWinningMoveSetup : Set-up the specification
- *  animateWinningMovePerform : Perform the actual animation
+ *  [AnimateWinningMoveSetup] Set-up the specification
+ *
+ *  [animateWinningMovePerform] Perform the actual animation
  */
 @Composable
 private fun AnimateWinningMoveSetup(animateWinningMove: Animatable<Float, AnimationVector1D>)
@@ -549,9 +557,9 @@ private fun AnimateWinningMoveSetup(animateWinningMove: Animatable<Float, Animat
 /**
  * Show Winning Move. Animate the shadowed ball movement
  *
- * @param drawScope : Draws cope to do the drawing on
- * @param gridSize : width or height of the grid in dp unit
- * @param uiState : The current state of the Solver Game
+ * @param drawScope Draws cope to do the drawing on
+ * @param gridSize width or height of the grid in dp unit
+ * @param uiState The current state of the Solver Game
  */
 private fun animateWinningMovePerform(
     drawScope: DrawScope,
@@ -585,29 +593,29 @@ private fun animateWinningMovePerform(
 }
 
 /**
- *  Ball movement animation routines. It contain a chain of ball animated movements in sequential
- *  order.
+ * Define the animation KeyframeSpec for the straight ball movement.
+ * Ensure the most of time is spend linear speed with slow start
+ * and a bounce effect at the end.
  *
- *  All the animation specs:
- *  @see straightBallMovementAnimatedSpec
- *  @see wiggleBallAnimatedSpec
+ * @param totalTimeLength Total time to run the straight ball movement
  *
- *  Animation Set-up:
- *  @see AnimateBallMovementsSetup
- *
- *  Perform the actual animation:
- *  @see animateBallMovementsPerform
+ * @see AnimateBallMovementsSetup
  */
-
-private val straightBallMovementAnimatedSpec = keyframes {
-    durationMillis = 900
-    0f.at(30) using LinearOutSlowInEasing      // from 0 to 30 ms
-    1.02f.at(880) using FastOutLinearInEasing  // From 30 ms to 880 ms
-    1.0f.at(900) using EaseOut                 // From 880 ms to 900 ms
+private fun ballMovementKeyframeSpec(totalTimeLength: Int): KeyframesSpec<Float>
+{
+    val spec :  KeyframesSpec<Float> = keyframes{
+        durationMillis = totalTimeLength
+        0f.at((0.05 * totalTimeLength).toInt())  using LinearOutSlowInEasing
+        1.02f.at((0.97 * totalTimeLength).toInt()) using FastOutLinearInEasing
+        1.0f.at(totalTimeLength) using EaseOut
+    }
+    return(spec)
 }
 
 /**
- * Animated specification to wiggle the ball
+ * Statically defined animated Keyframe specification to wiggle the ball
+ *
+ * @see AnimateBallMovementsSetup
  */
 private val wiggleBallAnimatedSpec = keyframes {
     durationMillis = 80
@@ -632,8 +640,9 @@ fun AnimateBallMovementsSetup(
     LaunchedEffect(Unit) {
         movingChain.forEachIndexed { index, currentMovingRec ->
             if (currentMovingRec.distance > 0) {
+                val totalTimeLength = currentMovingRec.distance * 100 + 100
                 animateBallMovementChain[index].animateTo(
-                    targetValue = 1f, animationSpec = straightBallMovementAnimatedSpec
+                    targetValue = 1f, animationSpec = ballMovementKeyframeSpec(totalTimeLength)
                 )
             } else {
                 // Distance is zero. Need to set-up the "wiggle" effect
@@ -702,9 +711,9 @@ fun animateBallMovementsPerform(
 /**
  * Set the actual row and column length in Offset record.
  *
- * @return both pair of values (row length and column length)
- * @sample Offset a = setOffsets(Direction.Up, 3, 100)
- *
+ * @return Pair values :
+ * - row length
+ * - column length
  */
 private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pair<Float, Float>
 {

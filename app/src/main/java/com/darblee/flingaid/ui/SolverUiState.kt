@@ -23,7 +23,7 @@ data class MovingRec(
 // These UI state data needs to be preserved in the event there is a configuration change
 // (e.g. screen size change, screen rotation).
 //
-// It will be managed in a observable flow called "STateFlow"
+// It will be managed in a observable flow called "StateFlow"
 // Android composable will listen for it.
 
 data class SolverUiState (
