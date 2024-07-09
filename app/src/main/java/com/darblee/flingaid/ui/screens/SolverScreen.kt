@@ -1,6 +1,5 @@
 package com.darblee.flingaid.ui.screens
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.HapticFeedbackConstants
@@ -91,11 +90,17 @@ import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_youWon
 import com.darblee.flingaid.ui.MovingRec
+import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverState
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
 import com.darblee.flingaid.ui.SolverGridPos
 import com.darblee.flingaid.utilities.gameToast
+import com.darblee.flingaid.utilities.randomInRange
+import com.darblee.flingaid.utilities.toPx
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
 import kotlin.math.abs
@@ -135,7 +140,7 @@ fun SolverScreen(
             (uiState.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
 
         if (uiState.needToDisplayNoWinnableToastMessage) {
-            DisplayNoWinnableMoveToast()
+            gameToast(LocalContext.current, "There is no winnable move", displayLonger = true)
             solverViewModel.noNeedToDisplayNoWinnableToastMessage()
         }
 
@@ -283,22 +288,19 @@ private fun ControlButtonsForSolver(
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
                 Log.i(Global.debugPrefix, ">>> Starting thinking : Button Pressed")
                 if (showWinnableMoveToUser) {
-                    /**
-                     *  After moving the ball, we need to find the next move and show the hint right
-                     *  away.
-                     *
-                     *  When setting up the moving chain, it will start a new LaunchEffect thread
-                     *  that will call animation complete at the end, which will in turn
-                     *  make the actual ball movement
-                     */
+
+                     //  After moving the ball, we need to find the next move and show the hint right
+                     //  away.
+                     //
+                     //  When setting up the moving chain, it will start a new LaunchEffect thread
+                     //  that will call animation complete at the end, which will in turn
+                     //  make the actual ball movement
                     val winningDirection = uiState.foundWinningDirection
                     val winningPos = uiState.winningPosition
                     solverViewModel.setupMovingChain(winningPos.row, winningPos.col, winningDirection)
                 } else {
-                    /**
-                     * In this case, we did not move the ball as we did not show hint yet.
-                     * We need to find the winning move.
-                     */
+                     // In this case, we did not move the ball as we did not show hint yet.
+                     // We need to find the winning move
                     Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
                     solverViewModel.findWinningMove(solverViewModel)
                 }
@@ -348,21 +350,6 @@ private fun ControlButtonsForSolver(
 }
 
 /**
- * Display the toast message indicating there is no winnable move
- */
-@Composable
-private fun DisplayNoWinnableMoveToast()
-{
-    val contextForToast = LocalContext.current
-
-    Toast.makeText(
-        contextForToast,
-        "There is no winnable move",
-        Toast.LENGTH_LONG
-    ).show()
-}
-
-/**
  *  Draw the Solver Game Board:
  *       Draw the Grid
  *       Place all the balls
@@ -395,18 +382,35 @@ private fun DrawSolverBoard(
         youWonAnnouncement.value = false
     }
 
-    /**
-     * Launch the animation only once when it enters the composition. It will animate infinitely
-     * until it is removed from the composition
-     */
+    // Launch the animation only once when it enters the composition. It will animate infinitely
+    // until it is removed from the composition
     val animateWinningMove = remember { Animatable(initialValue = 0f) }
     AnimateWinningMoveSetup(animateWinningMove)
 
     val animateBallMovementChain = mutableListOf<Animatable<Float,AnimationVector1D>>()
+    val animateParticleExplosion = remember { Animatable(initialValue = 0f) }
+
+    var particles = mutableListOf<Particle>()
 
     if (solverViewModel.needBallAnimation()) {
-        AnimateBallMovementsSetup(solverViewModel, uiState, youWonAnnouncement, animateBallMovementChain)
+
+        // Set-up the particles. which is used for the explosion animated effect
+        particles = remember {
+            generateExplosionParticles(solverViewModel, uiState)
+        }.toMutableList()
+
+        AnimateBallMovementsSetup(solverViewModel, uiState, youWonAnnouncement, animateBallMovementChain,
+            animateParticleExplosion)
+    } else {  // else need ball movement animation
+
+        // Make sure we do not show any more particle explosion when ball animation is done
+        particles.clear()
+        LaunchedEffect(Unit) {
+            animateParticleExplosion.stop()
+            animateParticleExplosion.snapTo(0f)
+        }
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -422,8 +426,8 @@ private fun DrawSolverBoard(
 
         val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
 
-        var offsetX by remember { mutableFloatStateOf(0f) }
-        var offsetY by remember { mutableFloatStateOf(0f) }
+        var dragXOffset by remember { mutableFloatStateOf(0f) }
+        var dragYOffset by remember { mutableFloatStateOf(0f) }
         var dragRow by remember { mutableIntStateOf(-1) }
         var dragCol by remember { mutableIntStateOf(-1) }
 
@@ -468,24 +472,23 @@ private fun DrawSolverBoard(
                             dragCol = (offset.x / gridSize).toInt()
                         },
                         onDrag = { change, dragAmount ->
-                            /**
-                             * Need to consume this event, so that its parent knows not to react to
-                             * it anymore. What change.consume() does is it prevent pointerInput
-                             * above it to receive events by returning PointerInputChange.positionChange()
-                             * Offset.Zero PointerInputChange.isConsumed true.
-                             */
+
+                            // Need to consume this event, so that its parent knows not to react to
+                            // it anymore. What change.consume() does is it prevent pointerInput
+                            // above it to receive events by returning PointerInputChange.positionChange()
+                            // Offset.Zero PointerInputChange.isConsumed true.
                             change.consume()
-                            offsetX += dragAmount.x
-                            offsetY += dragAmount.y
+                            dragXOffset += dragAmount.x
+                            dragYOffset += dragAmount.y
                         },
                         onDragEnd = {
-                            if ((abs(offsetX) > minSwipeOffset) ||
-                                (abs(offsetY) > minSwipeOffset)
+                            if ((abs(dragXOffset) > minSwipeOffset) ||
+                                (abs(dragYOffset) > minSwipeOffset)
                             ) {
                                 if (solverViewModel.ballCount() > 1) {
-                                    gameToast(context, "Use \"Find next\" button to move the ball",)
+                                    gameToast(context, "Use \"Find next\" button to move the ball")
                                 } else {
-                                    gameToast(context, "No need to move the last ball",)
+                                    gameToast(context, "No need to move the last ball")
                                 }
                             }
                         } // onDragEnd
@@ -514,31 +517,32 @@ private fun DrawSolverBoard(
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage)
 
                 if (solverViewModel.ballCount() > 1) {
+
+                    // If there is a known winnable move, then provide user a review of the next
+                    // winnable move by showing the animated ball movement in a shadow (transparent)
                     if (solverViewModel.foundWinnableMove()) {
 
                         val moveCount = solverViewModel.getWinningMoveCount(uiState)
                         animateWinningMovePerform(this, gridSize, uiState, animateWinningMove,
-                            moveCount, displayBallImage
-                        )
+                            moveCount, displayBallImage)
                     }
                 }
             }
 
             if (solverViewModel.needBallAnimation()) {
                 animateBallMovementsPerform(
-                    this, solverViewModel, gridSize,
-                    displayBallImage, animateBallMovementChain)
+                    this, solverViewModel, gridSize, displayBallImage,
+                    animateBallMovementChain, animateParticleExplosion, particles)
             }  // if needToAnimateMovingBall
         } // Canvas
     } // Box
 }
 
 /**
- * Animate upcoming ball movement that will lead to winning solution
+ * Show Winning Move. Animate the shadowed ball movement. This is a set-up
  *
- *  [AnimateWinningMoveSetup] Set-up the specification
- *
- *  [animateWinningMovePerform] Perform the actual animation
+ * @param animateWinningMove Object that control animation state of shadowed movement, which loop
+ * forever.
  */
 @Composable
 private fun AnimateWinningMoveSetup(animateWinningMove: Animatable<Float, AnimationVector1D>)
@@ -555,11 +559,14 @@ private fun AnimateWinningMoveSetup(animateWinningMove: Animatable<Float, Animat
 }
 
 /**
- * Show Winning Move. Animate the shadowed ball movement
+ * Show Winning Move. Animate the shadowed ball movement. Perform the actual animation
  *
- * @param drawScope Draws cope to do the drawing on
+ * @param drawScope Scope to do the drawing on
  * @param gridSize width or height of the grid in dp unit
  * @param uiState The current state of the Solver Game
+ * @param animate Object that control animation state of shadow ball movement. It loops endlessly
+ * @param gWinningMoveCount number of ball movement for the upcoming winning move
+ * @param displayBallImage The image of the ball
  */
 private fun animateWinningMovePerform(
     drawScope: DrawScope,
@@ -598,18 +605,38 @@ private fun animateWinningMovePerform(
  * and a bounce effect at the end.
  *
  * @param totalTimeLength Total time to run the straight ball movement
+ * @param whenBallMakeContactRatio Time ratio of total time when the ball makes contact to the neighboring ball. It is used
+ * in conjunction with [particleExplosionAnimatedSpec] routine
  *
  * @see AnimateBallMovementsSetup
  */
-private fun ballMovementKeyframeSpec(totalTimeLength: Int): KeyframesSpec<Float>
+private fun ballMovementKeyframeSpec(totalTimeLength: Int, whenBallMakeContactRatio: Float): KeyframesSpec<Float>
 {
-    val spec :  KeyframesSpec<Float> = keyframes{
+    val spec :  KeyframesSpec<Float> = keyframes {
         durationMillis = totalTimeLength
         0f.at((0.05 * totalTimeLength).toInt())  using LinearOutSlowInEasing
-        1.02f.at((0.97 * totalTimeLength).toInt()) using FastOutLinearInEasing
-        1.0f.at(totalTimeLength) using EaseOut
+        1.02f.at((whenBallMakeContactRatio * totalTimeLength).toInt()) using FastOutLinearInEasing   // Overrun the ball slightly to hit the neighboring ball
+        1.0f.at(totalTimeLength) using EaseOut   // Roll back to the destination
     }
-    return(spec)
+    return (spec)
+}
+
+/**
+ * Define the animation KeyframeSpec for the particle explosion. Explosion will occur at the tail
+ * end of the ball movement by delaying the start of explosion effect.
+ *
+ *  @param totalTimeLength Total time to run the straight ball movement
+ *  @param whenBallMakeContactRatio Time ratio of total time when the ball makes contact to the neighboring ball. It is used
+ *  in conjunction with [ballMovementKeyframeSpec] routine
+ */
+private fun particleExplosionAnimatedSpec(totalTimeLength: Int, whenBallMakeContactRatio: Float) : KeyframesSpec<Float>
+{
+    val spec : KeyframesSpec<Float> = keyframes {
+        durationMillis = totalTimeLength + 250
+        delayMillis = (whenBallMakeContactRatio * totalTimeLength - 10).toInt()
+        0.5f.at(totalTimeLength + 250) using LinearOutSlowInEasing
+    }
+    return (spec)
 }
 
 /**
@@ -623,12 +650,23 @@ private val wiggleBallAnimatedSpec = keyframes {
     5f.at(20) using LinearEasing    // from 10 ms to 20 ms
 }
 
+/**
+ * Setup ball movement animation and the particle explosion effect
+ *
+ * @param solverViewModel Solver Game View model
+ * @param uiState The current state of the Solver Game
+ * @param youWonAnnouncement Boolean flag to indicate whether you need to announce "you won" message
+ * @param animateBallMovementChain Object that control animation state of all the ball movement in this chain
+ * @param animateParticleExplosion Object that control animation state of particle explosion effect
+ */
 @Composable
 fun AnimateBallMovementsSetup(
     solverViewModel: SolverViewModel,
     uiState: SolverUiState,
     youWonAnnouncement: MutableState<Boolean>,
-    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>)
+    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
+    animateParticleExplosion: Animatable<Float, AnimationVector1D>
+)
 {
     val movingChain = solverViewModel.getMovingChain()
 
@@ -637,30 +675,59 @@ fun AnimateBallMovementsSetup(
         animateBallMovementChain.add(animateBallMovement)
     }
 
+    // Time ratio of total time when the ball makes contact to the neighboring ball
+    val whenBallMakeContactRatio = 0.97f
+
+    // Launch two animations in parallel
+    // Only start the explosion when the ball makes an impact to the other ball
+
     LaunchedEffect(Unit) {
-        movingChain.forEachIndexed { index, currentMovingRec ->
-            if (currentMovingRec.distance > 0) {
-                val totalTimeLength = currentMovingRec.distance * 100 + 100
-                animateBallMovementChain[index].animateTo(
-                    targetValue = 1f, animationSpec = ballMovementKeyframeSpec(totalTimeLength)
-                )
-            } else {
-                // Distance is zero. Need to set-up the "wiggle" effect
-                animateBallMovementChain[index].animateTo(
-                    targetValue = 0f, animationSpec = wiggleBallAnimatedSpec
-                )
-            } // if-else currentMovingRec.distance
-        }
 
-        solverViewModel.ballMovementAnimationComplete()
-        solverViewModel.makeWinningMove(uiState)
-        if (solverViewModel.ballCount() > 1) {
-            Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
-            solverViewModel.findWinningMove(solverViewModel)
-        }
+        // Use coroutine to ensure both launch animations get completed in the same scope
+        coroutineScope {
+            launch {  // one or more ball movements in serial fashion
+                movingChain.forEachIndexed { index, currentMovingRec ->
+                    if (currentMovingRec.distance > 0) {
+                        val totalTimeLength = (currentMovingRec.distance * 100) + 100
+                        animateBallMovementChain[index].animateTo(
+                            targetValue = 1f,
+                            animationSpec = ballMovementKeyframeSpec(
+                                totalTimeLength,
+                                whenBallMakeContactRatio
+                            )
+                        )
+                    } else {
+                        // Distance is zero. Need to set-up the "wiggle" effect
+                        animateBallMovementChain[index].animateTo(
+                            targetValue = 0f, animationSpec = wiggleBallAnimatedSpec
+                        )
+                    } // if-else currentMovingRec.distance
+                }
+                animateBallMovementChain.clear()
+                delay(500)
 
-        // Trigger a re-compose to announce that "you won"
-        if (solverViewModel.ballCount() == 1) youWonAnnouncement.value = true
+                solverViewModel.ballMovementAnimationComplete()
+                solverViewModel.makeWinningMove(uiState)
+                if (solverViewModel.ballCount() > 1) {
+                    Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
+                    solverViewModel.findWinningMove(solverViewModel)
+                }
+
+                // Trigger a re-compose to announce that "you won"
+                if (solverViewModel.ballCount() == 1) youWonAnnouncement.value = true
+            }
+
+            launch {  // If there is  multiple ball chain movements, we only animate explosion on the first ball
+                val totalTimeLength = (movingChain[0].distance * 100) + 100
+                animateParticleExplosion.animateTo(
+                    targetValue = 0.5f,
+                    animationSpec = particleExplosionAnimatedSpec(
+                        totalTimeLength,
+                        whenBallMakeContactRatio
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -669,7 +736,10 @@ fun animateBallMovementsPerform(
     solverViewModel: SolverViewModel,
     gridSize: Float,
     displayBallImage: ImageBitmap,
-    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>)
+    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
+    animateParticleExplosion: Animatable<Float, AnimationVector1D>,
+    particles: MutableList<Particle>,
+)
 {
     with (drawScope) {
         val movingDirection = solverViewModel.uiState.value.movingDirection
@@ -687,17 +757,8 @@ fun animateBallMovementsPerform(
             xOffset = offset.first
             yOffset = offset.second
 
-            // Define shaking direction if there is no ball movement
-            if (currentMovement.distance == 0) {
-                when (movingDirection) {
-                    Direction.UP -> yOffset = -1f
-                    Direction.DOWN -> yOffset = 1f
-                    Direction.LEFT -> xOffset = -1f
-                    Direction.RIGHT -> xOffset = 1f
-                    else -> assert(true) { "Unexpected direction value on animate ball movement"}
-                }
-            }
-
+            // Perform animation by adjusting both the xOffset and yOffset amount respectively
+            // to move the ball
             translate(
                 (xOffset) * ((animateBallMovementChain[index]).value),
                 (yOffset) * ((animateBallMovementChain[index]).value)
@@ -705,48 +766,94 @@ fun animateBallMovementsPerform(
                 drawBall(drawScope, gridSize, movingSourcePos, displayBallImage)
             } // translate
         }  // for
+
+        particles.forEach { curParticle ->
+            curParticle.updateProgress(animateParticleExplosion.value, gridSize)
+            drawCircle(
+                alpha = curParticle.alpha,
+                color = curParticle.color,
+                radius = curParticle.currentRadius,
+                center = Offset(curParticle.currentXPosition, curParticle.currentYPosition)
+            )
+        }
     }   // with (DrawScope)
 }
 
 /**
- * Set the actual row and column length in Offset record.
+ * Put in the appropriate xOffset and yOffset values.
+ * If the distance is zero, then just set the offset to 1 distance so that it will
+ * do a small bump movement
  *
- * @return Pair values :
+ * @return Pair <xOffset, yOffset>
  * - row length
  * - column length
  */
 private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pair<Float, Float>
 {
-    var xOffset = -1F
-    var yOffset = -1F
+    var xOffset = 0f
+    var yOffset = 0f
+
+    // If the distance is zero, then just set the offset to 1 distance so that it will
+    // do a small bump movement
+    if (distance == 0) {
+        when (direction) {
+            Direction.UP -> yOffset = -1f
+            Direction.DOWN -> yOffset = 1f
+            Direction.LEFT -> xOffset = -1f
+            Direction.RIGHT -> xOffset = 1f
+            else -> assert(true) { "Unexpected direction value on animate ball movement"}
+        }
+
+        return(Pair(xOffset, yOffset))
+    }
 
     when (direction) {
-        Direction.UP -> {
-            xOffset = 0 * gridSize
-            yOffset = -1 * distance * gridSize
-        }
-
-        Direction.DOWN -> {
-            xOffset = 0 * gridSize
-            yOffset = distance * gridSize
-        }
-
-        Direction.LEFT -> {
-            xOffset = -1 * distance * gridSize
-            yOffset = 0 * gridSize
-        }
-
-        Direction.RIGHT -> {
-            xOffset = distance * gridSize
-            yOffset = 0 * gridSize
-        }
-
-        else -> {
-            assert(true) { "Got unexpected direction during animation" }
-        }
+        Direction.UP -> yOffset = -1 * distance * gridSize
+        Direction.DOWN -> yOffset = distance * gridSize
+        Direction.LEFT -> xOffset = -1 * distance * gridSize
+        Direction.RIGHT -> xOffset = distance * gridSize
+        else -> assert(true) { "Got unexpected direction during animation" }
     }
 
     return(Pair(xOffset, yOffset))
+}
+
+/**
+ * Create all particles. which is used for the explosion animated effect
+ *
+ * @param solverViewModel Solver Game View model
+ * @param uiState The current state of the Solver Game
+ *
+ * @return List of all the particles
+ */
+private fun generateExplosionParticles(solverViewModel: SolverViewModel, uiState: SolverUiState): List<Particle>
+{
+    val sizeDp = 200.dp
+    val sizePx = sizeDp.toPx()
+    val explosionPos = (solverViewModel.getMovingChain())[1].pos
+    val explosionX = explosionPos.row
+    val explosionY = explosionPos.col
+    val particles =
+        List(5) {
+            Particle(
+                color = Color(
+                    listOf(
+                        0xffea4335,
+                        0xff4285f4,
+                        0xfffbbc05,
+                        0xff34a853
+                    ).random()
+                ),
+                startRow = explosionX,
+                startCol = explosionY,
+                direction = uiState.foundWinningDirection,
+                maxHorizontalDisplacement = sizePx * randomInRange(-0.3f, 0.3f),
+                maxVerticalDisplacement = sizePx * randomInRange(0.05f, 0.07f)
+            )
+        }
+
+    return (particles)
+
 }
 
 /**
@@ -778,7 +885,7 @@ private fun drawSolverBalls(
  *
  * @param drawScope
  * @param gridSize Size the dimension of the grid
- * @param pos Specific position (row, colume)
+ * @param pos Specific position (row, column)
  * @param displayBallImage Actual image bitmap of the ball
  * @param alpha amount of transparency
  */
@@ -845,6 +952,12 @@ private fun drawGrid(
     }
 }
 
+/**
+ * Play the search animation to indicate it is actively searching a solution
+ *
+ * @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
+ *  elements
+ */
 @Composable
 private fun PlaySearchAnimation(modifier: Modifier)
 {

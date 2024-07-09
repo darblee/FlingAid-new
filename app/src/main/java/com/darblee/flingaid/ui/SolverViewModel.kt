@@ -577,7 +577,6 @@ class SolverViewModel : ViewModel() {
         Log.i(Global.debugPrefix, "===============")
         movingList.forEach {rec ->
             val gridPos = rec.pos
-            Log.i(Global.debugPrefix, "Mov Pos: ${gridPos.row}, ${gridPos.col}, distance= ${rec.distance} $direction")
         }
         Log.i(Global.debugPrefix, "===============")
     }
