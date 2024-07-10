@@ -36,6 +36,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
@@ -88,6 +89,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.darblee.flingaid.ui.theme.SetColorTheme
 import com.darblee.flingaid.ui.theme.ColorThemeOption
@@ -204,7 +206,7 @@ private fun MainViewImplementation(
     val navController = rememberNavController()
 
     Scaffold (
-        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme, currentScreenName) }
+        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme, currentScreenName, navController) }
     ) { contentPadding ->
         SetUpNavGraph(navController = navController, contentPadding, onScreenChange = { newScreenTitle -> currentScreenName = newScreenTitle } )
     }
@@ -262,7 +264,9 @@ private fun SetUpGameAudioOnAppStart()
 private fun FlingAidTopAppBar(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
     currentTheme: ColorThemeOption,
-    screenTitle: String)
+    screenTitle: String,
+    navController: NavHostController
+)
 {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialogBox by remember { mutableStateOf(false) }
@@ -277,6 +281,14 @@ private fun FlingAidTopAppBar(
     Log.i(Global.debugPrefix, "Recompose CenterAlignedTopAppBar")
 
     CenterAlignedTopAppBar(
+        navigationIcon = {
+            IconButton(onClick = {
+                navController.navigate(Screen.Home)
+            })
+            {
+                Icon(Icons.Filled.Home, contentDescription = "Navigate back to home page")
+            }
+        },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = colorScheme.primaryContainer,
             titleContentColor = colorScheme.primary,

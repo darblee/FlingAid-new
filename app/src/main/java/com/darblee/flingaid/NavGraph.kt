@@ -75,9 +75,6 @@ fun SetUpNavGraph(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = Global.TopAppBarHeight))  // Height of the TopAppBar
-            {
-                navController.popBackStack()
-            }
         }
     }
 }

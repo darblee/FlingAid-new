@@ -112,12 +112,10 @@ lateinit var gBoardFile : File
  *
  *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
- *  @param onNavigateBack lambda function that navigates back to the previous screen
  */
 @Composable
 fun SolverScreen(
-    modifier: Modifier = Modifier,
-    onNavigateBack: () -> Unit)
+    modifier: Modifier = Modifier)
 {
     val solverViewModel: SolverViewModel = viewModel()
     Column (
@@ -144,7 +142,7 @@ fun SolverScreen(
             solverViewModel.noNeedToDisplayNoWinnableToastMessage()
         }
 
-        Instruction_DynamicLogo(uiState, onNavigateBack)
+        Instruction_DynamicLogo(uiState)
         ControlButtonsForSolver(
             solverViewModel = solverViewModel,
             findWinnableMoveButtonEnabled = findWinnableMoveButtonEnabled,
@@ -167,14 +165,11 @@ fun SolverScreen(
  * when it is searching for the solution.
  *
  * @param uiState Current UI state of the solver game
- * @param onNavigateBack lambda function to navigate back to the previous screen
  */
 @Composable
-private fun Instruction_DynamicLogo(uiState: SolverUiState,
-                                    onNavigateBack: () -> Unit)
+private fun Instruction_DynamicLogo(uiState: SolverUiState)
 {
     val logoSize = 125.dp
-    val view = LocalView.current
 
     Row(
         modifier = Modifier
@@ -234,24 +229,6 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState,
                         }
                     }},
                 style = MaterialTheme.typography.bodySmall)
-
-            Spacer(modifier = Modifier.padding(10.dp))
-
-            Button(
-                onClick = {
-                    view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                    onNavigateBack.invoke() },
-                Modifier
-                    .defaultMinSize()
-                    .align(Alignment.CenterHorizontally),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.primaryContainer
-                ),
-            ) {
-                Icon(painterResource(id = R.drawable.home_image), "Home")
-                Text(text = "Back to Home")
-            }  // Button
         } // Column
     } // Row
 }

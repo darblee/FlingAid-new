@@ -15,9 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -91,7 +89,7 @@ fun GameScreen(modifier: Modifier = Modifier,
 
     //    gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
 
-        InstructionLogo(onNavigateBack)
+        InstructionLogo()
         GameControlButtonsForGame(gameViewModel, uiState)
 
         if (!animateBalls) {
@@ -114,7 +112,7 @@ fun GameScreen(modifier: Modifier = Modifier,
  * when it is searching for the solution.
  */
 @Composable
-private fun InstructionLogo(onNavigateBack: () -> Unit)
+private fun InstructionLogo()
 {
     val logoSize = 125.dp
     Row(
@@ -156,24 +154,6 @@ private fun InstructionLogo(onNavigateBack: () -> Unit)
                         }
                     }},
                 style = MaterialTheme.typography.bodySmall)
-
-            Spacer(modifier = Modifier.padding(10.dp))
-
-            Button(
-                onClick = { onNavigateBack.invoke() },
-                Modifier
-                    .defaultMinSize()
-                    .align(Alignment.CenterHorizontally),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.primaryContainer
-                ),
-            ) {
-                Icon(painterResource(id = R.drawable.home_image), "Home")
-                Text(
-                    text = "Back to Home"
-                )
-            }
         }
     }
 }
