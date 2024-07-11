@@ -524,6 +524,7 @@ private fun DrawSolverBoard(
 private fun AnimateWinningMoveSetup(animateWinningMove: Animatable<Float, AnimationVector1D>)
 {
     LaunchedEffect(Unit) {
+        animateWinningMove.snapTo(0f)
         animateWinningMove.animateTo(
             targetValue = 1f, animationSpec =
             infiniteRepeatable(

@@ -722,7 +722,7 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit)
                             shape = RoundedCornerShape(0.dp),
                             contentPadding = PaddingValues(0.dp)
                         ) {
-                            Text(text = "Not now", color = Color.Gray)
+                            Text(text = "Not now", color = Color.Black)
                         }
                     }
                     HorizontalDivider(
