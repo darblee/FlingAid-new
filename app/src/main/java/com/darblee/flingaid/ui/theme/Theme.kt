@@ -91,8 +91,7 @@ fun SetColorTheme(
 ) {
     val context = LocalContext.current
     val darkTheme: Boolean
-    val dynamicColorSupported = Build.VERSION.SDK_INT > Build.VERSION_CODES.S
-    Log.i(Global.debugPrefix, "SetColorTheme: $currentColorTheme")
+    val dynamicColorSupported = true
     val colorScheme = if (currentColorTheme == ColorThemeOption.System) {
         if (isSystemInDarkTheme()) {
             darkTheme = true

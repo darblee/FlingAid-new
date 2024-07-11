@@ -71,8 +71,7 @@ import kotlinx.coroutines.delay
 import kotlin.math.abs
 
 @Composable
-fun GameScreen(modifier: Modifier = Modifier,
-        onNavigateBack: () -> Unit)
+fun GameScreen(modifier: Modifier = Modifier)
 {
     val gameViewModel: GameViewModel = viewModel()
     Column (
@@ -85,10 +84,6 @@ fun GameScreen(modifier: Modifier = Modifier,
         var animateBalls by remember {
             mutableStateOf(false)
         }
-    //    gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
-
-    //    gameViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
-
         InstructionLogo()
         GameControlButtonsForGame(gameViewModel, uiState)
 
@@ -105,7 +100,7 @@ fun GameScreen(modifier: Modifier = Modifier,
     }
 }
 
-/*
+/**
  * Provide instruction on how to play Solver Screen.
  *
  * Display the game logo. Game logo also change to animation

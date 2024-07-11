@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -22,16 +23,19 @@ import com.darblee.flingaid.ui.screens.HomeScreen
 import com.darblee.flingaid.ui.screens.SolverScreen
 import kotlinx.serialization.Serializable
 
+/**
+ * All the possible screen objects
+ */
 @Serializable
-sealed class Screen {
+sealed class Screen(val stringTitleResourceID: Int){
     @Serializable
-    data object Home: Screen()
+    data object Home: Screen(R.string.homepage_title)
 
     @Serializable
-    data object Game : Screen()
+    data object Game : Screen(R.string.game_title)
 
     @Serializable
-    data object Solver : Screen()
+    data object Solver : Screen(R.string.solver_title)
 }
 
 @SuppressLint("RestrictedApi")
@@ -39,7 +43,7 @@ sealed class Screen {
 fun SetUpNavGraph(
     navController: NavHostController,
     innerPadding: PaddingValues,
-    onScreenChange: (screenTitle: String) -> Unit
+    currentScreen: MutableState<Screen>
 ) {
     // A surface container using the 'background' color from the theme
     NavHost(
@@ -48,7 +52,7 @@ fun SetUpNavGraph(
     ) {
         composable<Screen.Home>{
             val appName = stringResource(id = R.string.app_name)
-            onScreenChange.invoke(appName)
+            currentScreen.value = Screen.Home
             HomeScreen (
                 modifier = Modifier
                     .fillMaxSize()
@@ -59,18 +63,15 @@ fun SetUpNavGraph(
         }
 
         composable<Screen.Game>{
-            onScreenChange.invoke(stringResource(id = R.string.game_title))
+            currentScreen.value = Screen.Game
             GameScreen(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = Global.TopAppBarHeight))  // Height of the TopAppBar
-            {
-                navController.popBackStack()
-            }
+                    .padding(top = Global.TopAppBarHeight))   // Height of the TopAppBar
         }
 
         composable<Screen.Solver>{
-            onScreenChange.invoke(stringResource(id = R.string.solver_title))
+            currentScreen.value = Screen.Solver
             SolverScreen(
                 modifier = Modifier
                     .fillMaxSize()

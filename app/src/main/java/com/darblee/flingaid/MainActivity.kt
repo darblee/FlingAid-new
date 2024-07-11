@@ -68,6 +68,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -104,7 +105,6 @@ class MainActivity : ComponentActivity()
         super.onCreate(savedInstanceState)
 
         setContent {
-            Log.i(Global.debugPrefix, "Recompose: SetContent")
             ForcePortraitMode()
 
             val splashScreen = installSplashScreen()
@@ -158,9 +158,9 @@ class MainActivity : ComponentActivity()
                             CoroutineScope(Dispatchers.IO).launch {
                                 PreferenceStore(applicationContext).saveColorModeToSetting(newColorThemeSetting)
                             }
-                        }
-                    )
-                }
+                        }  // onColorThemeUpdated
+                    )  // MainViewImplementation
+                }  // Surface
             }  // SetColorTheme()
         }
     }
@@ -193,7 +193,7 @@ private fun MainViewImplementation(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
     currentTheme: ColorThemeOption)
 {
-    var currentScreenName by remember { mutableStateOf("Fling Aid") }
+    val currentScreen = remember { mutableStateOf<Screen>(Screen.Home) }
 
     // When doing back press on main screen, confirm with the user whether
     // it should exit the app or not
@@ -206,9 +206,9 @@ private fun MainViewImplementation(
     val navController = rememberNavController()
 
     Scaffold (
-        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme, currentScreenName, navController) }
+        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme, navController, currentScreen) }
     ) { contentPadding ->
-        SetUpNavGraph(navController = navController, contentPadding, onScreenChange = { newScreenTitle -> currentScreenName = newScreenTitle } )
+        SetUpNavGraph(navController = navController, contentPadding, currentScreen)
     }
 }
 
@@ -264,8 +264,8 @@ private fun SetUpGameAudioOnAppStart()
 private fun FlingAidTopAppBar(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
     currentTheme: ColorThemeOption,
-    screenTitle: String,
-    navController: NavHostController
+    navController: NavHostController,
+    currentScreen: MutableState<Screen>
 )
 {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -273,31 +273,35 @@ private fun FlingAidTopAppBar(
     var showSettingDialogBox by remember { mutableStateOf(false) }
     var currentPlayerName by remember { mutableStateOf("") }
 
+    val screenTitle = stringResource(id = currentScreen.value.stringTitleResourceID)
+
     val preference = PreferenceStore(LocalContext.current)
     LaunchedEffect(key1 = true) {
         currentPlayerName = preference.readPlayerNameFomSetting()
     }
 
-    Log.i(Global.debugPrefix, "Recompose CenterAlignedTopAppBar")
-
     CenterAlignedTopAppBar(
         navigationIcon = {
-            IconButton(onClick = {
-                navController.navigate(Screen.Home)
-            })
-            {
-                Icon(Icons.Filled.Home, contentDescription = "Navigate back to home page")
+            when (currentScreen.value) {
+                Screen.Home -> {
+                    IconButton(onClick = { })
+                    { Icon(Icons.Filled.Home, contentDescription = "Home screen") }
+                }
+                Screen.Game,
+                Screen.Solver -> {
+                    IconButton(onClick = { navController.popBackStack() })
+                    { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back to home screen") }
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = colorScheme.primaryContainer,
             titleContentColor = colorScheme.primary,
         ),
-
         modifier = Modifier.height(Global.TopAppBarHeight),
-        title =
-        {
-            val titleText = if (currentPlayerName == "") screenTitle else "$screenTitle : $currentPlayerName"
+        title = {
+            val titleText =
+                if (currentPlayerName == "") screenTitle else "$screenTitle : $currentPlayerName"
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(titleText, style = MaterialTheme.typography.titleLarge)
             }
@@ -327,7 +331,10 @@ private fun FlingAidTopAppBar(
                 )
                 DropdownMenuItem(
                     leadingIcon = {
-                        Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = "Settings"
+                        )
                     },
                     text = { Text(text = "Setting...") },
                     onClick = {
@@ -337,7 +344,10 @@ private fun FlingAidTopAppBar(
                 )
                 DropdownMenuItem(
                     leadingIcon = {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Exit")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Exit"
+                        )
                     },
                     text = { Text("Exit") },
                     onClick = {
@@ -349,8 +359,9 @@ private fun FlingAidTopAppBar(
                     }
                 )
             } // DropdownMenu
-        }
-    )
+        }  // action
+    )  // CenterAlignTopBar
+
     if (showAboutDialogBox) {
         AboutDialogPopup(
             onDismissRequest = { showAboutDialogBox = false },
