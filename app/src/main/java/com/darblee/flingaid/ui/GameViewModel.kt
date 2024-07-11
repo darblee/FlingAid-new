@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class GameViewModel : ViewModel() {
+object GameViewModel : ViewModel() {
     private var _ballPositionList = mutableStateListOf<Pos>()
 
     /*

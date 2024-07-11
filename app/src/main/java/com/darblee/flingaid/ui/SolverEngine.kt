@@ -5,9 +5,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 
-
-
-class SolverEngine {
+internal class SolverEngine {
     private var flingGrid = Array(Global.MaxRowSize) { BooleanArray(Global.MaxColSize) }
 
     init {
@@ -301,27 +299,22 @@ class SolverEngine {
     fun findTargetRowOnMoveUp(srcRow: Int, col: Int) : Int {
         // If you are near the top of the grid, then you do not have any room to move up
         if (srcRow <= 1) {
-            // Log.d("GM: Details", "     ==> No upper move as it is near the top already. REJECT")
             return -1
         }
 
         // If there is already a Ball right on top, then there is no room to move. You need at least 1 free grid box to start the move
         if (flingGrid[srcRow - 1][col]) {
-            // Log.d("GM: Details", "     ==> No upper move as there is a ball right on top. It leave no room to move. REJECT")
             return -1
         }
 
         // Now we have room to move, so let's find the target row
         var targetRow = (srcRow  - 2)
-        // Log.d("GM: Details", "SrcRow is $srcRow Target $targetRow")
 
         while ((!flingGrid[targetRow][col]) && (targetRow > 0)) {
             targetRow--
-            // Log.d("GM: Details", "     ==> Exploring Target $targetRow")
         }
 
         if ((targetRow == 0) && (!flingGrid[0][col])) {
-            // Log.d("GM: Details", "     ==> No upper ball to knock off the edge. REJECT")
             return -1
         }
 
@@ -347,21 +340,17 @@ class SolverEngine {
 
         // If there is already a Ball right on bottom, then there is no room to move. You need at least 1 free grid box to start the move
         if (flingGrid[srcRow + 1][col]) {
-            // Log.d("GM: Details", "     ==> No lower move as there is a ball right on bottom. It leave no room to move down. REJECT")
             return -1
         }
 
         // Now we have room to move, so let's find the target row
         var targetRow = (srcRow + 2)
-        // Log.d("GM: Details", "     ==> SrcRow is $srcRow Target $targetRow")
 
         while ((!flingGrid[targetRow][col]) && (targetRow < (Global.MaxRowSize - 1))) {
             targetRow++
-            // Log.d("GM: Details", "     ==> Exploring Target $targetRow")
         }
 
         if ((targetRow == (Global.MaxRowSize - 1)) && (!flingGrid[(Global.MaxRowSize - 1)][col])) {
-            // Log.d("GM: Details", "     ==> No lower ball to knock off the edge. REJECT")
             return -1
         }
 
@@ -381,30 +370,24 @@ class SolverEngine {
      */
     fun findTargetColOnMoveRight(row: Int, srcCol: Int) : Int
     {
-
         // If you are near the right of the grid, then you do not have any room to move right
         if (srcCol > (Global.MaxColSize - 3)) {
-            // Log.d("GM: Details", "     ==> No right move as it is near the right edge already. REJECT")
             return -1
         }
 
         // If there is already a Ball right on right, then there is no room to move. You need at least 1 free grid to start the move
         if (flingGrid[row][(srcCol + 1)]) {
-            // Log.d("GM: Details", "     ==> No right move as there is a ball on the right. It leave no room to move down. REJECT")
             return -1
         }
 
         // Now we have room to move, so let's find the target col
         var targetCol = (srcCol + 2)
-        // Log.d("GM: Details", "     ==> SrcCol is $srcCol Target $targetCol")
 
         while ((!flingGrid[row][targetCol]) && (targetCol < (Global.MaxColSize - 1))) {
             targetCol++
-            // Log.d("GM: Details", "     ==> Exploring Target $targetCol")
         }
 
         if ((targetCol == (Global.MaxColSize - 1)) && (!flingGrid[row][(Global.MaxColSize - 1)])) {
-            // Log.d("GM: Details", "     ==> No ball at the right to knock off the edge. REJECT")
             return -1
         }
 
@@ -426,27 +409,22 @@ class SolverEngine {
     {
         // If you are near the left of the grid, then you do not have any room to move left
         if (srcCol < 2) {
-            // Log.d("GM: Details", "     ==> No left move as it is near the left edge already. REJECT")
             return -1
         }
 
         // If there is already a Ball right on left, then there is no room to move. You need at least 1 free grid box to start the move
         if (flingGrid[row][(srcCol - 1)]) {
-            // Log.d("GM: Details", "     ==> No left move as there is a ball on the left. It leave no room to move left. REJECT")
             return -1
         }
 
         // Now we have room to move, so let's find the target row
         var targetCol = (srcCol - 2)
-        // Log.d("GM: Details", "     ==> SrcCol is $srcCol Target $targetCol")
 
         while ((!flingGrid[row][targetCol]) && (targetCol > 0)) {
             targetCol--
-            // Log.d("GM: Details", "     ==> Exploring Target $targetCol")
         }
 
         if ((targetCol == 0) && (!flingGrid[row][0])) {
-            // Log.d("GM: Details", "     ==> No ball at the left to knock off the edge. REJECT")
             return -1
         }
 

@@ -10,7 +10,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.darblee.flingaid.ui.theme.ColorThemeOption
 import kotlinx.coroutines.flow.first
 
-class PreferenceStore(private val context: Context)
+internal class PreferenceStore(private val context: Context)
 {
     // Wrap the private variables in a "companion object" so they are not initialized more than once
     companion object {

@@ -9,7 +9,7 @@ lateinit var gAudio_gameMusic : MediaPlayer
 lateinit var gAudio_youWon : MediaPlayer
 var gSoundOn = false
 
-object Global {
+internal object Global {
     const val MaxColSize = 7
     const val MaxRowSize = 8
     const val debugPrefix = "Flinfo:"

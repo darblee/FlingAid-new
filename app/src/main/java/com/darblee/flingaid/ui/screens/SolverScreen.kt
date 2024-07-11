@@ -708,6 +708,18 @@ fun AnimateBallMovementsSetup(
     }
 }
 
+/**
+ * Perform the actual animation of ball movements (including its chain) and
+ * the particle explosion effect.
+ *
+ * @param drawScope
+ * @param solverViewModel Solver Game View model
+ * @param gridSize Size of grid. This used to do various computation on animation effect
+ * @param displayBallImage The actual ball image to show
+ * @param animateBallMovementChain Object that control animation state of all the ball movement in this chain
+ * @param animateParticleExplosion Object that control animation state of particle explosion effect
+ * @param particles List of each particle
+ */
 fun animateBallMovementsPerform(
     drawScope: DrawScope,
     solverViewModel: SolverViewModel,
@@ -727,6 +739,7 @@ fun animateBallMovementsPerform(
         var xOffset: Float
         var yOffset: Float
 
+        // Ball movements including multiple ball movements (if there is multiple balls in the chain)
         for ((index, currentMovement) in movingChain.withIndex()) {
             movingSourcePos = currentMovement.pos
 
@@ -744,6 +757,7 @@ fun animateBallMovementsPerform(
             } // translate
         }  // for
 
+        // Particle explosion effect
         particles.forEach { curParticle ->
             curParticle.updateProgress(animateParticleExplosion.value, gridSize)
             drawCircle(
@@ -887,6 +901,13 @@ private fun drawBall(
     }
 }
 
+/**
+ * Draw the game board, which is the grid and the circle in the middle of the grid
+ *
+ * @param drawScope
+ * @param gridSize Grid size of each box
+ * @param lineColor Color of the line. We are using the theme color
+ */
 private fun drawGrid(
     drawScope: DrawScope,
     gridSize: Float,

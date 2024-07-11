@@ -659,6 +659,8 @@ private fun setGameMusic(on: Boolean)
     }
 }
 
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit)
@@ -682,25 +684,36 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit)
                     .fillMaxWidth()
                     .background(Color.White)
             ) {
-                Text(
-                    text = "Logout",
-                    color = Color.Black,
-                    modifier = Modifier
-                        .padding(8.dp, 16.dp, 8.dp, 2.dp)
-                        .align(Alignment.CenterHorizontally)
-                        .fillMaxWidth(), fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = "Are you sure you want to exit?",
-                    color = Color.Black,
-                    modifier = Modifier
-                        .padding(8.dp, 2.dp, 8.dp, 16.dp)
-                        .align(Alignment.CenterHorizontally)
-                        .fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
+                Row {
+                    Column(Modifier.weight(1f)) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ball),
+                            contentDescription = "Game",
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                    Column(Modifier.weight(3f)) {
+                        Text(
+                            text = "Logout",
+                            color = Color.Black,
+                            modifier = Modifier
+                                .padding(8.dp, 16.dp, 8.dp, 2.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .fillMaxWidth(), fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Are you sure you want to exit?",
+                            color = Color.Black,
+                            modifier = Modifier
+                                .padding(8.dp, 2.dp, 8.dp, 16.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
                 HorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -760,14 +773,5 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit)
 @Preview(showBackground = true)
 private fun ScreenPreview()
 {
-    SettingPopup(
-        onDismissRequest = { /*TODO*/ },
-        onConfirmation = { /*TODO*/ },
-        onColorThemeUpdated = {},
-        currentTheme = ColorThemeOption.Dark,
-        onPlayerNameUpdated = {},
-        currentPlayerName = "Tom",
-        onSoundSettingUpdated = {},
-        currentSoundSetting = true
-    )
+    ExitAlertDialog(onDismiss = { /* TODO */ }, onExit = { /* TODO */ })
 }
