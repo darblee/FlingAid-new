@@ -184,7 +184,7 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState)
                     .background(MaterialTheme.colorScheme.background)
                 Image(
                     painter = painterResource(id = R.drawable.ball),
-                    contentDescription = stringResource(id = R.string.app_name),
+                    contentDescription = "",
                     contentScale = ContentScale.Fit,
                     modifier = imageModifier
                 )
@@ -196,8 +196,8 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState)
                 )
 
                 //  Track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-                val newPercentageValue: Float = (Global.ThinkingProgress.toFloat() /
-                        (Global.totalProcessCount) * 100.0).toFloat()
+                val newPercentageValue =
+                    (uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Active }).progressLevel
                 val percentComplete =
                     String.format(Locale.getDefault(), "%.1f%%", newPercentageValue)
                 Text("$percentComplete Complete",

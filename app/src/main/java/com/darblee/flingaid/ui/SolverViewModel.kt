@@ -22,13 +22,18 @@ import java.util.concurrent.CyclicBarrier
 
 var gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
 var gTotalBallInCurrentMove = 0
+// var gThinkingProgress = 0
 
 /**
  * View Model for the Solver Game
  *
  * Manage the game including the thinking activity
+ *
+ * There can only be one SolverViewModel instance. Hence, use the singleton class (object)
  */
-class SolverViewModel : ViewModel() {
+object SolverViewModel : ViewModel() {
+
+    var gThinkingProgress = 0
 
     /**
      * List of all the balls and its position on the game board
@@ -73,6 +78,7 @@ class SolverViewModel : ViewModel() {
     init {
         val file : File? = null
         reset(file)
+        gThinkingProgress = 0
     }
 
     /**
@@ -144,7 +150,8 @@ class SolverViewModel : ViewModel() {
         }
         _ballPositionList.clear()
         file?.delete()
-        
+
+        gThinkingProgress = 0
         _uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
     }
 
@@ -203,9 +210,13 @@ class SolverViewModel : ViewModel() {
      */
     fun findWinningMove(solverViewModel: SolverViewModel)
     {
+        gThinkingProgress = 0
+        val activeThinkingRec = SolverUiState.ThinkingMode.Active
+        activeThinkingRec.progressLevel = 0.0f
+
         _uiState.update { currentStatus ->
             currentStatus.copy(
-                thinkingStatus = SolverUiState.ThinkingMode.Active
+                thinkingStatus = activeThinkingRec
             )
         }
         viewModelScope.launch {
@@ -216,7 +227,7 @@ class SolverViewModel : ViewModel() {
             Global.task1_WinningDirection = Direction.INCOMPLETE
             Global.task2_WinningDirection = Direction.INCOMPLETE
 
-            Global.ThinkingProgress = 0
+            gThinkingProgress = 0
             gTotalBallInCurrentMove = solverViewModel.ballCount()
 
             lateinit var cyclicBarrier : CyclicBarrier
@@ -262,8 +273,6 @@ class SolverViewModel : ViewModel() {
 
     /**
      * Update the [_uiState] with the result of the thinking task(s).
-     *
-     * @return Unit (nothing)
      */
     private fun recordThinkingResult()
     {
@@ -271,7 +280,8 @@ class SolverViewModel : ViewModel() {
         uiState.value.thinkingStatus = SolverUiState.ThinkingMode.Idle
 
         if ((Global.task1_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
-            (Global.task1_WinningDirection != Direction.INCOMPLETE)) {
+            (Global.task1_WinningDirection != Direction.INCOMPLETE))
+        {
             // Task1 has the winning move
             Log.i(Global.debugPrefix,
                 "Task #1 has winning move with direction : ${Global.task1_WinningDirection}")
@@ -288,10 +298,7 @@ class SolverViewModel : ViewModel() {
                 )
             }
         } else {
-            Log.i(
-                Global.debugPrefix,
-                "Task #1 does not have winning result. Now check on task #2 outcome"
-            )
+            // Task1 does not have the winning result. NOw check on task #2
             if ((Global.task2_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
                 (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
                 Log.i(Global.debugPrefix,
@@ -308,7 +315,7 @@ class SolverViewModel : ViewModel() {
                     )
                 }
             } else {
-                Log.i(Global.debugPrefix, "Neither Task #1 nor Task #2 has winning result")
+                // Neither Task #1 nor Task #2 has winning result
                 gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
                 _uiState.update {currentState ->
                     currentState.copy(
@@ -320,6 +327,7 @@ class SolverViewModel : ViewModel() {
                 }
             }
         }
+        gThinkingProgress = 0
     }
 
     fun noNeedToDisplayNoWinnableToastMessage()
@@ -417,25 +425,24 @@ class SolverViewModel : ViewModel() {
 
     /**
      * Show the thinking processing activity.
-     *
-     * @return Unit (nothing)
      */
     private fun showProcessingActivity()
     {
-        var i = 0
         var currentValue = 0.0F
         Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
 
         while (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) {
 
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-            val newValue : Float = (Global.ThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0).toFloat()
+            val newValue : Float = (gThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0).toFloat()
 
             if (newValue > currentValue) {
                 currentValue = newValue
+                val ActiveThinking = SolverUiState.ThinkingMode.Active
+                ActiveThinking.progressLevel = currentValue
                 _uiState.update { currentState ->
                     currentState.copy(
-                        thinkingProgress = newValue
+                        thinkingStatus = ActiveThinking,
                     )
                 }
             }
@@ -446,7 +453,6 @@ class SolverViewModel : ViewModel() {
             if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
             if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
             if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
-            i++
         }
         Log.i(Global.debugPrefix, "Finished thinking")
     }
@@ -530,7 +536,6 @@ class SolverViewModel : ViewModel() {
             _ballPositionList = game.updateBallList()
         }
 
-        // Erase the arrow
         _uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
 
         saveBallPositions(gBoardFile)

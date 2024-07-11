@@ -26,7 +26,6 @@ data class MovingRec(
  * @param foundWinningDirection The direction of the ball to move that will lead to a win
  * @param needToDisplayNoWinnableToastMessage Indiaate whether we need to send a toast message
  * indicating there is no winnable move in the current ball positions
- * @param thinkingProgress If it is actively thinking, keep tracking of progress
  * @param movingDirection While moving the ball, this is the direction
  * @param movingChain In a ball movement, it may involve multiple balls that needs to be moved,
  */
@@ -35,12 +34,13 @@ data class SolverUiState (
     var winningPosition: SolverGridPos =  SolverGridPos(-1, -1),
     var foundWinningDirection : Direction = Direction.NO_WINNING_DIRECTION,
     val needToDisplayNoWinnableToastMessage: Boolean = false,
-    val thinkingProgress: Float = 0.0F,
     val movingDirection: Direction = Direction.INCOMPLETE,
     val movingChain: List<MovingRec> = listOf()
 ) {
     sealed class ThinkingMode {
-        data object Active : ThinkingMode()
+        data object Active : ThinkingMode() {
+            var progressLevel : Float = 0.0f
+        }
         data object Idle : ThinkingMode()
     }
 }

@@ -5,6 +5,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 
+
+
 class SolverEngine {
     private var flingGrid = Array(Global.MaxRowSize) { BooleanArray(Global.MaxColSize) }
 
@@ -100,7 +102,7 @@ class SolverEngine {
                         }
 
                         if (curSearchLevel == 2) {
-                            Global.ThinkingProgress++
+                            SolverViewModel.gThinkingProgress++
                         }
                         if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
@@ -117,7 +119,7 @@ class SolverEngine {
                         }
 
                         if (curSearchLevel == 2) {
-                            Global.ThinkingProgress++
+                            SolverViewModel.gThinkingProgress++
                         }
                         if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
@@ -134,7 +136,7 @@ class SolverEngine {
                         }
 
                         if (curSearchLevel == 2) {
-                            Global.ThinkingProgress++
+                            SolverViewModel.gThinkingProgress++
                         }
                         if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
@@ -151,7 +153,7 @@ class SolverEngine {
                         }
 
                         if (curSearchLevel == 2) {
-                            Global.ThinkingProgress++
+                            SolverViewModel.gThinkingProgress++
                         }
                         if (Thread.interrupted() || (Global.task1_WinningDirection != Direction.INCOMPLETE) || (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
