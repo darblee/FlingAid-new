@@ -51,7 +51,6 @@ fun SetUpNavGraph(
         startDestination = Screen.Home
     ) {
         composable<Screen.Home>{
-            val appName = stringResource(id = R.string.app_name)
             currentScreen.value = Screen.Home
             HomeScreen (
                 modifier = Modifier

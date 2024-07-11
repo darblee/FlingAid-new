@@ -91,7 +91,6 @@ fun GameScreen(modifier: Modifier = Modifier)
             DrawGameBoard(modifier = Modifier.fillMaxSize(), gameViewModel, uiState, onSwipeBall = {needToAnimate -> animateBalls = needToAnimate }  )
         } else {
             AnimateBalls(
-                uiState = uiState,
                 modifier = Modifier.fillMaxSize(),
                 gameViewModel = gameViewModel,
                 onSwipeBall = {needToAnimate: Boolean -> animateBalls = needToAnimate }
@@ -204,7 +203,6 @@ private fun GameControlButtonsForGame(
 private fun AnimateBalls(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
-    uiState: GameUIState,
     onSwipeBall: (animateBalls: Boolean) -> Unit
 )
 {

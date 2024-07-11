@@ -91,7 +91,6 @@ import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_youWon
 import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
-import com.darblee.flingaid.ui.SolverState
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
 import com.darblee.flingaid.ui.SolverGridPos
@@ -178,7 +177,7 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState)
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         Box {
-            if (uiState.state == SolverState.NotThinking) {
+            if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
                 val imageModifier = Modifier
                     .size(logoSize)
                     .align(Alignment.Center)
@@ -292,7 +291,7 @@ private fun ControlButtonsForSolver(
                 .weight(3F)
                 .padding(5.dp),
             enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) &&
-                    (uiState.state == SolverState.NotThinking))
+                    (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle))
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
@@ -422,7 +421,7 @@ private fun DrawSolverBoard(
                             view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
                             val thinkingStatus = solverViewModel.getThinkingStatus()
-                            if (thinkingStatus == SolverState.Thinking) {
+                            if (thinkingStatus == SolverUiState.ThinkingMode.Active) {
                                 Toast
                                     .makeText(
                                         context,

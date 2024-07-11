@@ -284,7 +284,7 @@ private fun FlingAidTopAppBar(
         navigationIcon = {
             when (currentScreen.value) {
                 Screen.Home -> {
-                    IconButton(onClick = { })
+                    IconButton(onClick = { /* Do nothing */ })
                     { Icon(Icons.Filled.Home, contentDescription = "Home screen") }
                 }
                 Screen.Game,

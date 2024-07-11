@@ -23,8 +23,16 @@ import java.util.concurrent.CyclicBarrier
 var gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
 var gTotalBallInCurrentMove = 0
 
+/**
+ * View Model for the Solver Game
+ *
+ * Manage the game including the thinking activity
+ */
 class SolverViewModel : ViewModel() {
 
+    /**
+     * List of all the balls and its position on the game board
+     */
     private var _ballPositionList = mutableStateListOf<SolverGridPos>()
 
     /**
@@ -59,11 +67,19 @@ class SolverViewModel : ViewModel() {
     internal var uiState : StateFlow<SolverUiState> = _uiState.asStateFlow()
     private set
 
+    /**
+     * Initialize the SolverViewModel
+     */
     init {
         val file : File? = null
         reset(file)
     }
 
+    /**
+     * Save the solver game board to a file
+     *
+     * @param file File to write to
+     */
     fun saveBallPositions(file: File)
     {
         val format = Json { prettyPrint = true }
@@ -83,6 +99,11 @@ class SolverViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Load the saved game board from file
+     *
+     * @param file  File to load from
+     */
     fun loadBallPositions(file: File)
     {
         try {
@@ -101,16 +122,24 @@ class SolverViewModel : ViewModel() {
         }
     }
 
-    fun getThinkingStatus(): SolverState
+    /**
+     * Get the current thinking status
+     */
+    fun getThinkingStatus(): SolverUiState.ThinkingMode
     {
-        return (_uiState.value.state)
+        return (_uiState.value.thinkingStatus)
     }
 
+    /**
+     * Reset the entire solver game
+     * - Clear the board
+     * - Remove any saved game file
+     */
     fun reset(file: File?)
     {
         _uiState.update {currentState ->
             currentState.copy(
-                state = SolverState.NotThinking
+                thinkingStatus = SolverUiState.ThinkingMode.Idle,
             )
         }
         _ballPositionList.clear()
@@ -119,6 +148,11 @@ class SolverViewModel : ViewModel() {
         _uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
     }
 
+    /**
+     * Return the number of active ball
+     *
+     * @return Number of active balls
+     */
     fun ballCount():Int
     {
         return _ballPositionList.count()
@@ -129,7 +163,6 @@ class SolverViewModel : ViewModel() {
      * If ball already exist on that location, then remove the ball
      *
      * @param solverGridPos The position of the ball
-     * @return Unit (nothing)
      */
     fun toggleBallPosition(solverGridPos: SolverGridPos)
     {
@@ -141,7 +174,7 @@ class SolverViewModel : ViewModel() {
 
         _uiState.update {currentState ->
             currentState.copy(
-                state = SolverState.NotThinking,
+                thinkingStatus = SolverUiState.ThinkingMode.Idle,
                 foundWinningDirection = Direction.NO_WINNING_DIRECTION
             )
         }
@@ -170,9 +203,9 @@ class SolverViewModel : ViewModel() {
      */
     fun findWinningMove(solverViewModel: SolverViewModel)
     {
-        _uiState.update {currentState ->
-            currentState.copy(
-                state = SolverState.Thinking
+        _uiState.update { currentStatus ->
+            currentStatus.copy(
+                thinkingStatus = SolverUiState.ThinkingMode.Active
             )
         }
         viewModelScope.launch {
@@ -235,7 +268,7 @@ class SolverViewModel : ViewModel() {
     private fun recordThinkingResult()
     {
         Log.i(Global.debugPrefix, "DisplayResult after processing....")
-        uiState.value.state = SolverState.NotThinking
+        uiState.value.thinkingStatus = SolverUiState.ThinkingMode.Idle
 
         if ((Global.task1_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
             (Global.task1_WinningDirection != Direction.INCOMPLETE)) {
@@ -249,7 +282,7 @@ class SolverViewModel : ViewModel() {
 
             _uiState.update {currentState ->
                 currentState.copy(
-                    state = SolverState.NotThinking,
+                    thinkingStatus = SolverUiState.ThinkingMode.Idle,
                     winningPosition = winningSolverGridPos,
                     foundWinningDirection = winningDir
                 )
@@ -269,7 +302,7 @@ class SolverViewModel : ViewModel() {
                 gWINNING_DIRECTION_from_tasks = Global.task2_WinningDirection
                 _uiState.update {currentState ->
                     currentState.copy(
-                        state = SolverState.NotThinking,
+                        thinkingStatus = SolverUiState.ThinkingMode.Idle,
                         winningPosition = winningSolverGridPos,
                         foundWinningDirection = winningDir
                     )
@@ -279,7 +312,7 @@ class SolverViewModel : ViewModel() {
                 gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
                 _uiState.update {currentState ->
                     currentState.copy(
-                        state = SolverState.NotThinking,
+                        thinkingStatus = SolverUiState.ThinkingMode.Idle,
                         winningPosition = SolverGridPos(-1, -1),
                         foundWinningDirection = Direction.NO_WINNING_DIRECTION,
                         needToDisplayNoWinnableToastMessage = true
@@ -393,7 +426,7 @@ class SolverViewModel : ViewModel() {
         var currentValue = 0.0F
         Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
 
-        while (_uiState.value.state == SolverState.Thinking) {
+        while (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) {
 
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
             val newValue : Float = (Global.ThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0).toFloat()
@@ -407,13 +440,12 @@ class SolverViewModel : ViewModel() {
                 }
             }
 
-            /**
-             * Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
-             * loop breakout when it has finished thinking
-             */
-            if (_uiState.value.state == SolverState.Thinking) Thread.sleep(500)
-            if (_uiState.value.state == SolverState.Thinking) Thread.sleep(500)
-            if (_uiState.value.state == SolverState.Thinking) Thread.sleep(500)
+
+            // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
+            // loop breakout when it has finished thinking
+            if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
+            if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
+            if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
             i++
         }
         Log.i(Global.debugPrefix, "Finished thinking")
