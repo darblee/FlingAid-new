@@ -24,7 +24,7 @@ data class MovingRec(
  * @param thinkingStatus Whether it is in active thinking mode or just idle
  * @param winningPosition The position of ball to move that will lead to a win
  * @param foundWinningDirection The direction of the ball to move that will lead to a win
- * @param needToDisplayNoWinnableToastMessage Indiaate whether we need to send a toast message
+ * @param needToDisplayNoWinnableToastMessage Indicate whether we need to send a toast message
  * indicating there is no winnable move in the current ball positions
  * @param movingDirection While moving the ball, this is the direction
  * @param movingChain In a ball movement, it may involve multiple balls that needs to be moved,

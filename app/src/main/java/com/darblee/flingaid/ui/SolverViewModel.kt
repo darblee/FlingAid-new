@@ -20,20 +20,48 @@ import java.io.FileReader
 import java.io.FileWriter
 import java.util.concurrent.CyclicBarrier
 
-var gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
-var gTotalBallInCurrentMove = 0
-// var gThinkingProgress = 0
-
 /**
  * View Model for the Solver Game
  *
- * Manage the game including the thinking activity
+ * - It manage the business logic for the game. This includes the thinking activity.
+ * - It is the sole source of truth for the solve game state.
+ * - It prepare data for the UI. All information flow one direction to the UI
+ * - It has a longer lifetime than the composable
  *
  * There can only be one SolverViewModel instance. Hence, use the singleton class (object)
  */
 object SolverViewModel : ViewModel() {
 
-    var gThinkingProgress = 0
+    /**
+     * _Developer's note:_ `internal` means it will only be visible within that module. A module
+     * is a set of Kotlin files that are compiled together e.g. a library or application. It provides real
+     * encapsulation for the implementation details. In this case, it is shared wit the SolverEngine class.
+     */
+    internal var gThinkingProgress = 0
+
+    /**
+     * Store the winning direction for each corresponding task. Only 1 task will have the winning move
+     * but we do not know which ones.
+     */
+    var task2_WinningDirection = Direction.NO_WINNING_DIRECTION
+    var task1_WinningDirection = Direction.NO_WINNING_DIRECTION
+
+    /**
+     * [_totalProcessCount] is the total amount of thinking process involved in the current move.
+     * [_totalBallInCurrentMove] total number of balls in the current move and current level
+     *
+     * The total is 2 levels of thinking.
+     * Next level is (number of balls - 1) x 4 directions
+     * Current level is the number of balls x 4 direction
+     * Total = (Next level) x (current level)
+     */
+    private var _totalProcessCount : Float = 0.0F
+    private var _totalBallInCurrentMove = 0
+
+    /**
+     * The direction of the winning move obtained from the tasks calculation
+     */
+    private var _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
 
     /**
      * List of all the balls and its position on the game board
@@ -61,10 +89,6 @@ object SolverViewModel : ViewModel() {
      * updates and make the screen state survive configuration changes.
      *
      * In the GameViewModel class, add the following [_uiState] property.
-     *
-     * `internal` means it will only be visible within that module. A module is a set of Kotlin
-     * files that are compiled together e.g. a library or application. It provides real
-     * encapsulation for the implementation details
      *
      * `private set` this is internally modifiable and read-only access from the outside.
      * This ensure information flow in one direction from the view model to the UI
@@ -220,21 +244,24 @@ object SolverViewModel : ViewModel() {
             )
         }
         viewModelScope.launch {
-            Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
-            gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
+
+            // For explanation on the formula, see the description for _totalProcessCount
+            _totalProcessCount = (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
+
+            _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
             val gTotalBallCount = solverViewModel.ballCount()
 
-            Global.task1_WinningDirection = Direction.INCOMPLETE
-            Global.task2_WinningDirection = Direction.INCOMPLETE
+            task1_WinningDirection = Direction.INCOMPLETE
+            task2_WinningDirection = Direction.INCOMPLETE
 
             gThinkingProgress = 0
-            gTotalBallInCurrentMove = solverViewModel.ballCount()
+            _totalBallInCurrentMove = solverViewModel.ballCount()
 
             lateinit var cyclicBarrier : CyclicBarrier
 
             if (gTotalBallCount > 12) {
                 gMultipleThread = true
-                Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
+                _totalProcessCount = (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
                 cyclicBarrier = CyclicBarrier(2) {
                     Log.i(Global.debugPrefix, "Reached a converged point between 2 parallel tasks")
                     recordThinkingResult()
@@ -279,16 +306,16 @@ object SolverViewModel : ViewModel() {
         Log.i(Global.debugPrefix, "DisplayResult after processing....")
         uiState.value.thinkingStatus = SolverUiState.ThinkingMode.Idle
 
-        if ((Global.task1_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
-            (Global.task1_WinningDirection != Direction.INCOMPLETE))
+        if ((task1_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
+            (task1_WinningDirection != Direction.INCOMPLETE))
         {
             // Task1 has the winning move
             Log.i(Global.debugPrefix,
-                "Task #1 has winning move with direction : ${Global.task1_WinningDirection}")
+                "Task #1 has winning move with direction : ${task1_WinningDirection}")
             val winningSolverGridPos = SolverGridPos(task1WinningRow, task1WinningCol)
-            val winningDir = Global.task1_WinningDirection
+            val winningDir = task1_WinningDirection
 
-            gWINNING_DIRECTION_from_tasks = Global.task1_WinningDirection
+            _winningDirection_from_tasks = task1_WinningDirection
 
             _uiState.update {currentState ->
                 currentState.copy(
@@ -299,14 +326,14 @@ object SolverViewModel : ViewModel() {
             }
         } else {
             // Task1 does not have the winning result. NOw check on task #2
-            if ((Global.task2_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
-                (Global.task2_WinningDirection != Direction.INCOMPLETE)) {
+            if ((task2_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
+                (task2_WinningDirection != Direction.INCOMPLETE)) {
                 Log.i(Global.debugPrefix,
-                    "Task #2 has winning move with direction: ${Global.task2_WinningDirection}")
+                    "Task #2 has winning move with direction: ${task2_WinningDirection}")
                 // Task2 has the winning move
                 val winningSolverGridPos = SolverGridPos(task2WinningRow, task2WinningCol)
-                val winningDir = Global.task2_WinningDirection
-                gWINNING_DIRECTION_from_tasks = Global.task2_WinningDirection
+                val winningDir = task2_WinningDirection
+                _winningDirection_from_tasks = task2_WinningDirection
                 _uiState.update {currentState ->
                     currentState.copy(
                         thinkingStatus = SolverUiState.ThinkingMode.Idle,
@@ -316,7 +343,7 @@ object SolverViewModel : ViewModel() {
                 }
             } else {
                 // Neither Task #1 nor Task #2 has winning result
-                gWINNING_DIRECTION_from_tasks = Direction.NO_WINNING_DIRECTION
+                _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
                 _uiState.update {currentState ->
                     currentState.copy(
                         thinkingStatus = SolverUiState.ThinkingMode.Idle,
@@ -330,6 +357,9 @@ object SolverViewModel : ViewModel() {
         gThinkingProgress = 0
     }
 
+    /**
+     * No need to display the "No winnable" toast message
+     */
     fun noNeedToDisplayNoWinnableToastMessage()
     {
         _uiState.update {currentState ->
@@ -339,6 +369,11 @@ object SolverViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Process the first task.
+     *
+     * It is tracked using the hardcoded task #1 meta data
+     */
     private fun processTask1(totalBallCnt :  Int)
     {
         try {
@@ -352,7 +387,7 @@ object SolverViewModel : ViewModel() {
             Log.i("${Global.debugPrefix} Finish Task #1",
                 "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
 
-            Global.task1_WinningDirection = direction
+            task1_WinningDirection = direction
 
             when (direction) {
 
@@ -368,10 +403,10 @@ object SolverViewModel : ViewModel() {
 
                 else -> {
                     // Task #1 got winning move
-                    Global.task1_WinningDirection = direction
+                    task1_WinningDirection = direction
                     task1WinningRow = finalRow
                     task1WinningCol = finalCol
-                    Global.task1_WinningDirection = direction
+                    task1_WinningDirection = direction
 
                     Log.i(Global.debugPrefix, "Attempting to interrupt task #2")
                     if (gMultipleThread) gThinkingThread2.interrupt()
@@ -382,19 +417,24 @@ object SolverViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Process the 2nd task.
+     *
+     * It is tracked using the hardcoded task #2 meta data
+     */
     private fun processTask2(totalBallCnt : Int)
     {
         try {
             Log.i("${Global.debugPrefix} Task 2", "Task 2 has started")
             val game2 = SolverEngine()
             game2.populateGrid(_ballPositionList)
-            Global.task2_WinningDirection = Direction.INCOMPLETE
+            task2_WinningDirection = Direction.INCOMPLETE
             val (direction, finalRow, finalCol) = game2.foundWinningMove(
                 totalBallCnt, 1, -1)
 
             Log.i("${Global.debugPrefix} Finish Task #2", "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
 
-            Global.task2_WinningDirection = direction
+            task2_WinningDirection = direction
 
             when (direction) {
 
@@ -409,10 +449,10 @@ object SolverViewModel : ViewModel() {
 
                 else -> {
                     // Task #2 got the winning move
-                    Global.task2_WinningDirection = direction
+                    task2_WinningDirection = direction
                     task2WinningRow = finalRow
                     task2WinningCol = finalCol
-                    Global.task2_WinningDirection = direction
+                    task2_WinningDirection = direction
 
                     Log.i(Global.debugPrefix, "Attempting to interrupt task #1")
                     gThinkingThread1.interrupt()
@@ -429,24 +469,23 @@ object SolverViewModel : ViewModel() {
     private fun showProcessingActivity()
     {
         var currentValue = 0.0F
-        Global.totalProcessCount = (((gTotalBallInCurrentMove - 1) * 4) * (gTotalBallInCurrentMove * 4)).toFloat()
+        _totalProcessCount = (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
 
         while (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) {
 
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-            val newValue : Float = (gThinkingProgress.toFloat() / (Global.totalProcessCount) * 100.0).toFloat()
+            val newValue : Float = (gThinkingProgress.toFloat() / (_totalProcessCount) * 100.0).toFloat()
 
             if (newValue > currentValue) {
                 currentValue = newValue
-                val ActiveThinking = SolverUiState.ThinkingMode.Active
-                ActiveThinking.progressLevel = currentValue
+                val activeThinking = SolverUiState.ThinkingMode.Active
+                activeThinking.progressLevel = currentValue
                 _uiState.update { currentState ->
                     currentState.copy(
-                        thinkingStatus = ActiveThinking,
+                        thinkingStatus = activeThinking,
                     )
                 }
             }
-
 
             // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
             // loop breakout when it has finished thinking
@@ -551,7 +590,6 @@ object SolverViewModel : ViewModel() {
 
                 if (movingChain.isEmpty()) return
 
-                printChain(direction, movingChain)
                 _uiState.update {currentState ->
                     currentState.copy(
                         movingDirection = Direction.UP,
@@ -564,8 +602,6 @@ object SolverViewModel : ViewModel() {
 
                 if (movingChain.isEmpty()) return
 
-                printChain(direction, movingChain)
-
                 _uiState.update { currentState ->
                     currentState.copy(
                         movingDirection = Direction.DOWN,
@@ -577,8 +613,6 @@ object SolverViewModel : ViewModel() {
                 val movingChain = buildMovingChain(row, col, direction)
                 if (movingChain.isEmpty()) return
 
-                printChain(direction, movingChain)
-
                 _uiState.update {currentState ->
                     currentState.copy(
                         movingDirection = Direction.RIGHT,
@@ -589,8 +623,6 @@ object SolverViewModel : ViewModel() {
             Direction.LEFT -> {
                 val movingChain = buildMovingChain(row, col, direction)
                 if (movingChain.isEmpty()) return
-
-                printChain(direction, movingChain)
 
                 _uiState.update {currentState ->
                     currentState.copy(
@@ -608,14 +640,6 @@ object SolverViewModel : ViewModel() {
     fun needBallAnimation() : Boolean
     {
         return (_uiState.value.movingChain.isNotEmpty())
-    }
-
-    private fun printChain(direction: Direction, movingList: List<MovingRec>) {
-        Log.i(Global.debugPrefix, "===============")
-        movingList.forEach {rec ->
-            val gridPos = rec.pos
-        }
-        Log.i(Global.debugPrefix, "===============")
     }
 
     private fun buildMovingChain(initialRow: Int, initialCol: Int, direction: Direction) : List<MovingRec>

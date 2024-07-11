@@ -348,14 +348,14 @@ private fun DrawSolverBoard(
     uiState: SolverUiState)
 {
     val context = LocalContext.current
-    val youWonAnnouncement = rememberSaveable { mutableStateOf(false) }
+    val youWonMessage = rememberSaveable { mutableStateOf(false) }
 
-    if (youWonAnnouncement.value) {
+    if (youWonMessage.value) {
         if (solverViewModel.ballCount() == 1) {
             gAudio_youWon.start()
             gameToast(context, "You won")
         }
-        youWonAnnouncement.value = false
+        youWonMessage.value = false
     }
 
     // Launch the animation only once when it enters the composition. It will animate infinitely
@@ -375,7 +375,7 @@ private fun DrawSolverBoard(
             generateExplosionParticles(solverViewModel, uiState)
         }.toMutableList()
 
-        AnimateBallMovementsSetup(solverViewModel, uiState, youWonAnnouncement, animateBallMovementChain,
+        AnimateBallMovementsSetup(solverViewModel, uiState, youWonMessage, animateBallMovementChain,
             animateParticleExplosion)
     } else {  // else need ball movement animation
 
