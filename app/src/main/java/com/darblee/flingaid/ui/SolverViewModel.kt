@@ -313,7 +313,6 @@ object SolverViewModel : ViewModel() {
                 currentState.copy(
                     thinkingStatus = idleRec,
                     winningPosition = winningSolverGridPos,
-                    foundWinningDirection = winningDir,
                     winningDirection = winningDir
                 )
             }
@@ -335,7 +334,6 @@ object SolverViewModel : ViewModel() {
                     currentState.copy(
                         thinkingStatus = idleRec,
                         winningPosition = winningSolverGridPos,
-                        foundWinningDirection = winningDir,
                         winningDirection = winningDir
                     )
                 }
@@ -350,7 +348,6 @@ object SolverViewModel : ViewModel() {
                     currentState.copy(
                         thinkingStatus = idleRec,
                         winningPosition = SolverGridPos(-1, -1),
-                        foundWinningDirection = Direction.NO_WINNING_DIRECTION,
                         winningDirection = Direction.NO_WINNING_DIRECTION
                     )
                 }
@@ -372,7 +369,6 @@ object SolverViewModel : ViewModel() {
             currentState.copy(
                 thinkingStatus = idleRec,
                 winningPosition = SolverGridPos(-1, -1),
-                foundWinningDirection = Direction.NO_WINNING_DIRECTION,
                 winningDirection = Direction.NO_WINNING_DIRECTION
             )
         }
@@ -604,8 +600,7 @@ object SolverViewModel : ViewModel() {
                 _uiState.update {currentState ->
                     currentState.copy(
                         winningDirection = Direction.UP,
-                        movingChain = movingChain,
-                        foundWinningDirection = Direction.UP
+                        movingChain = movingChain
                     )
                 }
             }
@@ -617,8 +612,7 @@ object SolverViewModel : ViewModel() {
                 _uiState.update { currentState ->
                     currentState.copy(
                         winningDirection = Direction.DOWN,
-                        movingChain = movingChain,
-                        foundWinningDirection = Direction.DOWN
+                        movingChain = movingChain
                     )
                 }
             }
@@ -629,8 +623,7 @@ object SolverViewModel : ViewModel() {
                 _uiState.update {currentState ->
                     currentState.copy(
                         winningDirection = Direction.RIGHT,
-                        movingChain = movingChain,
-                        foundWinningDirection = Direction.RIGHT
+                        movingChain = movingChain
                     )
                 }
             }
@@ -641,8 +634,7 @@ object SolverViewModel : ViewModel() {
                 _uiState.update {currentState ->
                     currentState.copy(
                         winningDirection = Direction.LEFT,
-                        movingChain = movingChain,
-                        foundWinningDirection = Direction.LEFT
+                        movingChain = movingChain
                     )
                 }
             }
@@ -777,8 +769,7 @@ object SolverViewModel : ViewModel() {
         _uiState.update { currentState ->
             currentState.copy(
                 winningDirection = Direction.NO_WINNING_DIRECTION,
-                movingChain = mutableListOf(),
-                foundWinningDirection = Direction.NO_WINNING_DIRECTION
+                movingChain = mutableListOf()
             )
         }
     }
