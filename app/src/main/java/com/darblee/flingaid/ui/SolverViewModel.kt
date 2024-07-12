@@ -650,11 +650,6 @@ object SolverViewModel : ViewModel() {
         }
     }
 
-    fun needBallAnimation() : Boolean
-    {
-        return (_uiState.value.winningMovingChain.isNotEmpty())
-    }
-
     private fun buildMovingChain(initialRow: Int, initialCol: Int, direction: Direction) : List<MovingRec>
     {
         val movingList = mutableListOf<MovingRec>()
@@ -768,16 +763,6 @@ object SolverViewModel : ViewModel() {
         }
 
         return (Pair(distance, nextSourcePos))
-    }
-
-    fun ballMovementAnimationComplete()
-    {
-        _uiState.update { currentState ->
-            currentState.copy(
-                winningDirection = Direction.NO_WINNING_DIRECTION,
-                winningMovingChain = mutableListOf()
-            )
-        }
     }
 
     fun getMovingChain() : List<MovingRec>
