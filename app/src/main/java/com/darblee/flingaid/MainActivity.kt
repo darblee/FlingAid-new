@@ -133,10 +133,7 @@ class MainActivity : ComponentActivity()
 
                 gSoundOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
 
-
-                if (gSoundOn) {
-                        gAudio_gameMusic.start()
-                }
+                if (gSoundOn) { gAudio_gameMusic.start() }
 
                 keepSplashOnScreen = false // End the splash screen
             }

@@ -45,7 +45,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -138,7 +137,8 @@ fun SolverScreen(modifier: Modifier = Modifier)
         /**
          * Keep track of when to do the ball movement animation
          */
-        var showBallmovementAnimation = remember { mutableStateOf(false) }
+        var showBallMovementAnimation by remember { mutableStateOf(false) }
+        val onBallMovementAnimationChange = { enableBallMovements:Boolean -> showBallMovementAnimation = enableBallMovements }
 
         if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
             val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
@@ -154,14 +154,15 @@ fun SolverScreen(modifier: Modifier = Modifier)
             findWinnableMoveButtonEnabled = findWinnableMoveButtonEnabled,
             showWinnableMoveToUser = showWinnableMoveToUser,
             uiState = uiState,
-            showBallmovementAnimation
+            onBallMovementAnimationChange = onBallMovementAnimationChange
         )
 
         DrawSolverBoard(
             modifier = Modifier.fillMaxSize(),
             solverViewModel = solverViewModel,
             uiState = uiState,
-            showBallmovementAnimation
+            showBallMovementAnimation = showBallMovementAnimation,
+            onBallMovementAnimationChange = onBallMovementAnimationChange
         )
     }
 }
@@ -258,7 +259,7 @@ private fun ControlButtonsForSolver(
      findWinnableMoveButtonEnabled: Boolean,
      showWinnableMoveToUser: Boolean,
      uiState: SolverUiState,
-     showBallmovementAnimation: MutableState<Boolean>
+     onBallMovementAnimationChange: (enableBallMovementAnimation:Boolean) -> Unit
  )
 {
     val view = LocalView.current
@@ -286,7 +287,7 @@ private fun ControlButtonsForSolver(
                     val winningDirection = uiState.winningDirection
                     val winningPos = uiState.winningPosition
                     solverViewModel.setupMovingChain(winningPos.row, winningPos.col, winningDirection)
-                    showBallmovementAnimation.value = true
+                    onBallMovementAnimationChange(true)
                 } else {
                      // In this case, we did not move the ball as we did not show hint yet.
                      // We need to find the winning move
@@ -363,7 +364,9 @@ private fun DrawSolverBoard(
     modifier: Modifier = Modifier,
     solverViewModel: SolverViewModel = viewModel(),
     uiState: SolverUiState,
-    showBallmovementAnimation: MutableState<Boolean>
+    showBallMovementAnimation: Boolean,
+    onBallMovementAnimationChange: (enableBallMovementAnimation:Boolean) -> Unit
+
 )
 {
     val context = LocalContext.current
@@ -389,7 +392,7 @@ private fun DrawSolverBoard(
 
     var particles = mutableListOf<Particle>()
 
-    if (showBallmovementAnimation.value) {
+    if (showBallMovementAnimation) {
 
         // Set-up the particles. which is used for the explosion animated effect
         particles = remember {
@@ -397,7 +400,7 @@ private fun DrawSolverBoard(
         }.toMutableList()
 
         AnimateBallMovementsSetup(solverViewModel, uiState, animateBallMovementChain,
-            animateParticleExplosion, showBallmovementAnimation)
+            animateParticleExplosion, onBallMovementAnimationChange)
     } else {  // else need ball movement animation
 
         // Make sure we do not show any more particle explosion when ball animation is done
@@ -507,7 +510,7 @@ private fun DrawSolverBoard(
                 ballSize, ballSize, false).asImageBitmap()
             displayBallImage.prepareToDraw()   // cache it
 
-            if (showBallmovementAnimation.value) {
+            if (showBallMovementAnimation) {
                 val ballsToErase = solverViewModel.uiState.value.winningMovingChain
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage, ballsToErase)
             } else {
@@ -526,7 +529,7 @@ private fun DrawSolverBoard(
                 }
             }
 
-            if (showBallmovementAnimation.value) {
+            if (showBallMovementAnimation) {
                 animateBallMovementsPerform(
                     this, solverViewModel, gridSize, displayBallImage,
                     animateBallMovementChain, animateParticleExplosion, particles)
@@ -662,7 +665,7 @@ fun AnimateBallMovementsSetup(
     uiState: SolverUiState,
     animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosion: Animatable<Float, AnimationVector1D>,
-    showBallmovementAnimation: MutableState<Boolean>
+    onAnimationChange: (enableBallMovementAnimation:Boolean) -> Unit
 )
 {
     val movingChain = solverViewModel.getMovingChain()
@@ -703,7 +706,7 @@ fun AnimateBallMovementsSetup(
                 animateBallMovementChain.clear()
                 delay(500)
 
-                showBallmovementAnimation.value = false
+                onAnimationChange(false)
                 solverViewModel.makeWinningMove(uiState)
                 if (solverViewModel.ballCount() > 1) {
                     Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
