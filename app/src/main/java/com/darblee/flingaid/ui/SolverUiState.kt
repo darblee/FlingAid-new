@@ -32,7 +32,7 @@ data class MovingRec(
 data class SolverUiState (
     var thinkingStatus: ThinkingMode = ThinkingMode.Idle,
     var winningPosition: SolverGridPos =  SolverGridPos(-1, -1),
-    var winningDirection: Direction = Direction.INCOMPLETE,
+    var winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
     val movingChain: List<MovingRec> = listOf()
 ) {
     /**
