@@ -27,13 +27,14 @@ data class MovingRec(
  * used to do ball animation as animation always move toward winning.
  * A value of "Direction.NO_WINNING_DIRECTION" means there is no winning direction found in the
  * current board layout.
- * @param movingChain In a ball movement, it may involve multiple balls that needs to be moved,
+ * @param winningMovingChain In a ball movement, it may involve multiple balls that needs to be moved,
+ * The chain is used primarily to animate all the ball movements
  */
 data class SolverUiState (
     var thinkingStatus: ThinkingMode = ThinkingMode.Idle,
     var winningPosition: SolverGridPos =  SolverGridPos(-1, -1),
     var winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
-    val movingChain: List<MovingRec> = listOf()
+    val winningMovingChain: List<MovingRec> = listOf()
 ) {
     /**
      * There are two different thinking modes:

@@ -523,24 +523,27 @@ object SolverViewModel : ViewModel() {
         var targetRow: Int
         var targetCol: Int
 
+        val winningRow = uiState.winningPosition.row
+        val winningCol = uiState.winningPosition.col
+
         if (uiState.winningDirection == Direction.UP) {
-            targetRow = game.findTargetRowOnMoveUp(uiState.winningPosition.row, uiState.winningPosition.col)
-            winningMoveCount = uiState.winningPosition.row - targetRow
+            targetRow = game.findTargetRowOnMoveUp(winningRow, winningCol)
+            winningMoveCount = winningRow - targetRow
         }
 
         if (uiState.winningDirection == Direction.DOWN) {
-            targetRow = game.findTargetRowOnMoveDown(uiState.winningPosition.row, uiState.winningPosition.col)
-            winningMoveCount = targetRow - uiState.winningPosition.row
+            targetRow = game.findTargetRowOnMoveDown(winningRow, winningCol)
+            winningMoveCount = targetRow - winningRow
         }
 
         if (uiState.winningDirection == Direction.RIGHT) {
-            targetCol = game.findTargetColOnMoveRight(uiState.winningPosition.row, uiState.winningPosition.col)
-            winningMoveCount = targetCol - uiState.winningPosition.col
+            targetCol = game.findTargetColOnMoveRight(winningRow, winningCol)
+            winningMoveCount = targetCol - winningCol
         }
 
         if (uiState.winningDirection == Direction.LEFT) {
-            targetCol = game.findTargetColOnMoveLeft(uiState.winningPosition.row, uiState.winningPosition.col)
-            winningMoveCount = uiState.winningPosition.col - targetCol
+            targetCol = game.findTargetColOnMoveLeft(winningRow, winningCol)
+            winningMoveCount = winningCol - targetCol
         }
 
         return (winningMoveCount)
@@ -554,30 +557,33 @@ object SolverViewModel : ViewModel() {
         var targetRow: Int
         var targetCol: Int
 
+        val winningRow = uiState.winningPosition.row
+        val winningCol = uiState.winningPosition.col
+
         if (uiState.winningDirection == Direction.UP) {
-            targetRow = game.findTargetRowOnMoveUp(uiState.winningPosition.row, uiState.winningPosition.col)
-            game.moveUp(uiState.winningPosition.row, targetRow, uiState.winningPosition.col)
+            targetRow = game.findTargetRowOnMoveUp(winningRow, winningCol)
+            game.moveUp(winningRow, targetRow, winningCol)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
 
         if (uiState.winningDirection == Direction.DOWN) {
-            targetRow = game.findTargetRowOnMoveDown(uiState.winningPosition.row, uiState.winningPosition.col)
-            game.moveDown(uiState.winningPosition.row, targetRow, uiState.winningPosition.col)
+            targetRow = game.findTargetRowOnMoveDown(winningRow, winningCol)
+            game.moveDown(winningRow, targetRow, winningCol)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
 
         if (uiState.winningDirection == Direction.RIGHT) {
-            targetCol = game.findTargetColOnMoveRight(uiState.winningPosition.row, uiState.winningPosition.col)
-            game.moveRight(uiState.winningPosition.col, targetCol, uiState.winningPosition.row)
+            targetCol = game.findTargetColOnMoveRight(winningRow, winningCol)
+            game.moveRight(winningCol, targetCol, winningRow)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
 
         if (uiState.winningDirection == Direction.LEFT) {
-            targetCol = game.findTargetColOnMoveLeft(uiState.winningPosition.row, uiState.winningPosition.col)
-            game.moveLeft(uiState.winningPosition.col, targetCol, uiState.winningPosition.row)
+            targetCol = game.findTargetColOnMoveLeft(winningRow, winningCol)
+            game.moveLeft(winningCol, targetCol, winningRow)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
@@ -600,7 +606,7 @@ object SolverViewModel : ViewModel() {
                 _uiState.update {currentState ->
                     currentState.copy(
                         winningDirection = Direction.UP,
-                        movingChain = movingChain
+                        winningMovingChain = movingChain
                     )
                 }
             }
@@ -612,7 +618,7 @@ object SolverViewModel : ViewModel() {
                 _uiState.update { currentState ->
                     currentState.copy(
                         winningDirection = Direction.DOWN,
-                        movingChain = movingChain
+                        winningMovingChain = movingChain
                     )
                 }
             }
@@ -623,7 +629,7 @@ object SolverViewModel : ViewModel() {
                 _uiState.update {currentState ->
                     currentState.copy(
                         winningDirection = Direction.RIGHT,
-                        movingChain = movingChain
+                        winningMovingChain = movingChain
                     )
                 }
             }
@@ -634,7 +640,7 @@ object SolverViewModel : ViewModel() {
                 _uiState.update {currentState ->
                     currentState.copy(
                         winningDirection = Direction.LEFT,
-                        movingChain = movingChain
+                        winningMovingChain = movingChain
                     )
                 }
             }
@@ -646,7 +652,7 @@ object SolverViewModel : ViewModel() {
 
     fun needBallAnimation() : Boolean
     {
-        return (_uiState.value.movingChain.isNotEmpty())
+        return (_uiState.value.winningMovingChain.isNotEmpty())
     }
 
     private fun buildMovingChain(initialRow: Int, initialCol: Int, direction: Direction) : List<MovingRec>
@@ -769,14 +775,14 @@ object SolverViewModel : ViewModel() {
         _uiState.update { currentState ->
             currentState.copy(
                 winningDirection = Direction.NO_WINNING_DIRECTION,
-                movingChain = mutableListOf()
+                winningMovingChain = mutableListOf()
             )
         }
     }
 
     fun getMovingChain() : List<MovingRec>
     {
-        return _uiState.value.movingChain
+        return _uiState.value.winningMovingChain
     }
 }
 

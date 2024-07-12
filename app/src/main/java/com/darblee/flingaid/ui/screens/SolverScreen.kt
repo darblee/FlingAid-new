@@ -495,7 +495,7 @@ private fun DrawSolverBoard(
             displayBallImage.prepareToDraw()   // cache it
 
             if (solverViewModel.needBallAnimation()) {
-                val ballsToErase = solverViewModel.uiState.value.movingChain
+                val ballsToErase = solverViewModel.uiState.value.winningMovingChain
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage, ballsToErase)
             } else {
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage)
@@ -735,7 +735,7 @@ fun animateBallMovementsPerform(
 {
     with (drawScope) {
         val movingDirection = solverViewModel.uiState.value.winningDirection
-        val movingChain = solverViewModel.uiState.value.movingChain
+        val movingChain = solverViewModel.uiState.value.winningMovingChain
 
         var movingSourcePos: SolverGridPos
         var offset : Pair<Float, Float>
