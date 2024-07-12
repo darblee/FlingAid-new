@@ -24,23 +24,36 @@ data class MovingRec(
  * @param thinkingStatus Whether it is in active thinking mode or just idle
  * @param winningPosition The position of ball to move that will lead to a win
  * @param foundWinningDirection The direction of the ball to move that will lead to a win
- * @param needToDisplayNoWinnableToastMessage Indicate whether we need to send a toast message
  * indicating there is no winnable move in the current ball positions
- * @param movingDirection While moving the ball, this is the direction
+ * @param winningDirection While moving the ball, this is the direction
  * @param movingChain In a ball movement, it may involve multiple balls that needs to be moved,
  */
 data class SolverUiState (
     var thinkingStatus: ThinkingMode = ThinkingMode.Idle,
     var winningPosition: SolverGridPos =  SolverGridPos(-1, -1),
     var foundWinningDirection : Direction = Direction.NO_WINNING_DIRECTION,
-    val needToDisplayNoWinnableToastMessage: Boolean = false,
-    val movingDirection: Direction = Direction.INCOMPLETE,
+    var winningDirection: Direction = Direction.INCOMPLETE,
     val movingChain: List<MovingRec> = listOf()
 ) {
+    /**
+     * There are two different thinking modes:
+     * - Active : Actively searching for solution with 'progressLevel' thinking progress
+     * - Idle : With one of the following idle mode:
+     *      - Waiting on the user
+     *      - No Solution is found
+     *      - Solution is found
+     */
     sealed class ThinkingMode {
         data object Active : ThinkingMode() {
             var progressLevel : Float = 0.0f
         }
-        data object Idle : ThinkingMode()
+        data object Idle : ThinkingMode() {
+            var IdleMode = IdleType.WaitingOnUser
+            enum class IdleType {
+                WaitingOnUser,
+                NoSolutionFound,
+                SolutionFound
+            }
+        }
     }
 }

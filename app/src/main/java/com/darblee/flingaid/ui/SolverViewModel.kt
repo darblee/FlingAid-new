@@ -167,16 +167,10 @@ object SolverViewModel : ViewModel() {
      */
     fun reset(file: File?)
     {
-        _uiState.update {currentState ->
-            currentState.copy(
-                thinkingStatus = SolverUiState.ThinkingMode.Idle,
-            )
-        }
         _ballPositionList.clear()
         file?.delete()
 
-        gThinkingProgress = 0
-        _uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
+        IDLEstate()
     }
 
     /**
@@ -203,12 +197,7 @@ object SolverViewModel : ViewModel() {
             _ballPositionList.add(solverGridPos)
         }
 
-        _uiState.update {currentState ->
-            currentState.copy(
-                thinkingStatus = SolverUiState.ThinkingMode.Idle,
-                foundWinningDirection = Direction.NO_WINNING_DIRECTION
-            )
-        }
+        IDLEstate()
     }
 
     /**
@@ -304,7 +293,7 @@ object SolverViewModel : ViewModel() {
     private fun recordThinkingResult()
     {
         Log.i(Global.debugPrefix, "DisplayResult after processing....")
-        uiState.value.thinkingStatus = SolverUiState.ThinkingMode.Idle
+        val idleRec = SolverUiState.ThinkingMode.Idle
 
         if ((task1_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
             (task1_WinningDirection != Direction.INCOMPLETE))
@@ -317,11 +306,15 @@ object SolverViewModel : ViewModel() {
 
             _winningDirection_from_tasks = task1_WinningDirection
 
+            idleRec.IdleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound
+            uiState.value.thinkingStatus = idleRec
+
             _uiState.update {currentState ->
                 currentState.copy(
-                    thinkingStatus = SolverUiState.ThinkingMode.Idle,
+                    thinkingStatus = idleRec,
                     winningPosition = winningSolverGridPos,
-                    foundWinningDirection = winningDir
+                    foundWinningDirection = winningDir,
+                    winningDirection = winningDir
                 )
             }
         } else {
@@ -334,22 +327,31 @@ object SolverViewModel : ViewModel() {
                 val winningSolverGridPos = SolverGridPos(task2WinningRow, task2WinningCol)
                 val winningDir = task2_WinningDirection
                 _winningDirection_from_tasks = task2_WinningDirection
+
+                idleRec.IdleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound
+                uiState.value.thinkingStatus = idleRec
+
                 _uiState.update {currentState ->
                     currentState.copy(
-                        thinkingStatus = SolverUiState.ThinkingMode.Idle,
+                        thinkingStatus = idleRec,
                         winningPosition = winningSolverGridPos,
-                        foundWinningDirection = winningDir
+                        foundWinningDirection = winningDir,
+                        winningDirection = winningDir
                     )
                 }
             } else {
                 // Neither Task #1 nor Task #2 has winning result
                 _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
+
+                idleRec.IdleMode = SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound
+                uiState.value.thinkingStatus = idleRec
+
                 _uiState.update {currentState ->
                     currentState.copy(
-                        thinkingStatus = SolverUiState.ThinkingMode.Idle,
+                        thinkingStatus = idleRec,
                         winningPosition = SolverGridPos(-1, -1),
                         foundWinningDirection = Direction.NO_WINNING_DIRECTION,
-                        needToDisplayNoWinnableToastMessage = true
+                        winningDirection = Direction.NO_WINNING_DIRECTION
                     )
                 }
             }
@@ -358,15 +360,24 @@ object SolverViewModel : ViewModel() {
     }
 
     /**
-     * No need to display the "No winnable" toast message
+     * Set to thinking status to Idle, and Waiting on User
      */
-    fun noNeedToDisplayNoWinnableToastMessage()
-    {
+    fun IDLEstate() {
+
+        val idleRec = SolverUiState.ThinkingMode.Idle
+        idleRec.IdleMode = SolverUiState.ThinkingMode.Idle.IdleType.WaitingOnUser
+        uiState.value.thinkingStatus = idleRec
+
         _uiState.update {currentState ->
             currentState.copy(
-                needToDisplayNoWinnableToastMessage = false
+                thinkingStatus = idleRec,
+                winningPosition = SolverGridPos(-1, -1),
+                foundWinningDirection = Direction.NO_WINNING_DIRECTION,
+                winningDirection = Direction.NO_WINNING_DIRECTION
             )
         }
+
+        gThinkingProgress = 0
     }
 
     /**
@@ -503,7 +514,7 @@ object SolverViewModel : ViewModel() {
 
     fun foundWinnableMove() : Boolean
     {
-        return (_uiState.value.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
+        return (_uiState.value.winningDirection != Direction.NO_WINNING_DIRECTION)
     }
 
     fun getWinningMoveCount(uiState: SolverUiState): Int
@@ -516,22 +527,22 @@ object SolverViewModel : ViewModel() {
         var targetRow: Int
         var targetCol: Int
 
-        if (uiState.foundWinningDirection == Direction.UP) {
+        if (uiState.winningDirection == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(uiState.winningPosition.row, uiState.winningPosition.col)
             winningMoveCount = uiState.winningPosition.row - targetRow
         }
 
-        if (uiState.foundWinningDirection == Direction.DOWN) {
+        if (uiState.winningDirection == Direction.DOWN) {
             targetRow = game.findTargetRowOnMoveDown(uiState.winningPosition.row, uiState.winningPosition.col)
             winningMoveCount = targetRow - uiState.winningPosition.row
         }
 
-        if (uiState.foundWinningDirection == Direction.RIGHT) {
+        if (uiState.winningDirection == Direction.RIGHT) {
             targetCol = game.findTargetColOnMoveRight(uiState.winningPosition.row, uiState.winningPosition.col)
             winningMoveCount = targetCol - uiState.winningPosition.col
         }
 
-        if (uiState.foundWinningDirection == Direction.LEFT) {
+        if (uiState.winningDirection == Direction.LEFT) {
             targetCol = game.findTargetColOnMoveLeft(uiState.winningPosition.row, uiState.winningPosition.col)
             winningMoveCount = uiState.winningPosition.col - targetCol
         }
@@ -547,35 +558,35 @@ object SolverViewModel : ViewModel() {
         var targetRow: Int
         var targetCol: Int
 
-        if (uiState.foundWinningDirection == Direction.UP) {
+        if (uiState.winningDirection == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(uiState.winningPosition.row, uiState.winningPosition.col)
             game.moveUp(uiState.winningPosition.row, targetRow, uiState.winningPosition.col)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
 
-        if (uiState.foundWinningDirection == Direction.DOWN) {
+        if (uiState.winningDirection == Direction.DOWN) {
             targetRow = game.findTargetRowOnMoveDown(uiState.winningPosition.row, uiState.winningPosition.col)
             game.moveDown(uiState.winningPosition.row, targetRow, uiState.winningPosition.col)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
 
-        if (uiState.foundWinningDirection == Direction.RIGHT) {
+        if (uiState.winningDirection == Direction.RIGHT) {
             targetCol = game.findTargetColOnMoveRight(uiState.winningPosition.row, uiState.winningPosition.col)
             game.moveRight(uiState.winningPosition.col, targetCol, uiState.winningPosition.row)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
 
-        if (uiState.foundWinningDirection == Direction.LEFT) {
+        if (uiState.winningDirection == Direction.LEFT) {
             targetCol = game.findTargetColOnMoveLeft(uiState.winningPosition.row, uiState.winningPosition.col)
             game.moveLeft(uiState.winningPosition.col, targetCol, uiState.winningPosition.row)
             _ballPositionList.clear()
             _ballPositionList = game.updateBallList()
         }
 
-        _uiState.value.foundWinningDirection = Direction.NO_WINNING_DIRECTION
+        _uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
 
         saveBallPositions(gBoardFile)
     }
@@ -592,8 +603,9 @@ object SolverViewModel : ViewModel() {
 
                 _uiState.update {currentState ->
                     currentState.copy(
-                        movingDirection = Direction.UP,
-                        movingChain = movingChain
+                        winningDirection = Direction.UP,
+                        movingChain = movingChain,
+                        foundWinningDirection = Direction.UP
                     )
                 }
             }
@@ -604,8 +616,9 @@ object SolverViewModel : ViewModel() {
 
                 _uiState.update { currentState ->
                     currentState.copy(
-                        movingDirection = Direction.DOWN,
-                        movingChain = movingChain
+                        winningDirection = Direction.DOWN,
+                        movingChain = movingChain,
+                        foundWinningDirection = Direction.DOWN
                     )
                 }
             }
@@ -615,8 +628,9 @@ object SolverViewModel : ViewModel() {
 
                 _uiState.update {currentState ->
                     currentState.copy(
-                        movingDirection = Direction.RIGHT,
-                        movingChain = movingChain
+                        winningDirection = Direction.RIGHT,
+                        movingChain = movingChain,
+                        foundWinningDirection = Direction.RIGHT
                     )
                 }
             }
@@ -626,8 +640,9 @@ object SolverViewModel : ViewModel() {
 
                 _uiState.update {currentState ->
                     currentState.copy(
-                        movingDirection = Direction.LEFT,
-                        movingChain = movingChain
+                        winningDirection = Direction.LEFT,
+                        movingChain = movingChain,
+                        foundWinningDirection = Direction.LEFT
                     )
                 }
             }
@@ -761,8 +776,9 @@ object SolverViewModel : ViewModel() {
     {
         _uiState.update { currentState ->
             currentState.copy(
-                movingDirection = Direction.NO_WINNING_DIRECTION,
-                movingChain = mutableListOf()
+                winningDirection = Direction.NO_WINNING_DIRECTION,
+                movingChain = mutableListOf(),
+                foundWinningDirection = Direction.NO_WINNING_DIRECTION
             )
         }
     }

@@ -199,7 +199,6 @@ private fun MainViewImplementation(
     // it should exit the app or not
     val backPressed = remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed.value = true })
-
     if (backPressed.value)
         ExitAlertDialog(onDismiss = { backPressed.value = false}, onExit = { exitProcess(1)})
 

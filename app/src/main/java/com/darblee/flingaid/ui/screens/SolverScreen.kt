@@ -45,7 +45,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -113,8 +112,7 @@ lateinit var gBoardFile : File
  *  elements
  */
 @Composable
-fun SolverScreen(
-    modifier: Modifier = Modifier)
+fun SolverScreen(modifier: Modifier = Modifier)
 {
     val solverViewModel: SolverViewModel = viewModel()
     Column (
@@ -134,11 +132,14 @@ fun SolverScreen(
 
         var showWinnableMoveToUser by remember { mutableStateOf(false) }
         showWinnableMoveToUser =
-            (uiState.foundWinningDirection != Direction.NO_WINNING_DIRECTION)
+            (uiState.winningDirection != Direction.NO_WINNING_DIRECTION)
 
-        if (uiState.needToDisplayNoWinnableToastMessage) {
-            gameToast(LocalContext.current, "There is no winnable move", displayLonger = true)
-            solverViewModel.noNeedToDisplayNoWinnableToastMessage()
+        if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
+            val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
+            if (idleRec.IdleMode == (SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound)) {
+                gameToast(LocalContext.current, "There is no winnable move", displayLonger = true)
+                solverViewModel.IDLEstate()
+            }
         }
 
         Instruction_DynamicLogo(uiState)
@@ -251,6 +252,7 @@ private fun ControlButtonsForSolver(
     uiState: SolverUiState)
 {
     val view = LocalView.current
+    val context = LocalContext.current
 
     Row(
         modifier = Modifier
@@ -271,7 +273,7 @@ private fun ControlButtonsForSolver(
                      //  When setting up the moving chain, it will start a new LaunchEffect thread
                      //  that will call animation complete at the end, which will in turn
                      //  make the actual ball movement
-                    val winningDirection = uiState.foundWinningDirection
+                    val winningDirection = uiState.winningDirection
                     val winningPos = uiState.winningPosition
                     solverViewModel.setupMovingChain(winningPos.row, winningPos.col, winningDirection)
                 } else {
@@ -305,7 +307,11 @@ private fun ControlButtonsForSolver(
         Button(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                solverViewModel.reset(gBoardFile)
+                if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Active ) {
+                    gameToast(context, "Unable to reset as it is currently busy finding a solution")
+                } else {
+                    solverViewModel.reset(gBoardFile)
+                }
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -348,14 +354,16 @@ private fun DrawSolverBoard(
     uiState: SolverUiState)
 {
     val context = LocalContext.current
-    val youWonMessage = rememberSaveable { mutableStateOf(false) }
 
-    if (youWonMessage.value) {
-        if (solverViewModel.ballCount() == 1) {
-            gAudio_youWon.start()
-            gameToast(context, "You won")
+    if (solverViewModel.ballCount() == 1) {
+        if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
+            val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
+            if (idleRec.IdleMode == (SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound)) {
+                gAudio_youWon.start()
+                gameToast(context, "You won")
+                solverViewModel.IDLEstate()
+            }
         }
-        youWonMessage.value = false
     }
 
     // Launch the animation only once when it enters the composition. It will animate infinitely
@@ -375,7 +383,7 @@ private fun DrawSolverBoard(
             generateExplosionParticles(solverViewModel, uiState)
         }.toMutableList()
 
-        AnimateBallMovementsSetup(solverViewModel, uiState, youWonMessage, animateBallMovementChain,
+        AnimateBallMovementsSetup(solverViewModel, uiState, animateBallMovementChain,
             animateParticleExplosion)
     } else {  // else need ball movement animation
 
@@ -557,13 +565,13 @@ private fun animateWinningMovePerform(
         var xOffset = 0
         var yOffset = 0
 
-        when (uiState.foundWinningDirection) {
+        when (uiState.winningDirection) {
             Direction.UP -> { yOffset = -1 * gridSize.toInt() * gWinningMoveCount }
             Direction.DOWN -> { yOffset = 1 * gridSize.toInt() * gWinningMoveCount }
             Direction.LEFT -> { xOffset = -1 * gridSize.toInt() * gWinningMoveCount }
             Direction.RIGHT -> { xOffset = 1 * gridSize.toInt() * gWinningMoveCount }
             else -> {
-                assert(true) { "Got unexpected Direction value: ${uiState.foundWinningDirection}"}
+                assert(true) { "Got unexpected Direction value: ${uiState.winningDirection}"}
             }
         }
 
@@ -632,7 +640,6 @@ private val wiggleBallAnimatedSpec = keyframes {
  *
  * @param solverViewModel Solver Game View model
  * @param uiState The current state of the Solver Game
- * @param youWonAnnouncement Boolean flag to indicate whether you need to announce "you won" message
  * @param animateBallMovementChain Object that control animation state of all the ball movement in this chain
  * @param animateParticleExplosion Object that control animation state of particle explosion effect
  */
@@ -640,7 +647,6 @@ private val wiggleBallAnimatedSpec = keyframes {
 fun AnimateBallMovementsSetup(
     solverViewModel: SolverViewModel,
     uiState: SolverUiState,
-    youWonAnnouncement: MutableState<Boolean>,
     animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosion: Animatable<Float, AnimationVector1D>
 )
@@ -689,9 +695,6 @@ fun AnimateBallMovementsSetup(
                     Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
                     solverViewModel.findWinningMove(solverViewModel)
                 }
-
-                // Trigger a re-compose to announce that "you won"
-                if (solverViewModel.ballCount() == 1) youWonAnnouncement.value = true
             }
 
             launch {  // If there is  multiple ball chain movements, we only animate explosion on the first ball
@@ -731,7 +734,7 @@ fun animateBallMovementsPerform(
 )
 {
     with (drawScope) {
-        val movingDirection = solverViewModel.uiState.value.movingDirection
+        val movingDirection = solverViewModel.uiState.value.winningDirection
         val movingChain = solverViewModel.uiState.value.movingChain
 
         var movingSourcePos: SolverGridPos
@@ -837,7 +840,7 @@ private fun generateExplosionParticles(solverViewModel: SolverViewModel, uiState
                 ),
                 startRow = explosionX,
                 startCol = explosionY,
-                direction = uiState.foundWinningDirection,
+                direction = uiState.winningDirection,
                 maxHorizontalDisplacement = sizePx * randomInRange(-0.3f, 0.3f),
                 maxVerticalDisplacement = sizePx * randomInRange(0.05f, 0.07f)
             )

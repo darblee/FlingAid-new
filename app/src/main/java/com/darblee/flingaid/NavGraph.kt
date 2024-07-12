@@ -38,6 +38,13 @@ sealed class Screen(val stringTitleResourceID: Int){
     data object Solver : Screen(R.string.solver_title)
 }
 
+/**
+ * Navigation set-up
+ *
+ * @param navController Navigation controller
+ * @param innerPadding Inner padding
+ * @param currentScreen  The current screen
+ */
 @SuppressLint("RestrictedApi")
 @Composable
 fun SetUpNavGraph(
@@ -79,6 +86,19 @@ fun SetUpNavGraph(
     }
 }
 
+/**
+ * BackPressHandler is used to intercept back press
+ *
+ * When doing back press on main screen, need to confirm with the user whether
+ * it should exit the app or not. It uses the [BackPressHandler] function.
+ * See code [MainViewImplementation]
+ *
+ * We created [OnBackPressedCallback] and add it to the onBackPressDispatcher
+ * that controls dispatching ystem back presses. We enable the callback whenever
+ * our Composable is recomposed, which disables other internal callbacks reponsible
+ * for back press handling. The callback is added on any lifecycle owner change and removed
+ * on dispose.
+ */
 @Composable
 fun BackPressHandler(
     backPressedDispatcher: OnBackPressedDispatcher? =
@@ -97,9 +117,6 @@ fun BackPressHandler(
 
     DisposableEffect(key1 = backPressedDispatcher) {
         backPressedDispatcher?.addCallback(backCallback)
-
-        onDispose {
-            backCallback.remove()
-        }
+        onDispose { backCallback.remove() }
     }
 }
