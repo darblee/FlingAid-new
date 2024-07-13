@@ -22,17 +22,16 @@ data class MovingRec(
  * It will be managed in a observable flow called "StateFlow" Android composable will listen for it.
  *
  * @param thinkingStatus Whether it is in active thinking mode or just idle
- * @param winningPosition The position of ball to move that will lead to a win
  * @param winningDirection The direction of the ball to move that will lead to a win. This is also
  * used to do ball animation as animation always move toward winning.
  * A value of "Direction.NO_WINNING_DIRECTION" means there is no winning direction found in the
  * current board layout.
- * @param winningMovingChain In a ball movement, it may involve multiple balls that needs to be moved,
+ * @param winningMovingChain The first element in the chain is the position of ball to move that
+ * will lead to a win.In a ball movement, it may involve multiple balls that needs to be moved,
  * The chain is used primarily to animate all the ball movements
  */
 data class SolverUiState (
     var thinkingStatus: ThinkingMode = ThinkingMode.Idle,
-    var winningPosition: SolverGridPos =  SolverGridPos(-1, -1),
     var winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
     val winningMovingChain: List<MovingRec> = listOf()
 ) {

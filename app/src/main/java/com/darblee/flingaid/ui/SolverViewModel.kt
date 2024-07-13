@@ -362,7 +362,6 @@ object SolverViewModel : ViewModel() {
         _uiState.update { currentState ->
             currentState.copy(
                 thinkingStatus = idleRec,
-                winningPosition = winningPos,
                 winningDirection = winningDir,
                 winningMovingChain = winningMovingChain
             )
@@ -502,11 +501,6 @@ object SolverViewModel : ViewModel() {
         return (_ballPositionList)
     }
 
-    fun foundWinnableMove() : Boolean
-    {
-        return (_uiState.value.winningDirection != Direction.NO_WINNING_DIRECTION)
-    }
-
     fun getWinningMoveCount(uiState: SolverUiState): Int
     {
         val game = SolverEngine()
@@ -517,11 +511,9 @@ object SolverViewModel : ViewModel() {
         var targetRow: Int
         var targetCol: Int
 
-        val winningRow = uiState.winningPosition.row
-        val winningCol = uiState.winningPosition.col
+        val winningRow = uiState.winningMovingChain[0].pos.row
+        val winningCol = uiState.winningMovingChain[0].pos.col
 
-/*        val winningRow = uiState.winningMovingChain[0].pos.row
-        val winningCol = uiState.winningMovingChain[0].pos.col*/
 
         if (uiState.winningDirection == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(winningRow, winningCol)
@@ -553,11 +545,9 @@ object SolverViewModel : ViewModel() {
 
         var targetRow: Int
         var targetCol: Int
-        val winningRow = uiState.winningPosition.row
-        val winningCol = uiState.winningPosition.col
 
-/*        val winningRow = uiState.winningMovingChain[0].pos.row
-        val winningCol = uiState.winningMovingChain[0].pos.col*/
+        val winningRow = uiState.winningMovingChain[0].pos.row
+        val winningCol = uiState.winningMovingChain[0].pos.col
 
         if (uiState.winningDirection == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(winningRow, winningCol)

@@ -128,7 +128,7 @@ fun SolverScreen(modifier: Modifier = Modifier)
 
         var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
         findWinnableMoveButtonEnabled =
-            ((solverViewModel.ballCount() > 1) && (!solverViewModel.foundWinnableMove()))
+            ((solverViewModel.ballCount() > 1) && (!hasFoundWinnableMove(uiState)))
 
         var showWinnableMoveToUser by remember { mutableStateOf(false) }
         showWinnableMoveToUser =
@@ -358,7 +358,6 @@ private fun DrawSolverBoard(
     uiState: SolverUiState,
     showBallMovementAnimation: Boolean,
     onBallMovementAnimationChange: (enableBallMovementAnimation:Boolean) -> Unit
-
 )
 {
     val context = LocalContext.current
@@ -512,11 +511,13 @@ private fun DrawSolverBoard(
 
                     // If there is a known winnable move, then provide user a review of the next
                     // winnable move by showing the animated ball movement in a shadow (transparent)
-                    if (solverViewModel.foundWinnableMove()) {
+                    if (hasFoundWinnableMove(uiState)) {
 
                         val moveCount = solverViewModel.getWinningMoveCount(uiState)
-                        animateWinningMovePerform(this, gridSize, uiState, animateWinningMove,
-                            moveCount, displayBallImage)
+                        animateWinningMovePerform(
+                            this, gridSize, uiState, animateWinningMove,
+                            moveCount, displayBallImage
+                        )
                     }
                 }
             }
@@ -528,6 +529,20 @@ private fun DrawSolverBoard(
             }  // if needToAnimateMovingBall
         } // Canvas
     } // Box
+}
+
+/**
+ * Determine if we have a winnable move
+ */
+fun hasFoundWinnableMove(uiState: SolverUiState): Boolean {
+    when (uiState.winningDirection) {
+        Direction.UP,
+        Direction.DOWN,
+        Direction.LEFT,
+        Direction.RIGHT -> return true
+
+        else -> return false
+    }
 }
 
 /**
@@ -587,7 +602,7 @@ private fun animateWinningMovePerform(
             (xOffset) * animate.value,
             (yOffset) * animate.value
         ) {
-            drawBall(drawScope, gridSize, uiState.winningPosition, displayBallImage, alpha = 0.4F)
+            drawBall(drawScope, gridSize, uiState.winningMovingChain[0].pos, displayBallImage, alpha = 0.4F)
         }
     }
 }
