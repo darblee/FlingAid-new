@@ -303,7 +303,13 @@ object SolverViewModel : ViewModel() {
 
             _winningDirection_from_tasks = task1_WinningDirection
 
-           setupMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
+            val movingChain = buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
+
+            IDLEstate(
+                idleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound,
+                winningPos = SolverGridPos(winningSolverGridPos.row, winningSolverGridPos.col),
+                winningDir = winningDir,
+                winningMovingChain = movingChain)
 
         } else {
 
@@ -318,11 +324,23 @@ object SolverViewModel : ViewModel() {
 
                 _winningDirection_from_tasks = task2_WinningDirection
 
-                setupMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
+                val movingChain = buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
+
+                IDLEstate(
+                    idleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound,
+                    winningPos = SolverGridPos(winningSolverGridPos.row, winningSolverGridPos.col),
+                    winningDir = winningDir,
+                    winningMovingChain = movingChain)
+
             } else {
+
                 // Neither Task #1 nor Task #2 has winning result
                 _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
-                IDLEstate(SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound)
+                IDLEstate(
+                    idleMode = SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound,
+                    winningPos = SolverGridPos(-1, -1),
+                    winningDir = Direction.NO_WINNING_DIRECTION,
+                    winningMovingChain = mutableStateListOf())
             }
         }
         gThinkingProgress = 0
@@ -331,21 +349,24 @@ object SolverViewModel : ViewModel() {
     /**
      * Set to thinking status to Idle, and Waiting on User
      */
-    fun IDLEstate(idleMode: SolverUiState.ThinkingMode.Idle.IdleType = SolverUiState.ThinkingMode.Idle.IdleType.WaitingOnUser) {
-
+    fun IDLEstate(
+        idleMode: SolverUiState.ThinkingMode.Idle.IdleType = SolverUiState.ThinkingMode.Idle.IdleType.WaitingOnUser,
+        winningPos: SolverGridPos = SolverGridPos(-1, -1),
+        winningDir: Direction = Direction.NO_WINNING_DIRECTION,
+        winningMovingChain: List<MovingRec> = mutableListOf())
+    {
         val idleRec = SolverUiState.ThinkingMode.Idle
         idleRec.IdleMode = idleMode
         uiState.value.thinkingStatus = idleRec
 
-        _uiState.update {currentState ->
+        _uiState.update { currentState ->
             currentState.copy(
                 thinkingStatus = idleRec,
-                winningPosition = SolverGridPos(-1, -1),
-                winningDirection = Direction.NO_WINNING_DIRECTION,
-                winningMovingChain = mutableStateListOf()
+                winningPosition = winningPos,
+                winningDirection = winningDir,
+                winningMovingChain = winningMovingChain
             )
         }
-
         gThinkingProgress = 0
     }
 
@@ -569,30 +590,6 @@ object SolverViewModel : ViewModel() {
         _uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
 
         saveBallPositions(gBoardFile)
-    }
-
-    private fun setupMovingChain(row: Int, col: Int, direction: Direction )
-    {
-        if (!(_ballPositionList.contains(SolverGridPos(row, col)))) return
-
-        val idleRec = SolverUiState.ThinkingMode.Idle
-
-        val winningSolverGridPos = SolverGridPos(row, col)
-        idleRec.IdleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound
-        uiState.value.thinkingStatus = idleRec
-
-        val movingChain = buildMovingChain(row, col, direction)
-
-        if (movingChain.isEmpty()) return
-
-        _uiState.update {currentState ->
-            currentState.copy(
-                winningDirection = direction,
-                winningMovingChain = movingChain,
-                thinkingStatus = idleRec,
-                winningPosition = winningSolverGridPos
-            )
-        }
     }
 
     private fun buildMovingChain(initialRow: Int, initialCol: Int, direction: Direction) : List<MovingRec>
