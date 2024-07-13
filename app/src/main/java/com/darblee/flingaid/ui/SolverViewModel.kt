@@ -292,9 +292,6 @@ object SolverViewModel : ViewModel() {
      */
     private fun recordThinkingResult()
     {
-        Log.i(Global.debugPrefix, "DisplayResult after processing....")
-        val idleRec = SolverUiState.ThinkingMode.Idle
-
         if ((task1_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
             (task1_WinningDirection != Direction.INCOMPLETE))
         {
@@ -306,17 +303,10 @@ object SolverViewModel : ViewModel() {
 
             _winningDirection_from_tasks = task1_WinningDirection
 
-            idleRec.IdleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound
-            uiState.value.thinkingStatus = idleRec
+           setupMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
-            _uiState.update {currentState ->
-                currentState.copy(
-                    thinkingStatus = idleRec,
-                    winningPosition = winningSolverGridPos,
-                    winningDirection = winningDir
-                )
-            }
         } else {
+
             // Task1 does not have the winning result. NOw check on task #2
             if ((task2_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
                 (task2_WinningDirection != Direction.INCOMPLETE)) {
@@ -325,32 +315,14 @@ object SolverViewModel : ViewModel() {
                 // Task2 has the winning move
                 val winningSolverGridPos = SolverGridPos(task2WinningRow, task2WinningCol)
                 val winningDir = task2_WinningDirection
+
                 _winningDirection_from_tasks = task2_WinningDirection
 
-                idleRec.IdleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound
-                uiState.value.thinkingStatus = idleRec
-
-                _uiState.update {currentState ->
-                    currentState.copy(
-                        thinkingStatus = idleRec,
-                        winningPosition = winningSolverGridPos,
-                        winningDirection = winningDir
-                    )
-                }
+                setupMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
             } else {
                 // Neither Task #1 nor Task #2 has winning result
                 _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
-
-                idleRec.IdleMode = SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound
-                uiState.value.thinkingStatus = idleRec
-
-                _uiState.update {currentState ->
-                    currentState.copy(
-                        thinkingStatus = idleRec,
-                        winningPosition = SolverGridPos(-1, -1),
-                        winningDirection = Direction.NO_WINNING_DIRECTION
-                    )
-                }
+                IDLEstate(SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound)
             }
         }
         gThinkingProgress = 0
@@ -359,17 +331,18 @@ object SolverViewModel : ViewModel() {
     /**
      * Set to thinking status to Idle, and Waiting on User
      */
-    fun IDLEstate() {
+    fun IDLEstate(idleMode: SolverUiState.ThinkingMode.Idle.IdleType = SolverUiState.ThinkingMode.Idle.IdleType.WaitingOnUser) {
 
         val idleRec = SolverUiState.ThinkingMode.Idle
-        idleRec.IdleMode = SolverUiState.ThinkingMode.Idle.IdleType.WaitingOnUser
+        idleRec.IdleMode = idleMode
         uiState.value.thinkingStatus = idleRec
 
         _uiState.update {currentState ->
             currentState.copy(
                 thinkingStatus = idleRec,
                 winningPosition = SolverGridPos(-1, -1),
-                winningDirection = Direction.NO_WINNING_DIRECTION
+                winningDirection = Direction.NO_WINNING_DIRECTION,
+                winningMovingChain = mutableStateListOf()
             )
         }
 
@@ -526,6 +499,9 @@ object SolverViewModel : ViewModel() {
         val winningRow = uiState.winningPosition.row
         val winningCol = uiState.winningPosition.col
 
+/*        val winningRow = uiState.winningMovingChain[0].pos.row
+        val winningCol = uiState.winningMovingChain[0].pos.col*/
+
         if (uiState.winningDirection == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(winningRow, winningCol)
             winningMoveCount = winningRow - targetRow
@@ -556,9 +532,11 @@ object SolverViewModel : ViewModel() {
 
         var targetRow: Int
         var targetCol: Int
-
         val winningRow = uiState.winningPosition.row
         val winningCol = uiState.winningPosition.col
+
+/*        val winningRow = uiState.winningMovingChain[0].pos.row
+        val winningCol = uiState.winningMovingChain[0].pos.col*/
 
         if (uiState.winningDirection == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(winningRow, winningCol)
@@ -593,60 +571,27 @@ object SolverViewModel : ViewModel() {
         saveBallPositions(gBoardFile)
     }
 
-    fun setupMovingChain(row: Int, col: Int, direction: Direction )
+    private fun setupMovingChain(row: Int, col: Int, direction: Direction )
     {
         if (!(_ballPositionList.contains(SolverGridPos(row, col)))) return
 
-        when (direction) {
-            Direction.UP -> {
-                val movingChain = buildMovingChain(row, col, direction)
+        val idleRec = SolverUiState.ThinkingMode.Idle
 
-                if (movingChain.isEmpty()) return
+        val winningSolverGridPos = SolverGridPos(row, col)
+        idleRec.IdleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound
+        uiState.value.thinkingStatus = idleRec
 
-                _uiState.update {currentState ->
-                    currentState.copy(
-                        winningDirection = Direction.UP,
-                        winningMovingChain = movingChain
-                    )
-                }
-            }
-            Direction.DOWN -> {
-                val movingChain = buildMovingChain(row, col, direction)
+        val movingChain = buildMovingChain(row, col, direction)
 
-                if (movingChain.isEmpty()) return
+        if (movingChain.isEmpty()) return
 
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        winningDirection = Direction.DOWN,
-                        winningMovingChain = movingChain
-                    )
-                }
-            }
-            Direction.RIGHT -> {
-                val movingChain = buildMovingChain(row, col, direction)
-                if (movingChain.isEmpty()) return
-
-                _uiState.update {currentState ->
-                    currentState.copy(
-                        winningDirection = Direction.RIGHT,
-                        winningMovingChain = movingChain
-                    )
-                }
-            }
-            Direction.LEFT -> {
-                val movingChain = buildMovingChain(row, col, direction)
-                if (movingChain.isEmpty()) return
-
-                _uiState.update {currentState ->
-                    currentState.copy(
-                        winningDirection = Direction.LEFT,
-                        winningMovingChain = movingChain
-                    )
-                }
-            }
-            else -> {
-                assert(true) {"Got unexpected direction value"}
-            }
+        _uiState.update {currentState ->
+            currentState.copy(
+                winningDirection = direction,
+                winningMovingChain = movingChain,
+                thinkingStatus = idleRec,
+                winningPosition = winningSolverGridPos
+            )
         }
     }
 

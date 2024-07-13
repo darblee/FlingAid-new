@@ -284,9 +284,9 @@ private fun ControlButtonsForSolver(
                      //  When setting up the moving chain, it will start a new LaunchEffect thread
                      //  that will call animation complete at the end, which will in turn
                      //  make the actual ball movement
-                    val winningDirection = uiState.winningDirection
+/*                    val winningDirection = uiState.winningDirection
                     val winningPos = uiState.winningPosition
-                    solverViewModel.setupMovingChain(winningPos.row, winningPos.col, winningDirection)
+                    solverViewModel.setupMovingChain(winningPos.row, winningPos.col, winningDirection)*/
                     onBallMovementAnimationChange(true)
                 } else {
                      // In this case, we did not move the ball as we did not show hint yet.
