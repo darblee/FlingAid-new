@@ -93,40 +93,31 @@ object SolverViewModel : ViewModel() {
     private var _ballPositionList = mutableStateListOf<SolverGridPos>()
 
     /**
-     * Contain the UI state of the solver game. This is used by the game screens to display
-     * proper UI elements. Various composable will automatically update when that state changes
+     * Get the list of balls and its position.
      *
-     * For reference, see [ https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn ]
+     * @return Balls list in SnapshotList property type.
+     *
+     * _Developer's note_ : SnapshotStateList is chosen instead of MutableStateList<T>. SnapshotStateList
+     * is a type of mutable list that integrates with the state observation system. When the contents of
+     * a SnapshotStateList change, Compose will recreate any composable functions that depends on it,
+     * which updates the UI. Only the respective item in the list will be (re)compose. When a change is
+     * made to a SnapshotStateList, a new snapshot is created instead of directly modifying the original
+     * list. This snapshot is a separate, immutable collection that represents the list's state at a specific
+     * moment.
      */
-    private val _uiState = MutableStateFlow(SolverUiState())
+    fun ballPositionList() : SnapshotStateList<SolverGridPos>
+    {
+        return (_ballPositionList)
+    }
 
     /**
-     * Holds the [_uiState] as a state flow.
+     * Return the number of active ball
      *
-     * __Developer's note__:
-     * StateFlow is a data holder observable flow that emits the current and new state updates.
-     * Its value property reflects the current state value. To update state and send it to the flow,
-     * assign a new value to the value property of the MutableStateFlow class.
-     *
-     * In Android, StateFlow works well with classes that must maintain an observable immutable state.
-     * A StateFlow can be exposed from the GameUiState so that the composable can listen for UI state
-     * updates and make the screen state survive configuration changes.
-     *
-     * In the GameViewModel class, add the following [_uiState] property.
-     *
-     * `private set` this is internally modifiable and read-only access from the outside.
-     * This ensure information flow in one direction from the view model to the UI
+     * @return Number of active balls
      */
-    internal var uiState : StateFlow<SolverUiState> = _uiState.asStateFlow()
-    private set
-
-    /**
-     * Initialize the SolverViewModel
-     */
-    init {
-        val file : File? = null
-        reset(file)
-        gThinkingProgress = 0
+    fun ballCount():Int
+    {
+        return _ballPositionList.count()
     }
 
     /**
@@ -176,6 +167,45 @@ object SolverViewModel : ViewModel() {
         }
     }
 
+    /********************************* SOLVER GAME MANAGEMENT ****************************/
+
+    /**
+     * Contain the UI state of the solver game. This is used by the game screens to display
+     * proper UI elements. Various composable will automatically update when that state changes
+     *
+     * For reference, see [ https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn ]
+     */
+    private val _uiState = MutableStateFlow(SolverUiState())
+
+    /**
+     * Holds the [_uiState] as a state flow.
+     *
+     * __Developer's note__:
+     * StateFlow is a data holder observable flow that emits the current and new state updates.
+     * Its value property reflects the current state value. To update state and send it to the flow,
+     * assign a new value to the value property of the MutableStateFlow class.
+     *
+     * In Android, StateFlow works well with classes that must maintain an observable immutable state.
+     * A StateFlow can be exposed from the GameUiState so that the composable can listen for UI state
+     * updates and make the screen state survive configuration changes.
+     *
+     * In the GameViewModel class, add the following [_uiState] property.
+     *
+     * `private set` this is internally modifiable and read-only access from the outside.
+     * This ensure information flow in one direction from the view model to the UI
+     */
+    internal var uiState : StateFlow<SolverUiState> = _uiState.asStateFlow()
+    private set
+
+    /**
+     * Initialize the SolverViewModel
+     */
+    init {
+        val file : File? = null
+        reset(file)
+        gThinkingProgress = 0
+    }
+
     /**
      * Reset the entire solver game
      * - Clear the board
@@ -187,16 +217,6 @@ object SolverViewModel : ViewModel() {
         file?.delete()
 
         setIDLEstate()
-    }
-
-    /**
-     * Return the number of active ball
-     *
-     * @return Number of active balls
-     */
-    fun ballCount():Int
-    {
-        return _ballPositionList.count()
     }
 
     /**
@@ -504,24 +524,6 @@ object SolverViewModel : ViewModel() {
             if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
         }
         Log.i(Global.debugPrefix, "Finished thinking")
-    }
-
-    /**
-     * Get the list of balls and its position.
-     *
-     * @return Balls list in SnapshotList property type.
-     *
-     * _Developer's note_ : SnapshotStateList is chosen instead of MutableStateList<T>. SnapshotStateList
-     * is a type of mutable list that integrates with the state observation system. When the contents of
-     * a SnapshotStateList change, Compose will recreate any composable functions that depends on it,
-     * which updates the UI. Only the respective item in the list will be (re)compose. When a change is
-     * made to a SnapshotStateList, a new snapshot is created instead of directly modifying the original
-     * list. This snapshot is a separate, immutable collection that represents the list's state at a specific
-     * moment.
-     */
-    fun ballPositionList() : SnapshotStateList<SolverGridPos>
-    {
-        return (_ballPositionList)
     }
 
     /**
