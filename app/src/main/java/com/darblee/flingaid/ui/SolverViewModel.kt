@@ -21,7 +21,7 @@ import java.io.FileWriter
 import java.util.concurrent.CyclicBarrier
 
 /**
- * View Model for the Solver Game
+ * **View Model for the Solver Game**
  *
  * - It manage the business logic for the game. This includes the thinking activity.
  * - It is the sole source of truth for the solve game state.
@@ -29,6 +29,23 @@ import java.util.concurrent.CyclicBarrier
  * - It has a longer lifetime than the composable
  *
  * There can only be one SolverViewModel instance. Hence, use the singleton class (object)
+ *
+ * [SolverUiState] State of UI
+ *
+ * **Ball Management**
+ * Managing the ball on the game board
+ * - [saveBallPositions]
+ * - [loadBallPositions]
+ * - [toggleBallPosition]
+ * - [ballCount]
+ * - [ballPositionList]
+ *
+ * **Game Play Functions**
+ * - [reset]
+ * - [setIDLEstate]
+ * - [findWinningMove]
+ * - [getWinningMoveCount]
+ * - [makeWinningMove]
  */
 object SolverViewModel : ViewModel() {
 
@@ -63,8 +80,15 @@ object SolverViewModel : ViewModel() {
      */
     private var _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
 
+    /********************************* BALL MANAGEMENT ****************************/
+
     /**
      * List of all the balls and its position on the game board
+     *
+     * _Developer's Note_
+     * Use of mutableStateListOf to preserve the composable state of the ball position. The state
+     * are kept appropriately isolated and can be performed in a safe manner without race condition
+     * when they are used in multiple threads (e.g. LaunchEffects).
      */
     private var _ballPositionList = mutableStateListOf<SolverGridPos>()
 
@@ -153,14 +177,6 @@ object SolverViewModel : ViewModel() {
     }
 
     /**
-     * Get the current thinking status
-     */
-    fun getThinkingStatus(): SolverUiState.ThinkingMode
-    {
-        return (_uiState.value.thinkingStatus)
-    }
-
-    /**
      * Reset the entire solver game
      * - Clear the board
      * - Remove any saved game file
@@ -170,7 +186,7 @@ object SolverViewModel : ViewModel() {
         _ballPositionList.clear()
         file?.delete()
 
-        IDLEstate()
+        setIDLEstate()
     }
 
     /**
@@ -197,7 +213,7 @@ object SolverViewModel : ViewModel() {
             _ballPositionList.add(solverGridPos)
         }
 
-        IDLEstate()
+        setIDLEstate()
     }
 
     /**
@@ -219,7 +235,6 @@ object SolverViewModel : ViewModel() {
      * Find the winning move.
      *
      * @param solverViewModel The ViewModel instance
-     * @return Unit (nothing)
      */
     fun findWinningMove(solverViewModel: SolverViewModel)
     {
@@ -305,9 +320,8 @@ object SolverViewModel : ViewModel() {
 
             val movingChain = buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
-            IDLEstate(
+            setIDLEstate(
                 idleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound,
-                winningPos = SolverGridPos(winningSolverGridPos.row, winningSolverGridPos.col),
                 winningDir = winningDir,
                 winningMovingChain = movingChain)
 
@@ -326,9 +340,8 @@ object SolverViewModel : ViewModel() {
 
                 val movingChain = buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
-                IDLEstate(
+                setIDLEstate(
                     idleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound,
-                    winningPos = SolverGridPos(winningSolverGridPos.row, winningSolverGridPos.col),
                     winningDir = winningDir,
                     winningMovingChain = movingChain)
 
@@ -336,9 +349,8 @@ object SolverViewModel : ViewModel() {
 
                 // Neither Task #1 nor Task #2 has winning result
                 _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
-                IDLEstate(
+                setIDLEstate(
                     idleMode = SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound,
-                    winningPos = SolverGridPos(-1, -1),
                     winningDir = Direction.NO_WINNING_DIRECTION,
                     winningMovingChain = mutableStateListOf())
             }
@@ -349,15 +361,13 @@ object SolverViewModel : ViewModel() {
     /**
      * Set to thinking status to Idle, and Waiting on User
      */
-    fun IDLEstate(
+    fun setIDLEstate(
         idleMode: SolverUiState.ThinkingMode.Idle.IdleType = SolverUiState.ThinkingMode.Idle.IdleType.WaitingOnUser,
-        winningPos: SolverGridPos = SolverGridPos(-1, -1),
         winningDir: Direction = Direction.NO_WINNING_DIRECTION,
         winningMovingChain: List<MovingRec> = mutableListOf())
     {
         val idleRec = SolverUiState.ThinkingMode.Idle
         idleRec.IdleMode = idleMode
-        uiState.value.thinkingStatus = idleRec
 
         _uiState.update { currentState ->
             currentState.copy(
@@ -495,12 +505,28 @@ object SolverViewModel : ViewModel() {
         }
         Log.i(Global.debugPrefix, "Finished thinking")
     }
-    
+
+    /**
+     * Get the list of balls and its position.
+     *
+     * @return Balls list in SnapshotList property type.
+     *
+     * _Developer's note_ : SnapshotStateList is chosen instead of MutableStateList<T>. SnapshotStateList
+     * is a type of mutable list that integrates with the state observation system. When the contents of
+     * a SnapshotStateList change, Compose will recreate any composable functions that depends on it,
+     * which updates the UI. Only the respective item in the list will be (re)compose. When a change is
+     * made to a SnapshotStateList, a new snapshot is created instead of directly modifying the original
+     * list. This snapshot is a separate, immutable collection that represents the list's state at a specific
+     * moment.
+     */
     fun ballPositionList() : SnapshotStateList<SolverGridPos>
     {
         return (_ballPositionList)
     }
 
+    /**
+     * Calculate number of boxes to move the ball as it go toward a win
+     */
     fun getWinningMoveCount(uiState: SolverUiState): Int
     {
         val game = SolverEngine()
@@ -511,9 +537,12 @@ object SolverViewModel : ViewModel() {
         var targetRow: Int
         var targetCol: Int
 
+        if (uiState.winningMovingChain.isEmpty()) {
+            assert(true) { "Got unexpected empty list moving chain." }
+        }
+
         val winningRow = uiState.winningMovingChain[0].pos.row
         val winningCol = uiState.winningMovingChain[0].pos.col
-
 
         if (uiState.winningDirection == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(winningRow, winningCol)
@@ -538,6 +567,11 @@ object SolverViewModel : ViewModel() {
         return (winningMoveCount)
     }
 
+    /**
+     * Move the ball toward a win
+     *
+     * @param uiState Current game UI state
+     */
     fun makeWinningMove(uiState: SolverUiState)
     {
         val game = SolverEngine()
@@ -545,6 +579,10 @@ object SolverViewModel : ViewModel() {
 
         var targetRow: Int
         var targetCol: Int
+
+        if (uiState.winningMovingChain.isEmpty()) {
+            assert(true) { "Got unexpected empty list moving chain." }
+        }
 
         val winningRow = uiState.winningMovingChain[0].pos.row
         val winningCol = uiState.winningMovingChain[0].pos.col
@@ -582,6 +620,14 @@ object SolverViewModel : ViewModel() {
         saveBallPositions(gBoardFile)
     }
 
+    /**
+     * Build a list of move records on this single move. If only one ball is involved, then this
+     * will be a chain of 1 ball record movement.
+     *
+     * @param initialRow
+     * @param initialCol
+     * @param direction
+     */
     private fun buildMovingChain(initialRow: Int, initialCol: Int, direction: Direction) : List<MovingRec>
     {
         val movingList = mutableListOf<MovingRec>()
@@ -695,11 +741,6 @@ object SolverViewModel : ViewModel() {
         }
 
         return (Pair(distance, nextSourcePos))
-    }
-
-    fun getMovingChain() : List<MovingRec>
-    {
-        return _uiState.value.winningMovingChain
     }
 }
 

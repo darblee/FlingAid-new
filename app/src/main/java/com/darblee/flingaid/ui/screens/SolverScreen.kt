@@ -144,7 +144,7 @@ fun SolverScreen(modifier: Modifier = Modifier)
             val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
             if (idleRec.IdleMode == (SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound)) {
                 gameToast(LocalContext.current, "There is no winnable move", displayLonger = true)
-                solverViewModel.IDLEstate()
+                solverViewModel.setIDLEstate()
             }
         }
 
@@ -368,7 +368,7 @@ private fun DrawSolverBoard(
             if (idleRec.IdleMode == (SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound)) {
                 gAudio_youWon.start()
                 gameToast(context, "You won")
-                solverViewModel.IDLEstate()
+                solverViewModel.setIDLEstate()
             }
         }
     }
@@ -387,7 +387,7 @@ private fun DrawSolverBoard(
 
         // Set-up the particles. which is used for the explosion animated effect
         particles = remember {
-            generateExplosionParticles(solverViewModel, uiState)
+            generateExplosionParticles(uiState)
         }.toMutableList()
 
         AnimateBallMovementsSetup(solverViewModel, uiState, animateBallMovementChain,
@@ -435,8 +435,7 @@ private fun DrawSolverBoard(
 
                             view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
-                            val thinkingStatus = solverViewModel.getThinkingStatus()
-                            if (thinkingStatus == SolverUiState.ThinkingMode.Active) {
+                            if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Active) {
                                 Toast
                                     .makeText(
                                         context,
@@ -535,13 +534,13 @@ private fun DrawSolverBoard(
  * Determine if we have a winnable move
  */
 fun hasFoundWinnableMove(uiState: SolverUiState): Boolean {
-    when (uiState.winningDirection) {
+    return when (uiState.winningDirection) {
         Direction.UP,
         Direction.DOWN,
         Direction.LEFT,
-        Direction.RIGHT -> return true
+        Direction.RIGHT -> true
 
-        else -> return false
+        else -> false
     }
 }
 
@@ -675,7 +674,7 @@ fun AnimateBallMovementsSetup(
     onAnimationChange: (enableBallMovementAnimation:Boolean) -> Unit
 )
 {
-    val movingChain = solverViewModel.getMovingChain()
+    val movingChain = uiState.winningMovingChain
 
     movingChain.forEach { _ ->
         val animateBallMovement = remember { Animatable(initialValue = 0f) }
@@ -839,16 +838,20 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
 /**
  * Create all particles. which is used for the explosion animated effect
  *
- * @param solverViewModel Solver Game View model
  * @param uiState The current state of the Solver Game
  *
  * @return List of all the particles
  */
-private fun generateExplosionParticles(solverViewModel: SolverViewModel, uiState: SolverUiState): List<Particle>
+private fun generateExplosionParticles(uiState: SolverUiState): List<Particle>
 {
+    if (uiState.winningMovingChain.isEmpty()) {
+        Log.i(Global.debugPrefix, "Got empty moving chain list. Unable to process particles")
+        return mutableListOf()
+    }
+
     val sizeDp = 200.dp
     val sizePx = sizeDp.toPx()
-    val explosionPos = (solverViewModel.getMovingChain())[1].pos
+    val explosionPos = uiState.winningMovingChain[1].pos
     val explosionX = explosionPos.row
     val explosionY = explosionPos.col
     val particles =
