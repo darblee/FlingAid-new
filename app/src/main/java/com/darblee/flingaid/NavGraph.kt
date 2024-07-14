@@ -62,9 +62,7 @@ fun SetUpNavGraph(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                navController = navController,
-                innerPadding = innerPadding
-            )
+                navController = navController)
         }
 
         composable<Screen.Game>{

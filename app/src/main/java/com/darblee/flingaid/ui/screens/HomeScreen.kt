@@ -4,12 +4,17 @@ import android.annotation.SuppressLint
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -18,34 +23,59 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
+import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.R
 import com.darblee.flingaid.Screen
-import com.darblee.flingaid.ui.SolverViewModel
 import kotlin.system.exitProcess
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    solverViewModel: SolverViewModel = viewModel(),
-    navController: NavHostController,
-    innerPadding: PaddingValues)
+    navController: NavHostController)
 {
+    // Intercept backPress key while on Game Solver screen..
+    //
+    // When doing back press on the current screen, confirm with the user whether
+    // it should exit this screen or not if it is middle of thinking.
+    // Do not exit this screen when:
+    // - It is middle of thinking
+    // - It is in middle of announcing victory message
+    var backPressed by remember { mutableStateOf(false) }
+    BackPressHandler(onBackPressed = { backPressed = true })
+    if (backPressed) {
+        ExitAlertDialog(onDismiss = { backPressed = false}, onExit = { exitProcess(1)})
+    }
+
     Column(
         modifier = modifier
             .background(MaterialTheme.colorScheme.background)
@@ -121,7 +151,6 @@ fun HomeScreen(
     }
 }
 
-
 @SuppressLint("UnrememberedMutableState")
 @Preview(name="Custom Dialog")
 @Composable
@@ -172,4 +201,118 @@ private fun MyDialogUIPreview(){
             Text(text = "Exit")
         }
     } // Column
+}
+
+/**
+ * Confirm user if it needs to exit or not
+ *
+ * @param onDismiss lambda function to cancel the exit
+ * @param onExit lambda function to perform the exit
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit)
+{
+    Dialog(
+        onDismissRequest = { onDismiss() },
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false)
+    ) {
+        Card(
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(0.dp)
+                .height(IntrinsicSize.Min),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+            ) {
+                Row {
+                    Column(Modifier.weight(1f)) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ball),
+                            contentDescription = "Game",
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                    Column(Modifier.weight(3f)) {
+                        Text(
+                            text = "Logout",
+                            color = Color.Black,
+                            modifier = Modifier
+                                .padding(8.dp, 16.dp, 8.dp, 2.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .fillMaxWidth(), fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Are you sure you want to exit?",
+                            color = Color.Black,
+                            modifier = Modifier
+                                .padding(8.dp, 2.dp, 8.dp, 16.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .width(1.dp), color = Color.Gray
+                )
+                Row(Modifier.padding(top = 0.dp)) {
+                    CompositionLocalProvider(
+                        LocalMinimumInteractiveComponentEnforcement provides false,
+                    ) {
+                        TextButton(
+                            onClick = { onDismiss() },
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp)
+                                .weight(1F)
+                                .border(0.dp, Color.Transparent)
+                                .height(48.dp),
+                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
+                            shape = RoundedCornerShape(0.dp),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Text(text = "Not now", color = Color.Black)
+                        }
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(1.dp), color = Color.Gray
+                    )
+                    CompositionLocalProvider(
+                        LocalMinimumInteractiveComponentEnforcement provides false,
+                    ) {
+                        TextButton(
+                            onClick = {
+                                onExit.invoke()
+                            },
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp)
+                                .weight(1F)
+                                .border(0.dp, color = Color.Transparent)
+                                .height(48.dp),
+                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
+                            shape = RoundedCornerShape(0.dp),
+                            contentPadding = PaddingValues()
+                        ) {
+                            Text(text = "Exit", color = Color.Red)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

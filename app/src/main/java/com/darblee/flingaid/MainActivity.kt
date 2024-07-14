@@ -192,13 +192,6 @@ private fun MainViewImplementation(
 {
     val currentScreen = remember { mutableStateOf<Screen>(Screen.Home) }
 
-    // When doing back press on main screen, confirm with the user whether
-    // it should exit the app or not
-    var backPressed by remember { mutableStateOf(false) }
-    BackPressHandler(onBackPressed = { backPressed = true })
-    if (backPressed)
-        ExitAlertDialog(onDismiss = { backPressed = false}, onExit = { exitProcess(1)})
-
     val navController = rememberNavController()
 
     Scaffold (
@@ -652,120 +645,6 @@ private fun setGameMusic(on: Boolean)
         }
     } else {
         gAudio_gameMusic.pause()
-    }
-}
-
-/**
- * Confirm user if it needs to exit or not
- *
- * @param onDismiss lambda function to cancel the exit
- * @param onExit lambda function to perform the exit
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit)
-{
-    Dialog(
-        onDismissRequest = { onDismiss() },
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false)
-    ) {
-        Card(
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp)
-                .height(IntrinsicSize.Min),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-            ) {
-                Row {
-                    Column(Modifier.weight(1f)) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ball),
-                            contentDescription = "Game",
-                            contentScale = ContentScale.Fit
-                        )
-                    }
-                    Column(Modifier.weight(3f)) {
-                        Text(
-                            text = "Logout",
-                            color = Color.Black,
-                            modifier = Modifier
-                                .padding(8.dp, 16.dp, 8.dp, 2.dp)
-                                .align(Alignment.CenterHorizontally)
-                                .fillMaxWidth(), fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Are you sure you want to exit?",
-                            color = Color.Black,
-                            modifier = Modifier
-                                .padding(8.dp, 2.dp, 8.dp, 16.dp)
-                                .align(Alignment.CenterHorizontally)
-                                .fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-                HorizontalDivider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .width(1.dp), color = Color.Gray
-                )
-                Row(Modifier.padding(top = 0.dp)) {
-                    CompositionLocalProvider(
-                        LocalMinimumInteractiveComponentEnforcement provides false,
-                    ) {
-                        TextButton(
-                            onClick = { onDismiss() },
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp)
-                                .weight(1F)
-                                .border(0.dp, Color.Transparent)
-                                .height(48.dp),
-                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
-                            shape = RoundedCornerShape(0.dp),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Text(text = "Not now", color = Color.Black)
-                        }
-                    }
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .width(1.dp), color = Color.Gray
-                    )
-                    CompositionLocalProvider(
-                        LocalMinimumInteractiveComponentEnforcement provides false,
-                    ) {
-                        TextButton(
-                            onClick = {
-                                onExit.invoke()
-                            },
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp)
-                                .weight(1F)
-                                .border(0.dp, color = Color.Transparent)
-                                .height(48.dp),
-                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
-                            shape = RoundedCornerShape(0.dp),
-                            contentPadding = PaddingValues()
-                        ) {
-                            Text(text = "Exit", color = Color.Red)
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 

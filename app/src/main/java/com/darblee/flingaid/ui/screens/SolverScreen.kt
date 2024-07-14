@@ -134,7 +134,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
-        Log.i(Global.debugPrefix, "Backpress is detected")
         backPressed = false
 
         if (announceVictory) return
@@ -1172,6 +1171,7 @@ private fun animatePreviewWinningMovePerform(
         }
     }
 }
+
 
 @Composable
 @Preview(showBackground = true)
