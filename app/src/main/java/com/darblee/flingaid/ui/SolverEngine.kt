@@ -196,7 +196,6 @@ internal class SolverEngine {
         val (direction, _, _) = tempBoard.foundWinningMove(totalBallCnt, (curSearchLevel + 1), 1)
 
         if ((direction == Direction.NO_WINNING_DIRECTION) || (direction == Direction.INCOMPLETE)) {
-            // Log.d("GM: $curSearchLevel","$debugIndentation $methodName: Could not find winnable move")
             return (false)
         }
 

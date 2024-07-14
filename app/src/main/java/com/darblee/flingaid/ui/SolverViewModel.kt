@@ -332,7 +332,7 @@ object SolverViewModel : ViewModel() {
         {
             // Task1 has the winning move
             Log.i(Global.debugPrefix,
-                "Task #1 has winning move with direction : ${task1_WinningDirection}")
+                "Task #1 has winning move with direction : $task1_WinningDirection")
             val winningSolverGridPos = SolverGridPos(task1WinningRow, task1WinningCol)
             val winningDir = task1_WinningDirection
 
@@ -351,7 +351,7 @@ object SolverViewModel : ViewModel() {
             if ((task2_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
                 (task2_WinningDirection != Direction.INCOMPLETE)) {
                 Log.i(Global.debugPrefix,
-                    "Task #2 has winning move with direction: ${task2_WinningDirection}")
+                    "Task #2 has winning move with direction: $task2_WinningDirection")
                 // Task2 has the winning move
                 val winningSolverGridPos = SolverGridPos(task2WinningRow, task2WinningCol)
                 val winningDir = task2_WinningDirection
@@ -379,7 +379,14 @@ object SolverViewModel : ViewModel() {
     }
 
     /**
-     * Set to thinking status to Idle, and Waiting on User
+     * Update uistate  thinking status to Idle state.
+     *
+     * @param idleMode Specific idle type. If this is not provided, it defaults to "Waiting on User"
+     * mode
+     * @param winningDir If this is idle with winning move, then this is direction of winning move.
+     * Otherwise it defaults to "No winning direction"
+     * @param winningMovingChain If this is idle with winning move, then this describe the movement
+     * details.
      */
     fun setIDLEstate(
         idleMode: SolverUiState.ThinkingMode.Idle.IdleType = SolverUiState.ThinkingMode.Idle.IdleType.WaitingOnUser,
@@ -403,6 +410,8 @@ object SolverViewModel : ViewModel() {
      * Process the first task.
      *
      * It is tracked using the hardcoded task #1 meta data
+     *
+     * @param totalBallCnt Used to determine whether it has winnable move or not
      */
     private fun processTask1(totalBallCnt :  Int)
     {
@@ -451,6 +460,8 @@ object SolverViewModel : ViewModel() {
      * Process the 2nd task.
      *
      * It is tracked using the hardcoded task #2 meta data
+     *
+     * @param totalBallCnt Used to determine whether it has winnable move or not
      */
     private fun processTask2(totalBallCnt : Int)
     {
@@ -494,7 +505,8 @@ object SolverViewModel : ViewModel() {
     }
 
     /**
-     * Show the thinking processing activity.
+     * Update the uistate to latest accurate progress level while it is still searching for
+     * winnable move.
      */
     private fun showProcessingActivity()
     {
@@ -528,6 +540,10 @@ object SolverViewModel : ViewModel() {
 
     /**
      * Calculate number of boxes to move the ball as it go toward a win
+     *
+     * @param uiState Current game UI state
+     *
+     * @return number of boxes to move the ball
      */
     fun getWinningMoveCount(uiState: SolverUiState): Int
     {
@@ -626,9 +642,12 @@ object SolverViewModel : ViewModel() {
      * Build a list of move records on this single move. If only one ball is involved, then this
      * will be a chain of 1 ball record movement.
      *
-     * @param initialRow
-     * @param initialCol
-     * @param direction
+     * @param initialRow Row of position to move from
+     * @param initialCol Column of position to move from
+     * @param direction Direction to move to
+     *
+     * @return List of movement records, If this only has 1 move, then this will be a chain of
+     * one movement record. It will return an empty list if there is no movement needed.
      */
     private fun buildMovingChain(initialRow: Int, initialCol: Int, direction: Direction) : List<MovingRec>
     {
