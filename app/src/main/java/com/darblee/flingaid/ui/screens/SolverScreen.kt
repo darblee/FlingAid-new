@@ -26,9 +26,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -71,9 +69,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -87,7 +91,6 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
-import com.darblee.flingaid.gAudio_youWon
 import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUiState
@@ -123,6 +126,10 @@ fun SolverScreen(modifier: Modifier = Modifier)
         val uiState by solverViewModel.uiState.collectAsState()
 
         gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
+
+        var announceVictory by remember { mutableStateOf(false) }
+        val onEnableVictoryMsg = { setting:Boolean -> announceVictory = setting }
+        val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
         solverViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
 
@@ -162,7 +169,10 @@ fun SolverScreen(modifier: Modifier = Modifier)
             solverViewModel = solverViewModel,
             uiState = uiState,
             showBallMovementAnimation = showBallMovementAnimation,
-            onBallMovementAnimationChange = onBallMovementAnimationChange
+            onBallMovementAnimationChange = onBallMovementAnimationChange,
+            announceVictory,
+            onEnableVictoryMsg,
+            victoryMsgColor
         )
     }
 }
@@ -357,18 +367,21 @@ private fun DrawSolverBoard(
     solverViewModel: SolverViewModel = viewModel(),
     uiState: SolverUiState,
     showBallMovementAnimation: Boolean,
-    onBallMovementAnimationChange: (enableBallMovementAnimation:Boolean) -> Unit
+    onBallMovementAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit,
+    announceVictory: Boolean,
+    onEnableVictoryMsg: (Boolean) -> Unit,
+    victoryMsgColor: Color
 )
 {
     val context = LocalContext.current
+
+    val textMeasurer = rememberTextMeasurer()
 
     if (solverViewModel.ballCount() == 1) {
         if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
             val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
             if (idleRec.IdleMode == (SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound)) {
-                gAudio_youWon.start()
-                gameToast(context, "You won")
-                solverViewModel.setIDLEstate()
+                onEnableVictoryMsg(true)
             }
         }
     }
@@ -379,9 +392,20 @@ private fun DrawSolverBoard(
     AnimateWinningMoveSetup(animateWinningMove)
 
     val animateBallMovementChain = mutableListOf<Animatable<Float,AnimationVector1D>>()
-    val animateParticleExplosion = remember { Animatable(initialValue = 0f) }
 
+    val animateParticleExplosion = remember { Animatable(initialValue = 0f) }
     var particles = mutableListOf<Particle>()
+
+    val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
+
+    if (announceVictory) {
+
+        AnimateVictoryMessageSetup(
+            animateVictoryMessage,
+            solverViewModel = solverViewModel,
+            onAnimationChange = onEnableVictoryMsg
+        )
+    }
 
     if (showBallMovementAnimation) {
 
@@ -526,8 +550,51 @@ private fun DrawSolverBoard(
                     this, solverViewModel, gridSize, displayBallImage,
                     animateBallMovementChain, animateParticleExplosion, particles)
             }  // if needToAnimateMovingBall
+
+            if (announceVictory) {
+                animateVictoryMsgPerform(this, animateVictoryMessage,
+                    textMeasurer, victoryMsgColor)
+            }
         } // Canvas
     } // Box
+}
+
+@Composable
+fun AnimateVictoryMessageSetup(
+    animateVictoryMessage: Animatable<Float, AnimationVector1D>,
+    onAnimationChange: (enableVictoryMessage: Boolean) -> Unit,
+    solverViewModel: SolverViewModel,
+)
+{
+    LaunchedEffect(Unit) {
+        animateVictoryMessage.snapTo(0f)
+        animateVictoryMessage.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(
+                durationMillis = 1000,
+                easing = LinearOutSlowInEasing
+            )
+        )
+        delay(1000)
+        onAnimationChange(false)
+        solverViewModel.setIDLEstate()
+        animateVictoryMessage.snapTo(0f)
+    }
+}
+
+fun animateVictoryMsgPerform(
+    drawScope: DrawScope,
+    animateVictoryMsg: Animatable<Float, AnimationVector1D>,
+    textMeasurer: TextMeasurer,
+    victoryMsgColor: Color
+)
+{
+    with (drawScope) {
+        drawVictoryMessage(this,
+            size.width, size.height,
+            textMeasurer, animateVictoryMsg.value,
+            victoryMsgColor)
+    }
 }
 
 /**
@@ -671,7 +738,7 @@ fun AnimateBallMovementsSetup(
     uiState: SolverUiState,
     animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosion: Animatable<Float, AnimationVector1D>,
-    onAnimationChange: (enableBallMovementAnimation:Boolean) -> Unit
+    onAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit
 )
 {
     val movingChain = uiState.winningMovingChain
@@ -688,7 +755,6 @@ fun AnimateBallMovementsSetup(
     // Only start the explosion when the ball makes an impact to the other ball
 
     LaunchedEffect(Unit) {
-
         // Use coroutine to ensure both launch animations get completed in the same scope
         coroutineScope {
             launch {  // one or more ball movements in serial fashion
@@ -998,59 +1064,56 @@ private fun PlaySearchAnimation(modifier: Modifier)
     )
 }
 
+/**
+ * Draw the "You won" message on the canvas.
+ *
+ * @param drawScope  Scope of the canvas
+ * @param canvasWidth Width of the canvas
+ * @param canvasHeight Height of the canvas
+ * @param textMeasurer Text measure
+ * @param animationValue Between 0f and 1f. The set up font size of the message. This is used in
+ * animation context to show the effect of growing text
+ * @param victoryMsgColor Font color. Depending on the current theme, this color will change
+ */
+private fun drawVictoryMessage(
+    drawScope: DrawScope,
+    canvasWidth: Float, canvasHeight: Float,
+    textMeasurer: TextMeasurer, animationValue: Float,
+    victoryMsgColor: Color
+)
+{
+    with (drawScope) {
+        val text = "You won!"
+        val animatedTextSize = (50 * animationValue) + 10
+        val textStyle = TextStyle(
+            color = victoryMsgColor,
+            fontWeight = FontWeight.Bold,
+            fontSize = animatedTextSize.sp
+        )
+        val textLayoutResult: TextLayoutResult =
+            textMeasurer.measure(text = AnnotatedString(text), style = textStyle)
+        val textSize = textLayoutResult.size
+        drawText(
+            textMeasurer = textMeasurer, text = text,
+            topLeft = Offset(
+                x = (canvasWidth - textSize.width) * 0.5f,  // in center
+                y = (canvasHeight * 0.25f)
+            ),
+            style = textStyle
+        )
+    }
+}
+
 @Composable
 @Preview(showBackground = true)
 private fun SolverScreenPreview()
 {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(5.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Box {
-            Image(
-                painter = painterResource(id = R.drawable.ball),
-                contentDescription = stringResource(id = R.string.app_name),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(150.dp)
-            )
-        }
-        Column(Modifier.padding(5.dp)) {
-            Text(text = "Instruction:",
-                style = MaterialTheme.typography.titleSmall)
-            val bullet = "\u2022"
-            val messages = listOf(
-                "Clear the board with \"Reset\" button",
-                "Add new balls on the grid",
-                "Solve the game with \"Find next\" button"
-            )
-            val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 10.sp))
-            Text(
-                text =
-                buildAnnotatedString {
-                    messages.forEach {
-                        withStyle(style = paragraphStyle) {
-                            append(bullet)
-                            append("\t")
-                            append(it)
-                        }
-                    }},
-                style = MaterialTheme.typography.bodySmall)
-
-            Spacer(modifier = Modifier.padding(10.dp))
-
-            Button(
-                onClick = { },
-                modifier = Modifier
-                    .defaultMinSize()
-                    .align(Alignment.CenterHorizontally)
-            ) {
-                Icon(painterResource(id = R.drawable.home_image), "Home")
-                Text(
-                    text = "Go back to Main Menu"
-                )
-            }
-        }
+    val textMeasurer = rememberTextMeasurer()
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        drawVictoryMessage(
+            drawScope = this,
+            canvasWidth = size.width, canvasHeight = size.height,
+            textMeasurer, 1.0f, Color.Cyan
+        )
     }
 }
