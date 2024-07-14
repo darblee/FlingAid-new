@@ -194,10 +194,10 @@ private fun MainViewImplementation(
 
     // When doing back press on main screen, confirm with the user whether
     // it should exit the app or not
-    val backPressed = remember { mutableStateOf(false) }
-    BackPressHandler(onBackPressed = { backPressed.value = true })
-    if (backPressed.value)
-        ExitAlertDialog(onDismiss = { backPressed.value = false}, onExit = { exitProcess(1)})
+    var backPressed by remember { mutableStateOf(false) }
+    BackPressHandler(onBackPressed = { backPressed = true })
+    if (backPressed)
+        ExitAlertDialog(onDismiss = { backPressed = false}, onExit = { exitProcess(1)})
 
     val navController = rememberNavController()
 
@@ -655,8 +655,12 @@ private fun setGameMusic(on: Boolean)
     }
 }
 
-
-
+/**
+ * Confirm user if it needs to exit or not
+ *
+ * @param onDismiss lambda function to cancel the exit
+ * @param onExit lambda function to perform the exit
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit)
@@ -769,5 +773,5 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit)
 @Preview(showBackground = true)
 private fun ScreenPreview()
 {
-    ExitAlertDialog(onDismiss = { /* TODO */ }, onExit = { /* TODO */ })
+ //   ExitAlertDialog(onDismiss = { /* TODO */ }, onExit = { /* TODO */ })
 }

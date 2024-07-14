@@ -342,7 +342,7 @@ object SolverViewModel : ViewModel() {
 
             setIDLEstate(
                 idleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound,
-                winningDir = winningDir,
+                winningDirection = winningDir,
                 winningMovingChain = movingChain)
 
         } else {
@@ -362,7 +362,7 @@ object SolverViewModel : ViewModel() {
 
                 setIDLEstate(
                     idleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound,
-                    winningDir = winningDir,
+                    winningDirection = winningDir,
                     winningMovingChain = movingChain)
 
             } else {
@@ -371,7 +371,7 @@ object SolverViewModel : ViewModel() {
                 _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
                 setIDLEstate(
                     idleMode = SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound,
-                    winningDir = Direction.NO_WINNING_DIRECTION,
+                    winningDirection = Direction.NO_WINNING_DIRECTION,
                     winningMovingChain = mutableStateListOf())
             }
         }
@@ -383,14 +383,14 @@ object SolverViewModel : ViewModel() {
      *
      * @param idleMode Specific idle type. If this is not provided, it defaults to "Waiting on User"
      * mode
-     * @param winningDir If this is idle with winning move, then this is direction of winning move.
+     * @param winningDirection If this is idle with winning move, then this is direction of winning move.
      * Otherwise it defaults to "No winning direction"
      * @param winningMovingChain If this is idle with winning move, then this describe the movement
      * details.
      */
     fun setIDLEstate(
         idleMode: SolverUiState.ThinkingMode.Idle.IdleType = SolverUiState.ThinkingMode.Idle.IdleType.WaitingOnUser,
-        winningDir: Direction = Direction.NO_WINNING_DIRECTION,
+        winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
         winningMovingChain: List<MovingRec> = mutableListOf())
     {
         val idleRec = SolverUiState.ThinkingMode.Idle
@@ -399,7 +399,7 @@ object SolverViewModel : ViewModel() {
         _uiState.update { currentState ->
             currentState.copy(
                 thinkingStatus = idleRec,
-                winningDirection = winningDir,
+                winningDirection = winningDirection,
                 winningMovingChain = winningMovingChain
             )
         }

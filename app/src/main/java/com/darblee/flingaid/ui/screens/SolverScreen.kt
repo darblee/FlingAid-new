@@ -84,10 +84,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
@@ -115,19 +117,46 @@ lateinit var gBoardFile : File
  *  elements
  */
 @Composable
-fun SolverScreen(modifier: Modifier = Modifier)
+fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController)
 {
     val solverViewModel: SolverViewModel = viewModel()
+    val uiState by solverViewModel.uiState.collectAsState()
+
+    var announceVictory by remember { mutableStateOf(false) }
+
+    // Intercept backPress key while on Game Solver screen..
+    //
+    // When doing back press on the current screen, confirm with the user whether
+    // it should exit this screen or not if it is middle of thinking.
+    // Do not exit this screen when:
+    // - It is middle of thinking
+    // - It is in middle of announcing victory message
+    var backPressed by remember { mutableStateOf(false) }
+    BackPressHandler(onBackPressed = { backPressed = true })
+    if (backPressed) {
+        Log.i(Global.debugPrefix, "Backpress is detected")
+        backPressed = false
+
+        if (announceVictory) return
+
+        if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Active) {
+            gameToast(
+                LocalContext.current,
+                "Unable to go back to the home screen while it is in middle of thinking")
+            return
+        }
+
+        navController.popBackStack() // We can now go back to the previous screen
+        return
+    }
+
     Column (
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val uiState by solverViewModel.uiState.collectAsState()
-
         gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
 
-        var announceVictory by remember { mutableStateOf(false) }
         val onEnableVictoryMsg = { setting:Boolean -> announceVictory = setting }
         val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
@@ -161,7 +190,8 @@ fun SolverScreen(modifier: Modifier = Modifier)
             findWinnableMoveButtonEnabled = findWinnableMoveButtonEnabled,
             showWinnableMoveToUser = showWinnableMoveToUser,
             uiState = uiState,
-            onBallMovementAnimationChange = onBallMovementAnimationChange
+            onBallMovementAnimationChange = onBallMovementAnimationChange,
+            announceVictory
         )
 
         DrawSolverBoard(
@@ -269,7 +299,8 @@ private fun ControlButtonsForSolver(
      findWinnableMoveButtonEnabled: Boolean,
      showWinnableMoveToUser: Boolean,
      uiState: SolverUiState,
-     onBallMovementAnimationChange: (enableBallMovementAnimation:Boolean) -> Unit
+     onBallMovementAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit,
+     announceVictory: Boolean
  )
 {
     val view = LocalView.current
@@ -316,7 +347,7 @@ private fun ControlButtonsForSolver(
                 Text("Move and find next")
             else
                 Text("Find next")
-        }
+        }  // "Find winning move" Button
 
         Button(
             onClick = {
@@ -324,6 +355,7 @@ private fun ControlButtonsForSolver(
                 if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Active ) {
                     gameToast(context, "Unable to reset as it is currently busy finding a solution")
                 } else {
+                    // Reset the board game and set it back to idle state
                     solverViewModel.reset(gBoardFile)
                 }
             },
@@ -336,12 +368,16 @@ private fun ControlButtonsForSolver(
             modifier = Modifier
                 .weight(2F)
                 .padding(5.dp),
+            // Disable button while it is in active thinking mode or in the middle of announce
+            // victory message
+            enabled = ((uiState.thinkingStatus != SolverUiState.ThinkingMode.Active) ||
+                    announceVictory)
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Reset",
                 modifier = Modifier.size(iconWidth))
             Text("Reset")
-        }
+        }  // Reset Button
     }
 }
 

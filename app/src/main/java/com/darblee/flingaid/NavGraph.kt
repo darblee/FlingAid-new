@@ -14,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -81,7 +80,8 @@ fun SetUpNavGraph(
             SolverScreen(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = Global.TopAppBarHeight))  // Height of the TopAppBar
+                    .padding(top = Global.TopAppBarHeight),
+                navController)  // Height of the TopAppBar
         }
     }
 }
@@ -94,8 +94,8 @@ fun SetUpNavGraph(
  * See code [MainViewImplementation]
  *
  * We created [OnBackPressedCallback] and add it to the onBackPressDispatcher
- * that controls dispatching ystem back presses. We enable the callback whenever
- * our Composable is recomposed, which disables other internal callbacks reponsible
+ * that controls dispatching system back presses. We enable the callback whenever
+ * our Composable is recomposed, which disables other internal callbacks responsible
  * for back press handling. The callback is added on any lifecycle owner change and removed
  * on dispose.
  */
