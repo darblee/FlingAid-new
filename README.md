@@ -1,7 +1,6 @@
 **SolverViewModel State Machine**
 
-![State Machine](state.bmp)
+![State Machine](SolverViewModel-State-Machine.bmp)
 
-This is another test
 
 
