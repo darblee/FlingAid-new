@@ -1,4 +1,6 @@
-SolverViewModel State Machinez
+**SolverViewModel State Machine**
+
+![State Machine](state.bmp)
 
 
 
