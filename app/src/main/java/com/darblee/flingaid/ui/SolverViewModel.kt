@@ -28,6 +28,8 @@ import java.util.concurrent.CyclicBarrier
  * - It prepare data for the UI. All information flow one direction to the UI
  * - It has a longer lifetime than the composable
  *
+ * [State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
+ *
  * There can only be one SolverViewModel instance. Hence, use the singleton class (object)
  *
  * [SolverUiState] State of UI
