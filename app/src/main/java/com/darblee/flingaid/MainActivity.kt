@@ -10,18 +10,13 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -42,17 +37,13 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedTextField
@@ -62,10 +53,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -75,23 +64,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.darblee.flingaid.ui.screens.solverScreenBackPressed
 import com.darblee.flingaid.ui.theme.SetColorTheme
 import com.darblee.flingaid.ui.theme.ColorThemeOption
 import kotlinx.coroutines.CoroutineScope
@@ -230,10 +216,10 @@ private fun SetUpGameAudioOnAppStart()
                 }
                 Lifecycle.Event.ON_STOP -> {
                     gAudio_gameMusic.pause()
-                    Log.i(Global.debugPrefix, "Music paused")
+                    Log.i(Global.DEBUG_PREFIX, "Music paused")
                 }
                 else -> {
-                    Log.i(Global.debugPrefix, "$event event ignored")
+                    Log.i(Global.DEBUG_PREFIX, "$event event ignored")
                 }
             }
         }
@@ -254,8 +240,7 @@ private fun FlingAidTopAppBar(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
     currentTheme: ColorThemeOption,
     navController: NavHostController,
-    currentScreen: MutableState<Screen>
-)
+    currentScreen: MutableState<Screen>)
 {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialogBox by remember { mutableStateOf(false) }
@@ -264,7 +249,8 @@ private fun FlingAidTopAppBar(
 
     val screenTitle = stringResource(id = currentScreen.value.stringTitleResourceID)
 
-    val preference = PreferenceStore(LocalContext.current)
+    val context = LocalContext.current
+    val preference = PreferenceStore(context)
     LaunchedEffect(key1 = true) {
         currentPlayerName = preference.readPlayerNameFomSetting()
     }
@@ -276,8 +262,11 @@ private fun FlingAidTopAppBar(
                     IconButton(onClick = { /* Do nothing */ })
                     { Icon(Icons.Filled.Home, contentDescription = "Home screen") }
                 }
-                Screen.Game,
                 Screen.Solver -> {
+                    IconButton(onClick = { solverScreenBackPressed(context, navController) })
+                    { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back to home screen") }
+                }
+                Screen.Game -> {
                     IconButton(onClick = { navController.popBackStack() })
                     { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back to home screen") }
                 }

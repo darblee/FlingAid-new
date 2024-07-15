@@ -140,7 +140,7 @@ object SolverViewModel : ViewModel() {
             writer.write(output)
             writer.close()
         } catch (e:Exception) {
-            Log.i(Global.debugPrefix, "${e.message}" )
+            Log.i(Global.DEBUG_PREFIX, "${e.message}" )
         }
     }
 
@@ -163,7 +163,7 @@ object SolverViewModel : ViewModel() {
                 _ballPositionList.add(pos)
             }
         } catch (e: Exception) {
-            Log.i(Global.debugPrefix, "An error occurred while reading the file: ${e.message}")
+            Log.i(Global.DEBUG_PREFIX, "An error occurred while reading the file: ${e.message}")
         }
     }
 
@@ -287,25 +287,25 @@ object SolverViewModel : ViewModel() {
                 gMultipleThread = true
                 _totalProcessCount = (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
                 cyclicBarrier = CyclicBarrier(2) {
-                    Log.i(Global.debugPrefix, "Reached a converged point between 2 parallel tasks")
+                    Log.i(Global.DEBUG_PREFIX, "Reached a converged point between 2 parallel tasks")
                     recordThinkingResult()
                 }
             } else {
                 gMultipleThread = false
                 cyclicBarrier = CyclicBarrier(1) {
-                    Log.i(Global.debugPrefix, "Reached a converged point. One thread")
+                    Log.i(Global.DEBUG_PREFIX, "Reached a converged point. One thread")
                     recordThinkingResult()
                 }
             }
 
             gThinkingThread1 = Thread {
                 processTask1(gTotalBallCount)
-                Log.i("${Global.debugPrefix} Task 1", "Task #1 is completed. Now waiting for all threads to complete.")
+                Log.i("${Global.DEBUG_PREFIX} Task 1", "Task #1 is completed. Now waiting for all threads to complete.")
                 cyclicBarrier.await()
             }
             gThinkingThread2 = Thread {
                 processTask2(gTotalBallCount)
-                Log.i("${Global.debugPrefix}: Task 2", "Task #2 is completed. Now waiting for all threads to complete.")
+                Log.i("${Global.DEBUG_PREFIX}: Task 2", "Task #2 is completed. Now waiting for all threads to complete.")
                 cyclicBarrier.await()
             }
 
@@ -331,7 +331,7 @@ object SolverViewModel : ViewModel() {
             (task1_WinningDirection != Direction.INCOMPLETE))
         {
             // Task1 has the winning move
-            Log.i(Global.debugPrefix,
+            Log.i(Global.DEBUG_PREFIX,
                 "Task #1 has winning move with direction : $task1_WinningDirection")
             val winningSolverGridPos = SolverGridPos(task1WinningRow, task1WinningCol)
             val winningDir = task1_WinningDirection
@@ -350,7 +350,7 @@ object SolverViewModel : ViewModel() {
             // Task1 does not have the winning result. NOw check on task #2
             if ((task2_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
                 (task2_WinningDirection != Direction.INCOMPLETE)) {
-                Log.i(Global.debugPrefix,
+                Log.i(Global.DEBUG_PREFIX,
                     "Task #2 has winning move with direction: $task2_WinningDirection")
                 // Task2 has the winning move
                 val winningSolverGridPos = SolverGridPos(task2WinningRow, task2WinningCol)
@@ -416,14 +416,14 @@ object SolverViewModel : ViewModel() {
     private fun processTask1(totalBallCnt :  Int)
     {
         try {
-            Log.i("${Global.debugPrefix} Task 1", "Task 1 has started")
+            Log.i("${Global.DEBUG_PREFIX} Task 1", "Task 1 has started")
             val game1 = SolverEngine()
             game1.populateGrid(_ballPositionList)
 
             val (direction, finalRow, finalCol) = game1.foundWinningMove(
                 totalBallCnt, 1, 1)
 
-            Log.i("${Global.debugPrefix} Finish Task #1",
+            Log.i("${Global.DEBUG_PREFIX} Finish Task #1",
                 "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
 
             task1_WinningDirection = direction
@@ -431,12 +431,12 @@ object SolverViewModel : ViewModel() {
             when (direction) {
 
                 Direction.INCOMPLETE -> {
-                    Log.i(Global.debugPrefix,
+                    Log.i(Global.DEBUG_PREFIX,
                         "Task #1 got incomplete. It expect task2 has deterministic result")
                 }
 
                 Direction.NO_WINNING_DIRECTION -> {
-                    Log.i(Global.debugPrefix, "Task #1 concluded there is no winning move")
+                    Log.i(Global.DEBUG_PREFIX, "Task #1 concluded there is no winning move")
                     if (gMultipleThread) gThinkingThread2.interrupt()
                 }
 
@@ -447,12 +447,12 @@ object SolverViewModel : ViewModel() {
                     task1WinningCol = finalCol
                     task1_WinningDirection = direction
 
-                    Log.i(Global.debugPrefix, "Attempting to interrupt task #2")
+                    Log.i(Global.DEBUG_PREFIX, "Attempting to interrupt task #2")
                     if (gMultipleThread) gThinkingThread2.interrupt()
                 }
             }
         } catch (e: InterruptedException) {
-            Log.i("${Global.debugPrefix} 1", "Interruption detected")
+            Log.i("${Global.DEBUG_PREFIX} 1", "Interruption detected")
         }
     }
 
@@ -466,25 +466,25 @@ object SolverViewModel : ViewModel() {
     private fun processTask2(totalBallCnt : Int)
     {
         try {
-            Log.i("${Global.debugPrefix} Task 2", "Task 2 has started")
+            Log.i("${Global.DEBUG_PREFIX} Task 2", "Task 2 has started")
             val game2 = SolverEngine()
             game2.populateGrid(_ballPositionList)
             task2_WinningDirection = Direction.INCOMPLETE
             val (direction, finalRow, finalCol) = game2.foundWinningMove(
                 totalBallCnt, 1, -1)
 
-            Log.i("${Global.debugPrefix} Finish Task #2", "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
+            Log.i("${Global.DEBUG_PREFIX} Finish Task #2", "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
 
             task2_WinningDirection = direction
 
             when (direction) {
 
                 Direction.INCOMPLETE -> {
-                    Log.i(Global.debugPrefix, "Task #2 got incomplete. It expect task1 has deterministic result")
+                    Log.i(Global.DEBUG_PREFIX, "Task #2 got incomplete. It expect task1 has deterministic result")
                 }
 
                 Direction.NO_WINNING_DIRECTION -> {
-                    Log.i(Global.debugPrefix, "Task #2 concluded there is no winning move")
+                    Log.i(Global.DEBUG_PREFIX, "Task #2 concluded there is no winning move")
                     gThinkingThread1.interrupt()
                 }
 
@@ -495,12 +495,12 @@ object SolverViewModel : ViewModel() {
                     task2WinningCol = finalCol
                     task2_WinningDirection = direction
 
-                    Log.i(Global.debugPrefix, "Attempting to interrupt task #1")
+                    Log.i(Global.DEBUG_PREFIX, "Attempting to interrupt task #1")
                     gThinkingThread1.interrupt()
                 }
             }
         } catch (e: InterruptedException) {
-            Log.i("${Global.debugPrefix} Task 2", "Interruption detected")
+            Log.i("${Global.DEBUG_PREFIX} Task 2", "Interruption detected")
         }
     }
 
@@ -535,7 +535,7 @@ object SolverViewModel : ViewModel() {
             if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
             if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
         }
-        Log.i(Global.debugPrefix, "Finished thinking")
+        Log.i(Global.DEBUG_PREFIX, "Finished thinking")
     }
 
     /**
@@ -717,7 +717,7 @@ object SolverViewModel : ViewModel() {
             return (Pair(2, null ))
         }
 
-        if ((direction == Direction.RIGHT) && (col == Global.MaxColSize)) {
+        if ((direction == Direction.RIGHT) && (col == Global.MAX_COL_SIZE)) {
             if (firstMove) return (Pair(0, null ))
             return (Pair(2, null ))
         }
@@ -727,7 +727,7 @@ object SolverViewModel : ViewModel() {
             return (Pair(2, null ))
         }
 
-        if ((direction == Direction.DOWN) && (row == Global.MaxRowSize)) {
+        if ((direction == Direction.DOWN) && (row == Global.MAX_ROW_SIZE)) {
             if (firstMove) return (Pair(0, null ))
             return (Pair(2, null ))
         }
@@ -744,8 +744,8 @@ object SolverViewModel : ViewModel() {
             newRow = sourceRow + xOffset
             newCol = sourceCol + yOffset
 
-            if ((newRow == -1) || (newRow == Global.MaxRowSize) ||
-                (newCol == -1) || (newCol == Global.MaxColSize)) {
+            if ((newRow == -1) || (newRow == Global.MAX_ROW_SIZE) ||
+                (newCol == -1) || (newCol == Global.MAX_COL_SIZE)) {
                 distance++ // Add two to make it fall off the edge
                 distance++
                 hitWall = true

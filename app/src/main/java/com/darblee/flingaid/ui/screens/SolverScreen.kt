@@ -1,5 +1,6 @@
 package com.darblee.flingaid.ui.screens
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.HapticFeedbackConstants
@@ -119,9 +120,6 @@ lateinit var gBoardFile : File
 @Composable
 fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController)
 {
-    val solverViewModel: SolverViewModel = viewModel()
-    val uiState by solverViewModel.uiState.collectAsState()
-
     var announceVictory by remember { mutableStateOf(false) }
 
     // Intercept backPress key while on Game Solver screen..
@@ -135,17 +133,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
         backPressed = false
-
         if (announceVictory) return
-
-        if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Active) {
-            gameToast(
-                LocalContext.current,
-                "Unable to go back to the home screen while it is in middle of thinking")
-            return
-        }
-
-        navController.popBackStack() // We can now go back to the previous screen
+        solverScreenBackPressed(LocalContext.current, navController)
         return
     }
 
@@ -154,7 +143,10 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        gBoardFile = File(LocalContext.current.filesDir, Global.boardFileName)
+        val solverViewModel: SolverViewModel = viewModel()
+        val uiState by solverViewModel.uiState.collectAsState()
+
+        gBoardFile = File(LocalContext.current.filesDir, Global.BOARD_FILENAME)
 
         val onEnableVictoryMsg = { setting:Boolean -> announceVictory = setting }
         val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -203,6 +195,23 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             onEnableVictoryMsg,
             victoryMsgColor
         )
+    }
+}
+
+/**
+ * Perform the key back press action. CHeck if it has permission to do so.
+ * Backpress is allow if:
+ * - THere is no active thinking
+ *
+ * @param context  Current context to do a toast on
+ * @param navController Navigator controller, which is used to navigate to the previous screen.
+ */
+fun solverScreenBackPressed(context: Context, navController: NavHostController)
+{
+    if (SolverViewModel.uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) {
+        gameToast(context, "Unable to go back to home while it is thinking")
+    } else {
+        navController.popBackStack()
     }
 }
 
@@ -315,7 +324,7 @@ private fun ControlButtonsForSolver(
         Button(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                Log.i(Global.debugPrefix, ">>> Starting thinking : Button Pressed")
+                Log.i(Global.DEBUG_PREFIX, ">>> Starting thinking : Button Pressed")
                 if (showWinnableMoveToUser) {
 
                      //  Turn on the need to do the ball movement animation
@@ -323,7 +332,7 @@ private fun ControlButtonsForSolver(
                 } else {
                      // In this case, we did not move the ball as we did not show hint yet.
                      // We need to find the winning move
-                    Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
+                    Log.i(Global.DEBUG_PREFIX, ">>> Looking for next winnable move")
                     solverViewModel.findWinningMove(solverViewModel)
                 }
             }, // OnClick
@@ -468,7 +477,7 @@ private fun DrawSolverBoard(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .aspectRatio(Global.MaxColSize.toFloat() / Global.MaxRowSize.toFloat())
+            .aspectRatio(Global.MAX_COL_SIZE.toFloat() / Global.MAX_ROW_SIZE.toFloat())
             .shadow(elevation = 10.dp, shape = RoundedCornerShape(20.dp))
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.background),
@@ -509,7 +518,7 @@ private fun DrawSolverBoard(
                             } else {
                                 val row = (tapOffset.y / gridSize).toInt()
                                 val col = (tapOffset.x / gridSize).toInt()
-                                if ((row < Global.MaxRowSize) && (col < Global.MaxColSize)) {
+                                if ((row < Global.MAX_ROW_SIZE) && (col < Global.MAX_COL_SIZE)) {
                                     solverViewModel.toggleBallPosition(SolverGridPos(row, col))
                                     view.playSoundEffect(SoundEffectConstants.CLICK)
                                     solverViewModel.saveBallPositions(gBoardFile)
@@ -551,8 +560,8 @@ private fun DrawSolverBoard(
             val canvasWidth = size.width
             val canvasHeight = size.height
 
-            val gridSizeWidth = (canvasWidth / (Global.MaxColSize))
-            val gridSizeHeight = (canvasHeight / (Global.MaxRowSize))
+            val gridSizeWidth = (canvasWidth / (Global.MAX_COL_SIZE))
+            val gridSizeHeight = (canvasHeight / (Global.MAX_ROW_SIZE))
 
             gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
@@ -661,7 +670,7 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
 private fun generateExplosionParticles(uiState: SolverUiState): List<Particle>
 {
     if (uiState.winningMovingChain.isEmpty()) {
-        Log.i(Global.debugPrefix, "Got empty moving chain list. Unable to process particles")
+        Log.i(Global.DEBUG_PREFIX, "Got empty moving chain list. Unable to process particles")
         return mutableListOf()
     }
 
@@ -762,8 +771,8 @@ private fun drawGrid(
     with (drawScope) {
         // Draw horizontal lines
         var currentY = 0F
-        val gridWidth = gridSize * Global.MaxColSize
-        repeat(Global.MaxRowSize + 1) { index ->
+        val gridWidth = gridSize * Global.MAX_COL_SIZE
+        repeat(Global.MAX_ROW_SIZE + 1) { index ->
             val lineWidth = if (index == 4) 5 else 2
             drawLine(
                 start = Offset(x = 0.dp.toPx(), y = currentY),
@@ -776,8 +785,8 @@ private fun drawGrid(
 
         // Draw vertical lines
         var currentX = 0F
-        val gridHeight = gridSize * Global.MaxRowSize
-        repeat(Global.MaxColSize + 1) {
+        val gridHeight = gridSize * Global.MAX_ROW_SIZE
+        repeat(Global.MAX_COL_SIZE + 1) {
 
             drawLine(
                 start = Offset(x = currentX, y = 0.dp.toPx()),
@@ -789,15 +798,16 @@ private fun drawGrid(
         }
 
         // Draw the circle in the center of the grid
-        val offsetX = (gridSize  * ((Global.MaxColSize / 2) + 0.5)).toFloat()
-        val offsetY = (gridSize  * ((Global.MaxRowSize / 2)))
+        val offsetX = (gridSize  * ((Global.MAX_COL_SIZE / 2) + 0.5)).toFloat()
+        val offsetY = (gridSize  * ((Global.MAX_ROW_SIZE / 2)))
         val radiusLength = (gridSize * 0.66).toFloat()
         drawCircle(lineColor, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
     }
 }
 
 /**
- * Play the search animation to indicate it is actively searching a solution
+ * Play the search animation to indicate it is actively searching a solution. It uses Lottie animation framework.
+ * For more details, see [Lottie](https://lottiefiles.com/tutorials/how-to-create-animation-in-android-studio-kotlin-lottie-files-android-development-full-course-EXR47xeo3cA)
  *
  * @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
@@ -857,59 +867,8 @@ private fun drawVictoryMessage(
 /************************** Animation Routines **************************/
 
 //
-// Animating Ball movements
+// Animating Preview Winning Ball Movement
 //
-
-/**
- * Statically defined animated Keyframe specification to wiggle the ball
- *
- * @see AnimatePreviewBallMovementsSetup
- */
-private val wiggleBallAnimatedSpec = keyframes {
-    durationMillis = 80
-    0f.at( 10) using LinearEasing   // from 0 ms to 10 ms
-    5f.at(20) using LinearEasing    // from 10 ms to 20 ms
-}
-
-/**
- * Define the animation KeyframeSpec for the straight ball movement.
- * Ensure the most of time is spend linear speed with slow start
- * and a bounce effect at the end.
- *
- * @param totalTimeLength Total time to run the straight ball movement
- * @param whenBallMakeContactRatio Time ratio of total time when the ball makes contact to the neighboring ball. It is used
- * in conjunction with [particleExplosionAnimatedSpec] routine
- *
- * @see AnimatePreviewBallMovementsSetup
- */
-private fun ballMovementKeyframeSpec(totalTimeLength: Int, whenBallMakeContactRatio: Float): KeyframesSpec<Float>
-{
-    val spec :  KeyframesSpec<Float> = keyframes {
-        durationMillis = totalTimeLength
-        0f.at((0.05 * totalTimeLength).toInt())  using LinearOutSlowInEasing
-        1.02f.at((whenBallMakeContactRatio * totalTimeLength).toInt()) using FastOutLinearInEasing   // Overrun the ball slightly to hit the neighboring ball
-        1.0f.at(totalTimeLength) using EaseOut   // Roll back to the destination
-    }
-    return (spec)
-}
-
-/**
- * Define the animation KeyframeSpec for the particle explosion. Explosion will occur at the tail
- * end of the ball movement by delaying the start of explosion effect.
- *
- *  @param totalTimeLength Total time to run the straight ball movement
- *  @param whenBallMakeContactRatio Time ratio of total time when the ball makes contact to the neighboring ball. It is used
- *  in conjunction with [ballMovementKeyframeSpec] routine
- */
-private fun particleExplosionAnimatedSpec(totalTimeLength: Int, whenBallMakeContactRatio: Float) : KeyframesSpec<Float>
-{
-    val spec : KeyframesSpec<Float> = keyframes {
-        durationMillis = totalTimeLength + 250
-        delayMillis = (whenBallMakeContactRatio * totalTimeLength - 10).toInt()
-        0.5f.at(totalTimeLength + 250) using LinearOutSlowInEasing
-    }
-    return (spec)
-}
 
 /**
  * Setup ball movement animation and the particle explosion effect
@@ -969,7 +928,7 @@ fun AnimatePreviewBallMovementsSetup(
                 onAnimationChange(false)
                 solverViewModel.makeWinningMove(uiState)
                 if (solverViewModel.ballCount() > 1) {
-                    Log.i(Global.debugPrefix, ">>> Looking for next winnable move")
+                    Log.i(Global.DEBUG_PREFIX, ">>> Looking for next winnable move")
                     solverViewModel.findWinningMove(solverViewModel)
                 }
             }
@@ -986,6 +945,70 @@ fun AnimatePreviewBallMovementsSetup(
             }
         }
     }
+}
+
+//
+// Animating Ball movements
+//
+
+/**
+ * Statically defined animated Keyframe specification to wiggle the ball
+ *
+ * @see AnimatePreviewBallMovementsSetup
+ */
+private val wiggleBallAnimatedSpec = keyframes {
+    durationMillis = 80
+    0f.at( 10) using LinearEasing   // from 0 ms to 10 ms
+    5f.at(20) using LinearEasing    // from 10 ms to 20 ms
+}
+
+/**
+ * Define the animation KeyframeSpec for the straight ball movement.
+ * Ensure the most of time is spend linear speed with slow start
+ * and a bounce effect at the end.
+ *
+ * The following functions all work together to create end-to-end animation of ball movement and particle explosion:
+ *  - [AnimatePreviewBallMovementsSetup]
+ *  - [ballMovementKeyframeSpec]
+ *  - [wiggleBallAnimatedSpec]
+ *  - [particleExplosionAnimatedSpec]
+ *  - [animateBallMovementsPerform]
+ *
+ * @param totalTimeLength Total time to run the straight ball movement
+ * @param whenBallMakeContactRatio Time ratio of total time when the ball makes contact to the neighboring ball. It is used
+ * in conjunction with [particleExplosionAnimatedSpec] routine
+ *
+ * @return Animation state specification
+ */
+private fun ballMovementKeyframeSpec(totalTimeLength: Int, whenBallMakeContactRatio: Float): KeyframesSpec<Float>
+{
+    val spec :  KeyframesSpec<Float> = keyframes {
+        durationMillis = totalTimeLength
+        0f.at((0.05 * totalTimeLength).toInt())  using LinearOutSlowInEasing
+        1.02f.at((whenBallMakeContactRatio * totalTimeLength).toInt()) using FastOutLinearInEasing   // Overrun the ball slightly to hit the neighboring ball
+        1.0f.at(totalTimeLength) using EaseOut   // Roll back to the destination
+    }
+    return (spec)
+}
+
+/**
+ * Define the animation KeyframeSpec for the particle explosion. Explosion will occur at the tail
+ * end of the ball movement by delaying the start of explosion effect.
+ *
+ *  @param totalTimeLength Total time to run the straight ball movement
+ *  @param whenBallMakeContactRatio Time ratio of total time when the ball makes contact to the neighboring ball. It is used
+ *  in conjunction with [ballMovementKeyframeSpec] routine
+ *
+ *  @return The animation state specification
+ */
+private fun particleExplosionAnimatedSpec(totalTimeLength: Int, whenBallMakeContactRatio: Float) : KeyframesSpec<Float>
+{
+    val spec : KeyframesSpec<Float> = keyframes {
+        durationMillis = totalTimeLength + 250
+        delayMillis = (whenBallMakeContactRatio * totalTimeLength - 10).toInt()
+        0.5f.at(totalTimeLength + 250) using LinearOutSlowInEasing
+    }
+    return (spec)
 }
 
 /**
@@ -1171,7 +1194,6 @@ private fun animatePreviewWinningMovePerform(
         }
     }
 }
-
 
 @Composable
 @Preview(showBackground = true)

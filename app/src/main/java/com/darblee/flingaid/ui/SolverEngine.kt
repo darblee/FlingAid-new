@@ -6,7 +6,7 @@ import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 
 internal class SolverEngine {
-    private var flingGrid = Array(Global.MaxRowSize) { BooleanArray(Global.MaxColSize) }
+    private var flingGrid = Array(Global.MAX_ROW_SIZE) { BooleanArray(Global.MAX_COL_SIZE) }
 
     init {
         reset()
@@ -14,8 +14,8 @@ internal class SolverEngine {
 
     private fun reset()
     {
-        repeat (Global.MaxRowSize) { row ->
-            repeat(Global.MaxColSize) { col ->
+        repeat (Global.MAX_ROW_SIZE) { row ->
+            repeat(Global.MAX_COL_SIZE) { col ->
                 flingGrid[row][col] = false
             }
         }
@@ -33,8 +33,8 @@ internal class SolverEngine {
         val tempBoard = SolverEngine()
 
         // Clone the board
-        repeat (Global.MaxRowSize) { curRow ->
-            repeat(Global.MaxColSize) { curCol ->
+        repeat (Global.MAX_ROW_SIZE) { curRow ->
+            repeat(Global.MAX_COL_SIZE) { curCol ->
                 tempBoard.flingGrid[curRow][curCol] = flingGrid[curRow][curCol]
             }
         }
@@ -56,15 +56,15 @@ internal class SolverEngine {
 
         if (thinkingDirectionOffset == 1) {
             startRow = 0
-            exceededRow = Global.MaxRowSize
+            exceededRow = Global.MAX_ROW_SIZE
 
             startColumn = 0
-            exceededCol = Global.MaxColSize
+            exceededCol = Global.MAX_COL_SIZE
         } else {
-            startRow = Global.MaxRowSize - 1
+            startRow = Global.MAX_ROW_SIZE - 1
             exceededRow = -1
 
-            startColumn = Global.MaxColSize - 1
+            startColumn = Global.MAX_COL_SIZE - 1
             exceededCol = -1
         }
         var curRow = startRow
@@ -75,7 +75,7 @@ internal class SolverEngine {
 
                 if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
                     val threadInterrupt = Thread.interrupted()
-                    Log.d("${Global.debugPrefix}:", "Short circuit on row processing. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
+                    Log.d("${Global.DEBUG_PREFIX}:", "Short circuit on row processing. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
                     direction = Direction.INCOMPLETE  // We should quit the current thread
                     return@repeatBlock
 
@@ -89,13 +89,13 @@ internal class SolverEngine {
                     curCol = currentCol
 
                     if (flingGrid[curRow][curCol]) {
-                        if (curSearchLevel == 1) Log.i("${Global.debugPrefix}: Top level", "Processing row=$curRow, col = $curCol")
+                        if (curSearchLevel == 1) Log.i("${Global.DEBUG_PREFIX}: Top level", "Processing row=$curRow, col = $curCol")
 
                         if (winnableByMovingUp(totalBallCnt, curSearchLevel, curRow, curCol)) {
                             direction = Direction.UP
                             winningRow = curRow
                             winningCol = curCol
-                            Log.i("${Global.debugPrefix}:", "Level #$curSearchLevel, Found winning move at direction $direction when processing at row: $curRow col: $curCol")
+                            Log.i("${Global.DEBUG_PREFIX}:", "Level #$curSearchLevel, Found winning move at direction $direction when processing at row: $curRow col: $curCol")
                             return@repeatBlock
                         }
 
@@ -104,7 +104,7 @@ internal class SolverEngine {
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
-                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after up. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
+                            Log.d("${Global.DEBUG_PREFIX}:", "Short circuit on col processing after up. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -121,7 +121,7 @@ internal class SolverEngine {
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
-                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after down. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
+                            Log.d("${Global.DEBUG_PREFIX}:", "Short circuit on col processing after down. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -138,7 +138,7 @@ internal class SolverEngine {
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
-                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after right. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
+                            Log.d("${Global.DEBUG_PREFIX}:", "Short circuit on col processing after right. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -155,7 +155,7 @@ internal class SolverEngine {
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
-                            Log.d("${Global.debugPrefix}:", "Short circuit on col processing after left. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
+                            Log.d("${Global.DEBUG_PREFIX}:", "Short circuit on col processing after left. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -169,7 +169,7 @@ internal class SolverEngine {
         }
 
         if (direction != Direction.NO_WINNING_DIRECTION)
-            Log.d("${Global.debugPrefix}:", "Returning winning (or incomplete) result: Level #$curSearchLevel, Direction is $direction")
+            Log.d("${Global.DEBUG_PREFIX}:", "Returning winning (or incomplete) result: Level #$curSearchLevel, Direction is $direction")
 
         return Triple(direction, winningRow, winningCol)
     }
@@ -216,7 +216,7 @@ internal class SolverEngine {
         tempBoard.moveDown(srcRow, targetRow, col)
 
         if (totalBallCnt == (curSearchLevel + 1)) {
-            Log.i("${Global.debugPrefix}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING DOWN")
+            Log.i("${Global.DEBUG_PREFIX}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING DOWN")
             return true
         }
 
@@ -246,7 +246,7 @@ internal class SolverEngine {
         tempBoard.moveRight(srcCol, targetCol, row)
 
         if (totalBallCnt == (curSearchLevel + 1)) {
-            Log.d("${Global.debugPrefix}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING RIGHT")
+            Log.d("${Global.DEBUG_PREFIX}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING RIGHT")
             return true
         }
 
@@ -333,7 +333,7 @@ internal class SolverEngine {
      */
     fun findTargetRowOnMoveDown(srcRow: Int, col: Int) : Int {
         // If you are near the bottom of the grid, then you do not have any room to move down
-        if (srcRow > (Global.MaxRowSize - 3)) {
+        if (srcRow > (Global.MAX_ROW_SIZE - 3)) {
             return -1
         }
 
@@ -345,11 +345,11 @@ internal class SolverEngine {
         // Now we have room to move, so let's find the target row
         var targetRow = (srcRow + 2)
 
-        while ((!flingGrid[targetRow][col]) && (targetRow < (Global.MaxRowSize - 1))) {
+        while ((!flingGrid[targetRow][col]) && (targetRow < (Global.MAX_ROW_SIZE - 1))) {
             targetRow++
         }
 
-        if ((targetRow == (Global.MaxRowSize - 1)) && (!flingGrid[(Global.MaxRowSize - 1)][col])) {
+        if ((targetRow == (Global.MAX_ROW_SIZE - 1)) && (!flingGrid[(Global.MAX_ROW_SIZE - 1)][col])) {
             return -1
         }
 
@@ -370,7 +370,7 @@ internal class SolverEngine {
     fun findTargetColOnMoveRight(row: Int, srcCol: Int) : Int
     {
         // If you are near the right of the grid, then you do not have any room to move right
-        if (srcCol > (Global.MaxColSize - 3)) {
+        if (srcCol > (Global.MAX_COL_SIZE - 3)) {
             return -1
         }
 
@@ -382,11 +382,11 @@ internal class SolverEngine {
         // Now we have room to move, so let's find the target col
         var targetCol = (srcCol + 2)
 
-        while ((!flingGrid[row][targetCol]) && (targetCol < (Global.MaxColSize - 1))) {
+        while ((!flingGrid[row][targetCol]) && (targetCol < (Global.MAX_COL_SIZE - 1))) {
             targetCol++
         }
 
-        if ((targetCol == (Global.MaxColSize - 1)) && (!flingGrid[row][(Global.MaxColSize - 1)])) {
+        if ((targetCol == (Global.MAX_COL_SIZE - 1)) && (!flingGrid[row][(Global.MAX_COL_SIZE - 1)])) {
             return -1
         }
 
@@ -536,19 +536,19 @@ internal class SolverEngine {
 
         // Handle the edge first
         // If the next row is already at the bottom, then just move it out of the grid and you're done
-        if (nextSrcRow == (Global.MaxRowSize - 1)) {
-            flingGrid[(Global.MaxRowSize - 1)][col] = false // Fell of the edge. One less ball
+        if (nextSrcRow == (Global.MAX_ROW_SIZE - 1)) {
+            flingGrid[(Global.MAX_ROW_SIZE - 1)][col] = false // Fell of the edge. One less ball
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             return
         }
 
         // If the next row is at 2nd last row (e.g. row = (Max Row - 2))), then handle it special since we are near the edge
-        if (nextSrcRow == (Global.MaxRowSize - 2)) {
-            if (flingGrid[(Global.MaxRowSize - 1)][col]) {
-                flingGrid[(Global.MaxRowSize -1)][col] = false // Fell of the edge. One less ball
+        if (nextSrcRow == (Global.MAX_ROW_SIZE - 2)) {
+            if (flingGrid[(Global.MAX_ROW_SIZE - 1)][col]) {
+                flingGrid[(Global.MAX_ROW_SIZE -1)][col] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             } else {
-                flingGrid[(Global.MaxRowSize - 2)][col] = false // Fell of the edge. One less ball
+                flingGrid[(Global.MAX_ROW_SIZE - 2)][col] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             }
             return
@@ -558,18 +558,18 @@ internal class SolverEngine {
 
         var indexRow = nextSrcRow + 1
         // Move nextSrcRow pointer to the next one that has space to move the ball
-        while ((flingGrid[indexRow][col]) && (indexRow < (Global.MaxRowSize - 1))){
+        while ((flingGrid[indexRow][col]) && (indexRow < (Global.MAX_ROW_SIZE - 1))){
             // There is no space. Then move indexRow pointer until there is space
             indexRow++
         }
 
         // Check if we have continuous balls all the way to the edge
-        if (indexRow == (Global.MaxRowSize - 1)) {
-            if (flingGrid[Global.MaxRowSize - 1][col]) {
-                flingGrid[Global.MaxRowSize - 1][col] = false // Fell of the edge. One less ball
+        if (indexRow == (Global.MAX_ROW_SIZE - 1)) {
+            if (flingGrid[Global.MAX_ROW_SIZE - 1][col]) {
+                flingGrid[Global.MAX_ROW_SIZE - 1][col] = false // Fell of the edge. One less ball
             } else {
-                if (flingGrid[Global.MaxRowSize - 2][col]) {
-                    flingGrid[Global.MaxRowSize - 2][col] = false
+                if (flingGrid[Global.MAX_ROW_SIZE - 2][col]) {
+                    flingGrid[Global.MAX_ROW_SIZE - 2][col] = false
                 }
             }
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
@@ -583,7 +583,7 @@ internal class SolverEngine {
         // Otherwise, we need re-iterate the process in the next chain
         var foundBallBeforeEdge = false
         indexRow = nextSrcRow + 1
-        while ((indexRow < (Global.MaxRowSize - 1)) && (!foundBallBeforeEdge)) {
+        while ((indexRow < (Global.MAX_ROW_SIZE - 1)) && (!foundBallBeforeEdge)) {
             if (flingGrid[indexRow][col])
                 foundBallBeforeEdge = true
             else
@@ -591,11 +591,11 @@ internal class SolverEngine {
         }
 
         // Need to handle one more edge case
-        if ((!foundBallBeforeEdge) && (indexRow == (Global.MaxRowSize-1))) {
-            if (flingGrid[Global.MaxRowSize-1][col]) foundBallBeforeEdge = true
+        if ((!foundBallBeforeEdge) && (indexRow == (Global.MAX_ROW_SIZE-1))) {
+            if (flingGrid[Global.MAX_ROW_SIZE-1][col]) foundBallBeforeEdge = true
         }
 
-        if ((indexRow == (Global.MaxRowSize - 1)) && (!foundBallBeforeEdge)) {
+        if ((indexRow == (Global.MAX_ROW_SIZE - 1)) && (!foundBallBeforeEdge)) {
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             flingGrid[nextSrcRow][col] = false  // Fell of the edge. One less ball
             return
@@ -623,19 +623,19 @@ internal class SolverEngine {
 
         // Handle the edge first
         // If the next column is already at the right, then just move it out of the grid and you're done
-        if (nextSrcCol == (Global.MaxColSize - 1)) {
-            flingGrid[row][Global.MaxColSize - 1] = false // Fell of the edge. One less ball
+        if (nextSrcCol == (Global.MAX_COL_SIZE - 1)) {
+            flingGrid[row][Global.MAX_COL_SIZE - 1] = false // Fell of the edge. One less ball
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             return
         }
 
         // If the next row is at 2nd last column (e.g. col = (Max Col - 2))), then handle it special since we are near the edge
-        if (nextSrcCol == (Global.MaxColSize - 2)) {
-            if (flingGrid[row][(Global.MaxColSize - 1)]) {
-                flingGrid[row][(Global.MaxColSize - 1)] = false // Fell of the edge. One less ball
+        if (nextSrcCol == (Global.MAX_COL_SIZE - 2)) {
+            if (flingGrid[row][(Global.MAX_COL_SIZE - 1)]) {
+                flingGrid[row][(Global.MAX_COL_SIZE - 1)] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             } else {
-                flingGrid[row][(Global.MaxColSize - 2)] = false // Fell of the edge. One less ball
+                flingGrid[row][(Global.MAX_COL_SIZE - 2)] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             }
             return
@@ -645,19 +645,19 @@ internal class SolverEngine {
 
         var indexCol = nextSrcCol + 1
         // Move nextSrcCol pointer to the next one that has space to move the ball
-        while ((flingGrid[row][indexCol]) && (indexCol < (Global.MaxColSize - 1))){
+        while ((flingGrid[row][indexCol]) && (indexCol < (Global.MAX_COL_SIZE - 1))){
             // There is no space. Then move indexCol pointer until there is space
             indexCol++
         }
 
         // Check if we have continuous balls all the way to the edge
-        if (indexCol == (Global.MaxColSize - 1)) {
+        if (indexCol == (Global.MAX_COL_SIZE - 1)) {
 
-            if (flingGrid[row][Global.MaxColSize - 1]) {
-                flingGrid[row][Global.MaxColSize - 1] = false // Fell of the edge. One less ball
+            if (flingGrid[row][Global.MAX_COL_SIZE - 1]) {
+                flingGrid[row][Global.MAX_COL_SIZE - 1] = false // Fell of the edge. One less ball
             } else {
-                if (flingGrid[row][Global.MaxColSize - 2]) {
-                    flingGrid[row][Global.MaxColSize - 2] = false
+                if (flingGrid[row][Global.MAX_COL_SIZE - 2]) {
+                    flingGrid[row][Global.MAX_COL_SIZE - 2] = false
                 }
             }
 
@@ -674,7 +674,7 @@ internal class SolverEngine {
         indexCol = nextSrcCol + 1
 
         // while ((indexCol < MaxColSize) && (!foundBallBeforeEdge)) {
-        while ((indexCol < (Global.MaxColSize - 1)) && (!foundBallBeforeEdge)) {
+        while ((indexCol < (Global.MAX_COL_SIZE - 1)) && (!foundBallBeforeEdge)) {
             if (flingGrid[row][indexCol])
                 foundBallBeforeEdge = true
             else
@@ -682,11 +682,11 @@ internal class SolverEngine {
         }
 
         // Need to handle one more edge case
-        if ((!foundBallBeforeEdge) && (indexCol == (Global.MaxColSize-1))) {
-            if (flingGrid[row][Global.MaxColSize-1]) foundBallBeforeEdge = true
+        if ((!foundBallBeforeEdge) && (indexCol == (Global.MAX_COL_SIZE-1))) {
+            if (flingGrid[row][Global.MAX_COL_SIZE-1]) foundBallBeforeEdge = true
         }
 
-        if ((indexCol == (Global.MaxColSize - 1)) && (!foundBallBeforeEdge)) {
+        if ((indexCol == (Global.MAX_COL_SIZE - 1)) && (!foundBallBeforeEdge)) {
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             flingGrid[row][nextSrcCol] = false  // Fell of the edge. One less ball
             return
@@ -794,8 +794,8 @@ internal class SolverEngine {
         val ballList: SnapshotStateList<SolverGridPos> = SnapshotStateList<SolverGridPos>().apply {
 
             // Clone the board
-            repeat (Global.MaxRowSize) { curRow ->
-                repeat(Global.MaxColSize) { curCol ->
+            repeat (Global.MAX_ROW_SIZE) { curRow ->
+                repeat(Global.MAX_COL_SIZE) { curCol ->
                     if (flingGrid[curRow][curCol]) {
                         val solverGridPos = SolverGridPos(curRow,curCol)
                         add(solverGridPos)

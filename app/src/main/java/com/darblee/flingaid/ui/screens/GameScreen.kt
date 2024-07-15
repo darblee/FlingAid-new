@@ -206,7 +206,7 @@ private fun AnimateBalls(
     onSwipeBall: (animateBalls: Boolean) -> Unit
 )
 {
-    Log.i(Global.debugPrefix, "Recompose animateBalls  grid ")
+    Log.i(Global.DEBUG_PREFIX, "Recompose animateBalls  grid ")
 
     val animate1 = remember { Animatable(initialValue = 0f) }
     val animate2 = remember { Animatable(initialValue = 0f) }
@@ -246,7 +246,7 @@ private fun AnimateBalls(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .aspectRatio(Global.MaxColSize.toFloat() / Global.MaxRowSize.toFloat())
+            .aspectRatio(Global.MAX_COL_SIZE.toFloat() / Global.MAX_ROW_SIZE.toFloat())
             .shadow(
                 elevation = 10.dp,
                 shape = RoundedCornerShape(20.dp)
@@ -255,7 +255,7 @@ private fun AnimateBalls(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
-        Log.i(Global.debugPrefix, "Recompose box grid")
+        Log.i(Global.DEBUG_PREFIX, "Recompose box grid")
         val lineColor = MaterialTheme.colorScheme.outline
         var gridSize by rememberSaveable {
             mutableFloatStateOf(0f)
@@ -279,7 +279,7 @@ private fun AnimateBalls(
                         onDragStart = { offset: Offset ->
                             dragRow = (offset.y / gridSize).toInt()
                             dragCol = (offset.x / gridSize).toInt()
-                            Log.i(Global.debugPrefix, "Offset is row: $dragRow, col: $dragCol")
+                            Log.i(Global.DEBUG_PREFIX, "Offset is row: $dragRow, col: $dragCol")
                         },
                         onDrag = { change, dragAmount ->
 
@@ -297,7 +297,7 @@ private fun AnimateBalls(
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
                                     Log.i(
-                                        Global.debugPrefix,
+                                        Global.DEBUG_PREFIX,
                                         "Swipe left from $dragRow, $dragCol for length $offsetX"
                                     )
                                     offsetX = 0F
@@ -308,7 +308,7 @@ private fun AnimateBalls(
 
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
                                     Log.i(
-                                        Global.debugPrefix,
+                                        Global.DEBUG_PREFIX,
                                         "Swipe right from $dragRow, $dragCol for length $offsetX"
                                     )
                                     offsetX = 0F
@@ -319,7 +319,7 @@ private fun AnimateBalls(
 
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
                                     Log.i(
-                                        Global.debugPrefix,
+                                        Global.DEBUG_PREFIX,
                                         "Swipe Up from $dragRow, $dragCol for length $offsetY"
                                     )
                                     offsetX = 0F
@@ -330,7 +330,7 @@ private fun AnimateBalls(
 
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
                                     Log.i(
-                                        Global.debugPrefix,
+                                        Global.DEBUG_PREFIX,
                                         "Swipe down from $dragRow, $dragCol for length $offsetY"
                                     )
                                     offsetX = 0F
@@ -343,12 +343,12 @@ private fun AnimateBalls(
                     ) // detectDragGestures
                 } // .pointerInput
         ) {
-            Log.i(Global.debugPrefix, "Recompose canvas")
+            Log.i(Global.DEBUG_PREFIX, "Recompose canvas")
             val canvasWidth = size.width
             val canvasHeight = size.height
 
-            val gridSizeWidth = (canvasWidth / (Global.MaxColSize))
-            val gridSizeHeight = (canvasHeight / (Global.MaxRowSize))
+            val gridSizeWidth = (canvasWidth / (Global.MAX_COL_SIZE))
+            val gridSizeHeight = (canvasHeight / (Global.MAX_ROW_SIZE))
 
             gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
@@ -409,7 +409,7 @@ private fun DrawGameBoard(
     onSwipeBall: (animateBalls: Boolean) -> Unit
 )
 {
-    Log.i(Global.debugPrefix, "Recompose drawGame grid")
+    Log.i(Global.DEBUG_PREFIX, "Recompose drawGame grid")
     /**
      * Launch the animation only once when it enters the composition. It will animate infinitely
      * until it is removed from the composition
@@ -446,7 +446,7 @@ private fun DrawGameBoard(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .aspectRatio(Global.MaxColSize.toFloat() / Global.MaxRowSize.toFloat())
+            .aspectRatio(Global.MAX_COL_SIZE.toFloat() / Global.MAX_ROW_SIZE.toFloat())
             .shadow(
                 elevation = 10.dp,
                 shape = RoundedCornerShape(20.dp)
@@ -455,7 +455,7 @@ private fun DrawGameBoard(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
-        Log.i(Global.debugPrefix, "Recompose box grid ")
+        Log.i(Global.DEBUG_PREFIX, "Recompose box grid ")
         val lineColor = MaterialTheme.colorScheme.outline
         var gridSize by rememberSaveable {
             mutableFloatStateOf(0f)
@@ -479,7 +479,7 @@ private fun DrawGameBoard(
                         onDragStart = { offset: Offset ->
                             dragRow = (offset.y / gridSize).toInt()
                             dragCol = (offset.x / gridSize).toInt()
-                            Log.i(Global.debugPrefix, "Offset is row: $dragRow, col: $dragCol")
+                            Log.i(Global.DEBUG_PREFIX, "Offset is row: $dragRow, col: $dragCol")
                         },
                         onDrag = { change, dragAmount ->
 
@@ -497,7 +497,7 @@ private fun DrawGameBoard(
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
                                     Log.i(
-                                        Global.debugPrefix,
+                                        Global.DEBUG_PREFIX,
                                         "Swipe left from $dragRow, $dragCol for length $offsetX"
                                     )
                                     gameViewModel.MoveBallPos(1, 1)
@@ -510,7 +510,7 @@ private fun DrawGameBoard(
 
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
                                     Log.i(
-                                        Global.debugPrefix,
+                                        Global.DEBUG_PREFIX,
                                         "Swipe right from $dragRow, $dragCol for length $offsetX"
                                     )
                                     gameViewModel.MoveBallPos(1, 2)
@@ -523,7 +523,7 @@ private fun DrawGameBoard(
 
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
                                     Log.i(
-                                        Global.debugPrefix,
+                                        Global.DEBUG_PREFIX,
                                         "Swipe Up from $dragRow, $dragCol for length $offsetY"
                                     )
                                     gameViewModel.MoveBallPos(1, 3)
@@ -536,7 +536,7 @@ private fun DrawGameBoard(
 
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
                                     Log.i(
-                                        Global.debugPrefix,
+                                        Global.DEBUG_PREFIX,
                                         "Swipe down from $dragRow, $dragCol for length $offsetY"
                                     )
                                     gameViewModel.MoveBallPos(1, 4)
@@ -551,12 +551,12 @@ private fun DrawGameBoard(
                     ) // detectDragGestures
                 } // .pointerInput
         ) {
-            Log.i(Global.debugPrefix, "Recompose canvas")
+            Log.i(Global.DEBUG_PREFIX, "Recompose canvas")
             val canvasWidth = size.width
             val canvasHeight = size.height
 
-            val gridSizeWidth = (canvasWidth / (Global.MaxColSize))
-            val gridSizeHeight = (canvasHeight / (Global.MaxRowSize))
+            val gridSizeWidth = (canvasWidth / (Global.MAX_COL_SIZE))
+            val gridSizeHeight = (canvasHeight / (Global.MAX_ROW_SIZE))
 
             gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
@@ -581,8 +581,8 @@ private fun drawGridForGame(
     with (drawScope) {
         // Draw horizontal lines
         var currentY = 0F
-        val gridWidth = gridSize * Global.MaxColSize
-        repeat(Global.MaxRowSize + 1) { index ->
+        val gridWidth = gridSize * Global.MAX_COL_SIZE
+        repeat(Global.MAX_ROW_SIZE + 1) { index ->
             val lineWidth = if (index == 4) 5 else 2
             drawLine(
                 start = Offset(x = 0.dp.toPx(), y = currentY),
@@ -595,8 +595,8 @@ private fun drawGridForGame(
 
         // Draw vertical lines
         var currentX = 0F
-        val gridHeight = gridSize * Global.MaxRowSize
-        repeat(Global.MaxColSize + 1) {
+        val gridHeight = gridSize * Global.MAX_ROW_SIZE
+        repeat(Global.MAX_COL_SIZE + 1) {
 
             drawLine(
                 start = Offset(x = currentX, y = 0.dp.toPx()),
@@ -608,8 +608,8 @@ private fun drawGridForGame(
         }
 
         // Draw the circle in the center of the grid
-        val offsetX = (gridSize  * ((Global.MaxColSize / 2) + 0.5)).toFloat()
-        val offsetY = (gridSize  * ((Global.MaxRowSize / 2)))
+        val offsetX = (gridSize  * ((Global.MAX_COL_SIZE / 2) + 0.5)).toFloat()
+        val offsetY = (gridSize  * ((Global.MAX_ROW_SIZE / 2)))
         val radiusLength = (gridSize * 0.66).toFloat()
         drawCircle(lineColor, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
     }

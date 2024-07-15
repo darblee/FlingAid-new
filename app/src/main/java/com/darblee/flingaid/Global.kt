@@ -21,9 +21,9 @@ lateinit var gAudio_youWon : MediaPlayer
 var gSoundOn = false
 
 internal object Global {
-    const val MaxColSize = 7
-    const val MaxRowSize = 8
-    const val debugPrefix = "Flinfo:"
-    const val boardFileName = "Board.txt"
+    const val MAX_COL_SIZE = 7
+    const val MAX_ROW_SIZE = 8
+    const val DEBUG_PREFIX = "Flicker:"
+    const val BOARD_FILENAME = "Board.txt"
     val TopAppBarHeight = 48.0.dp
 }
