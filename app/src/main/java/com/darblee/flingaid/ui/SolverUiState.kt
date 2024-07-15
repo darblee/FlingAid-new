@@ -21,6 +21,8 @@ data class MovingRec(
  *
  * It will be managed in a observable flow called "StateFlow" Android composable will listen for it.
  *
+ * [Solver State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
+ *
  * @param thinkingStatus Whether it is in active thinking mode or just idle
  * @param winningDirection The direction of the ball to move that will lead to a win. This is also
  * used to do ball animation as animation always move toward winning.

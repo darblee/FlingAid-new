@@ -573,7 +573,7 @@ private fun DrawSolverBoard(
             displayBallImage.prepareToDraw()   // cache it
 
             if (showPreviewBallMovementAnimation) {
-                val ballsToErase = solverViewModel.uiState.value.winningMovingChain
+                val ballsToErase = uiState.winningMovingChain
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage, ballsToErase)
             } else {
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage)
@@ -594,9 +594,9 @@ private fun DrawSolverBoard(
             }
 
             if (showPreviewBallMovementAnimation) {
-                animateBallMovementsPerform(
-                    this, solverViewModel, gridSize, displayBallImage,
-                    animateBallMovementChain, animateParticleExplosion, particles)
+                  animateBallMovementsPerform(
+                    this, gridSize, displayBallImage, animateBallMovementChain,
+                      animateParticleExplosion, particles, uiState)
             }  // if needToAnimateMovingBall
 
             if (announceVictory) {
@@ -1016,7 +1016,6 @@ private fun particleExplosionAnimatedSpec(totalTimeLength: Int, whenBallMakeCont
  * the particle explosion effect.
  *
  * @param drawScope
- * @param solverViewModel Solver Game View model
  * @param gridSize Size of grid. This used to do various computation on animation effect
  * @param displayBallImage The actual ball image to show
  * @param animateBallMovementChain Object that control animation state of all the ball movement in this chain
@@ -1025,17 +1024,17 @@ private fun particleExplosionAnimatedSpec(totalTimeLength: Int, whenBallMakeCont
  */
 fun animateBallMovementsPerform(
     drawScope: DrawScope,
-    solverViewModel: SolverViewModel,
     gridSize: Float,
     displayBallImage: ImageBitmap,
     animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosion: Animatable<Float, AnimationVector1D>,
     particles: MutableList<Particle>,
+    uiState: SolverUiState
 )
 {
     with (drawScope) {
-        val movingDirection = solverViewModel.uiState.value.winningDirection
-        val movingChain = solverViewModel.uiState.value.winningMovingChain
+        val movingDirection = uiState.winningDirection
+        val movingChain = uiState.winningMovingChain
 
         var movingSourcePos: SolverGridPos
         var offset : Pair<Float, Float>
