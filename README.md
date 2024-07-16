@@ -1,6 +1,5 @@
 **SolverViewModel State Machine**
 
-![State Machine](SolverViewModel-State-Machine.bmp)
+![Game State Machine](GameViewModel-State-Machine.bmp)
 
-
-
+![Solver State Machine](SolverViewModel-State-Machine.bmp)
