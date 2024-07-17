@@ -18,9 +18,8 @@ internal class SolverEngine {
     /**
      * Clear the entire game board.
      */
-    private fun clearGameBoard()
-    {
-        repeat (Global.MAX_ROW_SIZE) { row ->
+    private fun clearGameBoard() {
+        repeat(Global.MAX_ROW_SIZE) { row ->
             repeat(Global.MAX_COL_SIZE) { col ->
                 flingGrid[row][col] = false
             }
@@ -32,9 +31,8 @@ internal class SolverEngine {
      *
      * @param ballPositionList List of all the ball positions
      */
-    fun populateGrid(ballPositionList: SnapshotStateList<SolverGridPos>)
-    {
-        ballPositionList.forEach {pos ->
+    fun populateGrid(ballPositionList: SnapshotStateList<SolverGridPos>) {
+        ballPositionList.forEach { pos ->
             flingGrid[pos.row][pos.col] = true
         }
     }
@@ -43,12 +41,11 @@ internal class SolverEngine {
      * Set-up another solver engine instance. The new instance will have exact
      * copy of the current game board.
      */
-    private fun duplicate() : SolverEngine
-    {
+    private fun duplicate(): SolverEngine {
         val tempBoard = SolverEngine()
 
         // Clone the board
-        repeat (Global.MAX_ROW_SIZE) { curRow ->
+        repeat(Global.MAX_ROW_SIZE) { curRow ->
             repeat(Global.MAX_COL_SIZE) { curCol ->
                 tempBoard.flingGrid[curRow][curCol] = flingGrid[curRow][curCol]
             }
@@ -72,8 +69,11 @@ internal class SolverEngine {
      *
      * If no winning move is found, it will return direction = NO_WINNING_DIRECTION
      */
-    fun foundWinningMove(totalBallCnt : Int, curSearchLevel : Int, thinkingDirectionOffset : Int): Triple<Direction, Int, Int>
-    {
+    fun foundWinningMove(
+        totalBallCnt: Int,
+        curSearchLevel: Int,
+        thinkingDirectionOffset: Int
+    ): Triple<Direction, Int, Int> {
         var direction = Direction.NO_WINNING_DIRECTION
         var winningRow = -1
         var winningCol = -1
@@ -81,7 +81,7 @@ internal class SolverEngine {
         val startRow: Int
         val exceededRow: Int
         val startColumn: Int
-        val exceededCol:Int
+        val exceededCol: Int
 
         if (thinkingDirectionOffset == 1) {
             startRow = 0
@@ -104,7 +104,10 @@ internal class SolverEngine {
 
                 if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
                     val threadInterrupt = Thread.interrupted()
-                    Log.d("${Global.DEBUG_PREFIX}:", "Short circuit on row processing. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
+                    Log.d(
+                        "${Global.DEBUG_PREFIX}:",
+                        "Short circuit on row processing. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                    )
                     direction = Direction.INCOMPLETE  // We should quit the current thread
                     return@repeatBlock
 
@@ -112,19 +115,25 @@ internal class SolverEngine {
 
                 currentCol = startColumn
 
-                var curCol : Int
+                var curCol: Int
                 while (currentCol != exceededCol) {
 
                     curCol = currentCol
 
                     if (flingGrid[curRow][curCol]) {
-                        if (curSearchLevel == 1) Log.i("${Global.DEBUG_PREFIX}: Top level", "Processing row=$curRow, col = $curCol")
+                        if (curSearchLevel == 1) Log.i(
+                            "${Global.DEBUG_PREFIX}: Top level",
+                            "Processing row=$curRow, col = $curCol"
+                        )
 
                         if (winnableByMovingUp(totalBallCnt, curSearchLevel, curRow, curCol)) {
                             direction = Direction.UP
                             winningRow = curRow
                             winningCol = curCol
-                            Log.i("${Global.DEBUG_PREFIX}:", "Level #$curSearchLevel, Found winning move at direction $direction when processing at row: $curRow col: $curCol")
+                            Log.i(
+                                "${Global.DEBUG_PREFIX}:",
+                                "Level #$curSearchLevel, Found winning move at direction $direction when processing at row: $curRow col: $curCol"
+                            )
                             return@repeatBlock
                         }
 
@@ -133,7 +142,10 @@ internal class SolverEngine {
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
-                            Log.d("${Global.DEBUG_PREFIX}:", "Short circuit on col processing after up. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
+                            Log.d(
+                                "${Global.DEBUG_PREFIX}:",
+                                "Short circuit on col processing after up. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                            )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -150,7 +162,10 @@ internal class SolverEngine {
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
-                            Log.d("${Global.DEBUG_PREFIX}:", "Short circuit on col processing after down. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
+                            Log.d(
+                                "${Global.DEBUG_PREFIX}:",
+                                "Short circuit on col processing after down. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                            )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -167,7 +182,10 @@ internal class SolverEngine {
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
-                            Log.d("${Global.DEBUG_PREFIX}:", "Short circuit on col processing after right. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
+                            Log.d(
+                                "${Global.DEBUG_PREFIX}:",
+                                "Short circuit on col processing after right. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                            )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -184,7 +202,10 @@ internal class SolverEngine {
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
                             val threadInterrupt = Thread.interrupted()
-                            Log.d("${Global.DEBUG_PREFIX}:", "Short circuit on col processing after left. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}")
+                            Log.d(
+                                "${Global.DEBUG_PREFIX}:",
+                                "Short circuit on col processing after left. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                            )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
                         }
@@ -198,13 +219,20 @@ internal class SolverEngine {
         }
 
         if (direction != Direction.NO_WINNING_DIRECTION)
-            Log.d("${Global.DEBUG_PREFIX}:", "Returning winning (or incomplete) result: Level #$curSearchLevel, Direction is $direction")
+            Log.d(
+                "${Global.DEBUG_PREFIX}:",
+                "Returning winning (or incomplete) result: Level #$curSearchLevel, Direction is $direction"
+            )
 
         return Triple(direction, winningRow, winningCol)
     }
 
-    private fun winnableByMovingUp(totalBallCnt : Int, curSearchLevel: Int, srcRow: Int, col : Int) : Boolean
-    {
+    private fun winnableByMovingUp(
+        totalBallCnt: Int,
+        curSearchLevel: Int,
+        srcRow: Int,
+        col: Int
+    ): Boolean {
         val targetRow = findTargetRowOnMoveUp(srcRow, col)
 
         if (targetRow == -1) {
@@ -218,7 +246,10 @@ internal class SolverEngine {
         tempBoard.moveUp(srcRow, targetRow, col)
 
         if (totalBallCnt == (curSearchLevel + 1)) {
-            Log.d("GM: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING UP")
+            Log.d(
+                "GM: Level $curSearchLevel",
+                "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING UP"
+            )
             return true
         }
 
@@ -231,8 +262,12 @@ internal class SolverEngine {
         return true
     }
 
-    private fun winnableByMovingDown(totalBallCnt : Int, curSearchLevel: Int, srcRow: Int, col : Int) : Boolean
-    {
+    private fun winnableByMovingDown(
+        totalBallCnt: Int,
+        curSearchLevel: Int,
+        srcRow: Int,
+        col: Int
+    ): Boolean {
         val targetRow = findTargetRowOnMoveDown(srcRow, col)
 
         if (targetRow == -1) {
@@ -245,7 +280,10 @@ internal class SolverEngine {
         tempBoard.moveDown(srcRow, targetRow, col)
 
         if (totalBallCnt == (curSearchLevel + 1)) {
-            Log.i("${Global.DEBUG_PREFIX}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING DOWN")
+            Log.i(
+                "${Global.DEBUG_PREFIX}: Level $curSearchLevel",
+                "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING DOWN"
+            )
             return true
         }
 
@@ -258,8 +296,12 @@ internal class SolverEngine {
         return true
     }
 
-    private fun winnableByMovingRight(totalBallCnt: Int, curSearchLevel: Int, row: Int, srcCol : Int) : Boolean
-    {
+    private fun winnableByMovingRight(
+        totalBallCnt: Int,
+        curSearchLevel: Int,
+        row: Int,
+        srcCol: Int
+    ): Boolean {
 
         val targetCol = findTargetColOnMoveRight(row, srcCol)
 
@@ -275,7 +317,10 @@ internal class SolverEngine {
         tempBoard.moveRight(srcCol, targetCol, row)
 
         if (totalBallCnt == (curSearchLevel + 1)) {
-            Log.d("${Global.DEBUG_PREFIX}: Level $curSearchLevel", "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING RIGHT")
+            Log.d(
+                "${Global.DEBUG_PREFIX}: Level $curSearchLevel",
+                "TotalBallCnt = $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING RIGHT"
+            )
             return true
         }
 
@@ -288,8 +333,12 @@ internal class SolverEngine {
         return true
     }
 
-    private fun winnableByMovingLeft(totalBallCnt : Int, curSearchLevel: Int, row: Int, srcCol : Int) : Boolean
-    {
+    private fun winnableByMovingLeft(
+        totalBallCnt: Int,
+        curSearchLevel: Int,
+        row: Int,
+        srcCol: Int
+    ): Boolean {
         val targetCol = findTargetColOnMoveLeft(row, srcCol)
 
         if (targetCol == -1) {
@@ -302,7 +351,10 @@ internal class SolverEngine {
         tempBoard.moveLeft(srcCol, targetCol, row)
 
         if (totalBallCnt == (curSearchLevel + 1)) {
-            Log.d("GM: Level $curSearchLevel", "TOTAL BALL is $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING LEFT")
+            Log.d(
+                "GM: Level $curSearchLevel",
+                "TOTAL BALL is $totalBallCnt : FOUND A WINNABLE MOVE BY MOVING LEFT"
+            )
             return true
         }
 
@@ -324,7 +376,7 @@ internal class SolverEngine {
      *
      * @return Return the number of row it can move to. If it can not find any room, it will return -1
      */
-    fun findTargetRowOnMoveUp(srcRow: Int, col: Int) : Int {
+    fun findTargetRowOnMoveUp(srcRow: Int, col: Int): Int {
         // If you are near the top of the grid, then you do not have any room to move up
         if (srcRow <= 1) {
             return -1
@@ -336,7 +388,7 @@ internal class SolverEngine {
         }
 
         // Now we have room to move, so let's find the target row
-        var targetRow = (srcRow  - 2)
+        var targetRow = (srcRow - 2)
 
         while ((!flingGrid[targetRow][col]) && (targetRow > 0)) {
             targetRow--
@@ -360,7 +412,7 @@ internal class SolverEngine {
      *
      * @return Return the number of row it can move to. If it can not find any room, it will return -1
      */
-    fun findTargetRowOnMoveDown(srcRow: Int, col: Int) : Int {
+    fun findTargetRowOnMoveDown(srcRow: Int, col: Int): Int {
         // If you are near the bottom of the grid, then you do not have any room to move down
         if (srcRow > (Global.MAX_ROW_SIZE - 3)) {
             return -1
@@ -396,8 +448,7 @@ internal class SolverEngine {
      *
      * @return Return the number of column it can move to. If it can not find any room, it will return -1
      */
-    fun findTargetColOnMoveRight(row: Int, srcCol: Int) : Int
-    {
+    fun findTargetColOnMoveRight(row: Int, srcCol: Int): Int {
         // If you are near the right of the grid, then you do not have any room to move right
         if (srcCol > (Global.MAX_COL_SIZE - 3)) {
             return -1
@@ -433,8 +484,7 @@ internal class SolverEngine {
      *
      * @return Return the number of column it can move to. If it can not find any room, it will return -1
      */
-    fun findTargetColOnMoveLeft(row: Int, srcCol: Int) : Int
-    {
+    fun findTargetColOnMoveLeft(row: Int, srcCol: Int): Int {
         // If you are near the left of the grid, then you do not have any room to move left
         if (srcCol < 2) {
             return -1
@@ -461,8 +511,7 @@ internal class SolverEngine {
         return (targetCol)
     }
 
-    fun moveUp(srcRow : Int, targetRow : Int, col : Int)
-    {
+    fun moveUp(srcRow: Int, targetRow: Int, col: Int) {
         // Do the first move
         if (!flingGrid[srcRow][col]) error("Unexpected ball status. row=$srcRow, col=$col should be true")
         if (flingGrid[targetRow][col]) error("Unexpected ball status. row=$targetRow, col=$col should be false")
@@ -497,7 +546,7 @@ internal class SolverEngine {
 
         var indexRow = nextSrcRow - 1
         // Move nextSrcRow pointer to the next one that has space to move the ball
-        while ((flingGrid[indexRow][col]) && (indexRow > 0)){
+        while ((flingGrid[indexRow][col]) && (indexRow > 0)) {
             // There is no space. Then move nextRow pointer until there is space
             indexRow--
         }
@@ -551,11 +600,10 @@ internal class SolverEngine {
         return
     }
 
-    fun moveDown(srcRow : Int, targetRow : Int, col : Int)
-    {
+    fun moveDown(srcRow: Int, targetRow: Int, col: Int) {
         // Do the first move
         if (!flingGrid[srcRow][col]) error("Unexpected ball status. row=$srcRow, col=$col should be true")
-        if (flingGrid[targetRow][col])  error("Unexpected ball status. row=$targetRow, col=$col should be false")
+        if (flingGrid[targetRow][col]) error("Unexpected ball status. row=$targetRow, col=$col should be false")
         flingGrid[srcRow][col] = false
         flingGrid[targetRow][col] = true
 
@@ -574,7 +622,7 @@ internal class SolverEngine {
         // If the next row is at 2nd last row (e.g. row = (Max Row - 2))), then handle it special since we are near the edge
         if (nextSrcRow == (Global.MAX_ROW_SIZE - 2)) {
             if (flingGrid[(Global.MAX_ROW_SIZE - 1)][col]) {
-                flingGrid[(Global.MAX_ROW_SIZE -1)][col] = false // Fell of the edge. One less ball
+                flingGrid[(Global.MAX_ROW_SIZE - 1)][col] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             } else {
                 flingGrid[(Global.MAX_ROW_SIZE - 2)][col] = false // Fell of the edge. One less ball
@@ -587,7 +635,7 @@ internal class SolverEngine {
 
         var indexRow = nextSrcRow + 1
         // Move nextSrcRow pointer to the next one that has space to move the ball
-        while ((flingGrid[indexRow][col]) && (indexRow < (Global.MAX_ROW_SIZE - 1))){
+        while ((flingGrid[indexRow][col]) && (indexRow < (Global.MAX_ROW_SIZE - 1))) {
             // There is no space. Then move indexRow pointer until there is space
             indexRow++
         }
@@ -620,8 +668,8 @@ internal class SolverEngine {
         }
 
         // Need to handle one more edge case
-        if ((!foundBallBeforeEdge) && (indexRow == (Global.MAX_ROW_SIZE-1))) {
-            if (flingGrid[Global.MAX_ROW_SIZE-1][col]) foundBallBeforeEdge = true
+        if ((!foundBallBeforeEdge) && (indexRow == (Global.MAX_ROW_SIZE - 1))) {
+            if (flingGrid[Global.MAX_ROW_SIZE - 1][col]) foundBallBeforeEdge = true
         }
 
         if ((indexRow == (Global.MAX_ROW_SIZE - 1)) && (!foundBallBeforeEdge)) {
@@ -638,11 +686,10 @@ internal class SolverEngine {
         return
     }
 
-    fun moveRight(srcCol : Int, targetCol : Int, row : Int)
-    {
+    fun moveRight(srcCol: Int, targetCol: Int, row: Int) {
         // Do the first move
         if (!flingGrid[row][srcCol]) error("Unexpected ball status. row=$row, col=$srcCol should be true")
-        if (flingGrid[row][targetCol])  error("Unexpected ball status. row=$row, col=$targetCol should be false")
+        if (flingGrid[row][targetCol]) error("Unexpected ball status. row=$row, col=$targetCol should be false")
         flingGrid[row][srcCol] = false
         flingGrid[row][targetCol] = true
 
@@ -674,7 +721,7 @@ internal class SolverEngine {
 
         var indexCol = nextSrcCol + 1
         // Move nextSrcCol pointer to the next one that has space to move the ball
-        while ((flingGrid[row][indexCol]) && (indexCol < (Global.MAX_COL_SIZE - 1))){
+        while ((flingGrid[row][indexCol]) && (indexCol < (Global.MAX_COL_SIZE - 1))) {
             // There is no space. Then move indexCol pointer until there is space
             indexCol++
         }
@@ -711,8 +758,8 @@ internal class SolverEngine {
         }
 
         // Need to handle one more edge case
-        if ((!foundBallBeforeEdge) && (indexCol == (Global.MAX_COL_SIZE-1))) {
-            if (flingGrid[row][Global.MAX_COL_SIZE-1]) foundBallBeforeEdge = true
+        if ((!foundBallBeforeEdge) && (indexCol == (Global.MAX_COL_SIZE - 1))) {
+            if (flingGrid[row][Global.MAX_COL_SIZE - 1]) foundBallBeforeEdge = true
         }
 
         if ((indexCol == (Global.MAX_COL_SIZE - 1)) && (!foundBallBeforeEdge)) {
@@ -729,11 +776,10 @@ internal class SolverEngine {
         return
     }
 
-    fun moveLeft(srcCol : Int, targetCol : Int, row : Int)
-    {
+    fun moveLeft(srcCol: Int, targetCol: Int, row: Int) {
         // Do the first move
         if (!flingGrid[row][srcCol]) error("Unexpected ball status. row=$row, col=$srcCol should be true")
-        if (flingGrid[row][targetCol])  error("Unexpected ball status. row=$row, col=$targetCol should be false")
+        if (flingGrid[row][targetCol]) error("Unexpected ball status. row=$row, col=$targetCol should be false")
         flingGrid[row][srcCol] = false
         flingGrid[row][targetCol] = true
 
@@ -765,7 +811,7 @@ internal class SolverEngine {
 
         var indexCol = nextSrcCol - 1
         // Move nextSrcCol pointer to the next one that has space to move the ball
-        while ((flingGrid[row][indexCol]) && (indexCol > 0)){
+        while ((flingGrid[row][indexCol]) && (indexCol > 0)) {
             // There is no space. Then move indexCol pointer until there is space
             indexCol--
         }
@@ -818,15 +864,14 @@ internal class SolverEngine {
         return
     }
 
-    fun updateBallList(): SnapshotStateList<SolverGridPos>
-    {
+    fun updateBallList(): SnapshotStateList<SolverGridPos> {
         val ballList: SnapshotStateList<SolverGridPos> = SnapshotStateList<SolverGridPos>().apply {
 
             // Clone the board
-            repeat (Global.MAX_ROW_SIZE) { curRow ->
+            repeat(Global.MAX_ROW_SIZE) { curRow ->
                 repeat(Global.MAX_COL_SIZE) { curCol ->
                     if (flingGrid[curRow][curCol]) {
-                        val solverGridPos = SolverGridPos(curRow,curCol)
+                        val solverGridPos = SolverGridPos(curRow, curCol)
                         add(solverGridPos)
                     }
                 }

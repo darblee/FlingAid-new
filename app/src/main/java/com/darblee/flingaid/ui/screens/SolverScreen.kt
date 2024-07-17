@@ -109,7 +109,7 @@ import java.io.File
 import java.util.Locale
 import kotlin.math.abs
 
-lateinit var gBoardFile : File
+lateinit var gBoardFile: File
 
 /**
  *  The main Solver Game Screen
@@ -120,8 +120,7 @@ lateinit var gBoardFile : File
  *  managing the back stack, and more
  */
 @Composable
-fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController)
-{
+fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController) {
     var announceVictory by remember { mutableStateOf(false) }
 
     // Intercept backPress key while on Game Solver screen..
@@ -145,7 +144,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     gBoardFile = File(LocalContext.current.filesDir, Global.BOARD_FILENAME)
 
-    val onEnableVictoryMsg = { setting:Boolean -> announceVictory = setting }
+    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
     solverViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
@@ -162,7 +161,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
      * Keep track of when to do the ball movement animation
      */
     var showBallMovementAnimation by remember { mutableStateOf(false) }
-    val onBallMovementAnimationChange = { enableBallMovements:Boolean -> showBallMovementAnimation = enableBallMovements }
+    val onBallMovementAnimationChange =
+        { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
 
     if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
         val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
@@ -172,7 +172,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         }
     }
 
-    Column (
+    Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -208,8 +208,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
  * @param context  Current context to do a toast on
  * @param navController Navigator controller, which is used to navigate to the previous screen.
  */
-fun solverScreenBackPressed(context: Context, navController: NavHostController)
-{
+fun solverScreenBackPressed(context: Context, navController: NavHostController) {
     if (SolverViewModel.uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) {
         gameToast(context, "Unable to go back to home while it is thinking")
     } else {
@@ -226,8 +225,7 @@ fun solverScreenBackPressed(context: Context, navController: NavHostController)
  * @param uiState Current UI state of the solver game
  */
 @Composable
-private fun Instruction_DynamicLogo(uiState: SolverUiState)
-{
+private fun Instruction_DynamicLogo(uiState: SolverUiState) {
     val logoSize = 125.dp
 
     Row(
@@ -260,15 +258,19 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState)
                     (uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Active }).progressLevel
                 val percentComplete =
                     String.format(Locale.getDefault(), "%.1f%%", newPercentageValue)
-                Text("$percentComplete Complete",
+                Text(
+                    "$percentComplete Complete",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.align(Alignment.TopCenter))
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
             }
         }  // Box
         Column(Modifier.padding(5.dp)) {
-            Text(text = "Instruction:",
-                style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = "Instruction:",
+                style = MaterialTheme.typography.titleSmall
+            )
 
             val bullet = "\u2022"
             val messages = listOf(
@@ -286,33 +288,34 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState)
                             append("\t")
                             append(it)
                         }
-                    }},
-                style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                style = MaterialTheme.typography.bodySmall
+            )
         } // Column
     } // Row
 }
 
- /**
-  * Show all the control buttons on top of the screen. These buttons
-  * are "find the solution" button and "reset" button
-  *
-  * @param solverViewModel Solver Game View model
-  * @param findWinnableMoveButtonEnabled Determine whether the "Find move" button needs to be
-  * enabled or disabled
-  * @param showWinnableMoveToUser Determine whether to show the preview of the next winnable
-  * move or not
-  * @param uiState Current UI state of the solver game
-  */
+/**
+ * Show all the control buttons on top of the screen. These buttons
+ * are "find the solution" button and "reset" button
+ *
+ * @param solverViewModel Solver Game View model
+ * @param findWinnableMoveButtonEnabled Determine whether the "Find move" button needs to be
+ * enabled or disabled
+ * @param showWinnableMoveToUser Determine whether to show the preview of the next winnable
+ * move or not
+ * @param uiState Current UI state of the solver game
+ */
 @Composable
 private fun ControlButtonsForSolver(
-     solverViewModel: SolverViewModel = viewModel(),
-     findWinnableMoveButtonEnabled: Boolean,
-     showWinnableMoveToUser: Boolean,
-     uiState: SolverUiState,
-     onBallMovementAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit,
-     announceVictory: Boolean
- )
-{
+    solverViewModel: SolverViewModel = viewModel(),
+    findWinnableMoveButtonEnabled: Boolean,
+    showWinnableMoveToUser: Boolean,
+    uiState: SolverUiState,
+    onBallMovementAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit,
+    announceVictory: Boolean
+) {
     val view = LocalView.current
     val context = LocalContext.current
 
@@ -329,11 +332,11 @@ private fun ControlButtonsForSolver(
                 Log.i(Global.DEBUG_PREFIX, ">>> Starting thinking : Button Pressed")
                 if (showWinnableMoveToUser) {
 
-                     //  Turn on the need to do the ball movement animation
+                    //  Turn on the need to do the ball movement animation
                     onBallMovementAnimationChange(true)
                 } else {
-                     // In this case, we did not move the ball as we did not show hint yet.
-                     // We need to find the winning move
+                    // In this case, we did not move the ball as we did not show hint yet.
+                    // We need to find the winning move
                     Log.i(Global.DEBUG_PREFIX, ">>> Looking for next winnable move")
                     solverViewModel.findWinningMove(solverViewModel)
                 }
@@ -351,8 +354,10 @@ private fun ControlButtonsForSolver(
                     (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle))
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
-            Icon(imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
-                modifier = Modifier.size(iconWidth))
+            Icon(
+                imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
+                modifier = Modifier.size(iconWidth)
+            )
             if (showWinnableMoveToUser)
                 Text("Move and find next")
             else
@@ -362,7 +367,7 @@ private fun ControlButtonsForSolver(
         Button(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Active ) {
+                if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Active) {
                     gameToast(context, "Unable to reset as it is currently busy finding a solution")
                 } else {
                     // Reset the board game and set it back to idle state
@@ -384,8 +389,10 @@ private fun ControlButtonsForSolver(
                     announceVictory)
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
-            Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Reset",
-                modifier = Modifier.size(iconWidth))
+            Icon(
+                imageVector = Icons.Filled.Refresh, contentDescription = "Reset",
+                modifier = Modifier.size(iconWidth)
+            )
             Text("Reset")
         }  // Reset Button
     }
@@ -417,8 +424,7 @@ private fun DrawSolverBoard(
     announceVictory: Boolean,
     onEnableVictoryMsg: (Boolean) -> Unit,
     victoryMsgColor: Color
-)
-{
+) {
     val context = LocalContext.current
 
     /**
@@ -441,7 +447,7 @@ private fun DrawSolverBoard(
     val animateWinningMove = remember { Animatable(initialValue = 0f) }
     AnimatePreviewWinningMoveSetup(animateWinningMove)
 
-    val animateBallMovementChain = mutableListOf<Animatable<Float,AnimationVector1D>>()
+    val animateBallMovementChain = mutableListOf<Animatable<Float, AnimationVector1D>>()
 
     val animateParticleExplosion = remember { Animatable(initialValue = 0f) }
     var particles = mutableListOf<Particle>()
@@ -464,8 +470,10 @@ private fun DrawSolverBoard(
             generateExplosionParticles(uiState)
         }.toMutableList()
 
-        AnimatePreviewBallMovementsSetup(solverViewModel, uiState, animateBallMovementChain,
-            animateParticleExplosion, onBallMovementAnimationChange)
+        AnimatePreviewBallMovementsSetup(
+            solverViewModel, uiState, animateBallMovementChain,
+            animateParticleExplosion, onBallMovementAnimationChange
+        )
     } else {  // else need ball movement animation
 
         // Make sure we do not show any more particle explosion when ball animation is done
@@ -569,9 +577,11 @@ private fun DrawSolverBoard(
 
             drawGrid(this, gridSize, lineColor)
 
-            val ballSize =  (gridSize * 1.2).toInt()
-            val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
-                ballSize, ballSize, false).asImageBitmap()
+            val ballSize = (gridSize * 1.2).toInt()
+            val displayBallImage = Bitmap.createScaledBitmap(
+                ballImage.asAndroidBitmap(),
+                ballSize, ballSize, false
+            ).asImageBitmap()
             displayBallImage.prepareToDraw()   // cache it
 
             if (showPreviewBallMovementAnimation) {
@@ -596,14 +606,17 @@ private fun DrawSolverBoard(
             }
 
             if (showPreviewBallMovementAnimation) {
-                  animateBallMovementsPerform(
+                animateBallMovementsPerform(
                     this, gridSize, displayBallImage, animateBallMovementChain,
-                      animateParticleExplosion, particles, uiState)
+                    animateParticleExplosion, particles, uiState
+                )
             }  // if needToAnimateMovingBall
 
             if (announceVictory) {
-                animateVictoryMsgPerform(this, animateVictoryMessage,
-                    textMeasurer, victoryMsgColor)
+                animateVictoryMsgPerform(
+                    this, animateVictoryMessage,
+                    textMeasurer, victoryMsgColor
+                )
             }
         } // Canvas
     } // Box
@@ -632,8 +645,7 @@ fun hasFoundWinnableMove(uiState: SolverUiState): Boolean {
  * - row length
  * - column length
  */
-private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pair<Float, Float>
-{
+private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pair<Float, Float> {
     var xOffset = 0f
     var yOffset = 0f
 
@@ -645,10 +657,10 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
             Direction.DOWN -> yOffset = 1f
             Direction.LEFT -> xOffset = -1f
             Direction.RIGHT -> xOffset = 1f
-            else -> assert(true) { "Unexpected direction value on animate ball movement"}
+            else -> assert(true) { "Unexpected direction value on animate ball movement" }
         }
 
-        return(Pair(xOffset, yOffset))
+        return (Pair(xOffset, yOffset))
     }
 
     when (direction) {
@@ -659,7 +671,7 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
         else -> assert(true) { "Got unexpected direction during animation" }
     }
 
-    return(Pair(xOffset, yOffset))
+    return (Pair(xOffset, yOffset))
 }
 
 /**
@@ -669,8 +681,7 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
  *
  * @return List of all the particles
  */
-private fun generateExplosionParticles(uiState: SolverUiState): List<Particle>
-{
+private fun generateExplosionParticles(uiState: SolverUiState): List<Particle> {
     if (uiState.winningMovingChain.isEmpty()) {
         Log.i(Global.DEBUG_PREFIX, "Got empty moving chain list. Unable to process particles")
         return mutableListOf()
@@ -714,8 +725,8 @@ private fun drawSolverBalls(
     solverViewModel: SolverViewModel,
     gridSize: Float,
     displayBallImage: ImageBitmap,
-    eraseAnimatedBallPositions: List<MovingRec> = listOf())
-{
+    eraseAnimatedBallPositions: List<MovingRec> = listOf()
+) {
     // Draw all the balls
     solverViewModel.ballPositionList().forEach { pos ->
         var skipDraw = false
@@ -742,11 +753,11 @@ private fun drawBall(
     gridSize: Float,
     pos: SolverGridPos,
     displayBallImage: ImageBitmap,
-    alpha: Float = 1.0F )
-{
+    alpha: Float = 1.0F
+) {
     val offsetAdjustment = (gridSize / 2) - (displayBallImage.width / 2)
 
-    with (drawScope) {
+    with(drawScope) {
         drawImage(
             image = displayBallImage,
             topLeft = Offset(
@@ -768,9 +779,9 @@ private fun drawBall(
 private fun drawGrid(
     drawScope: DrawScope,
     gridSize: Float,
-    lineColor: Color)
-{
-    with (drawScope) {
+    lineColor: Color
+) {
+    with(drawScope) {
         // Draw horizontal lines
         var currentY = 0F
         val gridWidth = gridSize * Global.MAX_COL_SIZE
@@ -800,10 +811,15 @@ private fun drawGrid(
         }
 
         // Draw the circle in the center of the grid
-        val offsetX = (gridSize  * ((Global.MAX_COL_SIZE / 2) + 0.5)).toFloat()
-        val offsetY = (gridSize  * ((Global.MAX_ROW_SIZE / 2)))
+        val offsetX = (gridSize * ((Global.MAX_COL_SIZE / 2) + 0.5)).toFloat()
+        val offsetY = (gridSize * ((Global.MAX_ROW_SIZE / 2)))
         val radiusLength = (gridSize * 0.66).toFloat()
-        drawCircle(lineColor, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
+        drawCircle(
+            lineColor,
+            radius = radiusLength,
+            center = Offset(x = offsetX, y = offsetY),
+            style = Stroke(width = 4.dp.toPx())
+        )
     }
 }
 
@@ -815,8 +831,7 @@ private fun drawGrid(
  *  elements
  */
 @Composable
-private fun PlaySearchAnimation(modifier: Modifier)
-{
+private fun PlaySearchAnimation(modifier: Modifier) {
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.find_animation))
 
     LottieAnimation(
@@ -842,9 +857,8 @@ private fun drawVictoryMessage(
     canvasWidth: Float, canvasHeight: Float,
     textMeasurer: TextMeasurer, animationValue: Float,
     victoryMsgColor: Color
-)
-{
-    with (drawScope) {
+) {
+    with(drawScope) {
         val text = "You won!"
         val animatedTextSize = (50 * animationValue) + 10
         val textStyle = TextStyle(
@@ -888,8 +902,7 @@ fun AnimatePreviewBallMovementsSetup(
     animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosion: Animatable<Float, AnimationVector1D>,
     onAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit
-)
-{
+) {
     val movingChain = uiState.winningMovingChain
 
     movingChain.forEach { _ ->
@@ -960,7 +973,7 @@ fun AnimatePreviewBallMovementsSetup(
  */
 private val wiggleBallAnimatedSpec = keyframes {
     durationMillis = 80
-    0f.at( 10) using LinearEasing   // from 0 ms to 10 ms
+    0f.at(10) using LinearEasing   // from 0 ms to 10 ms
     5f.at(20) using LinearEasing    // from 10 ms to 20 ms
 }
 
@@ -982,11 +995,13 @@ private val wiggleBallAnimatedSpec = keyframes {
  *
  * @return Animation state specification
  */
-private fun ballMovementKeyframeSpec(totalTimeLength: Int, whenBallMakeContactRatio: Float): KeyframesSpec<Float>
-{
-    val spec :  KeyframesSpec<Float> = keyframes {
+private fun ballMovementKeyframeSpec(
+    totalTimeLength: Int,
+    whenBallMakeContactRatio: Float
+): KeyframesSpec<Float> {
+    val spec: KeyframesSpec<Float> = keyframes {
         durationMillis = totalTimeLength
-        0f.at((0.05 * totalTimeLength).toInt())  using LinearOutSlowInEasing
+        0f.at((0.05 * totalTimeLength).toInt()) using LinearOutSlowInEasing
         1.02f.at((whenBallMakeContactRatio * totalTimeLength).toInt()) using FastOutLinearInEasing   // Overrun the ball slightly to hit the neighboring ball
         1.0f.at(totalTimeLength) using EaseOut   // Roll back to the destination
     }
@@ -1003,9 +1018,11 @@ private fun ballMovementKeyframeSpec(totalTimeLength: Int, whenBallMakeContactRa
  *
  *  @return The animation state specification
  */
-private fun particleExplosionAnimatedSpec(totalTimeLength: Int, whenBallMakeContactRatio: Float) : KeyframesSpec<Float>
-{
-    val spec : KeyframesSpec<Float> = keyframes {
+private fun particleExplosionAnimatedSpec(
+    totalTimeLength: Int,
+    whenBallMakeContactRatio: Float
+): KeyframesSpec<Float> {
+    val spec: KeyframesSpec<Float> = keyframes {
         durationMillis = totalTimeLength + 250
         delayMillis = (whenBallMakeContactRatio * totalTimeLength - 10).toInt()
         0.5f.at(totalTimeLength + 250) using LinearOutSlowInEasing
@@ -1032,14 +1049,13 @@ fun animateBallMovementsPerform(
     animateParticleExplosion: Animatable<Float, AnimationVector1D>,
     particles: MutableList<Particle>,
     uiState: SolverUiState
-)
-{
-    with (drawScope) {
+) {
+    with(drawScope) {
         val movingDirection = uiState.winningDirection
         val movingChain = uiState.winningMovingChain
 
         var movingSourcePos: SolverGridPos
-        var offset : Pair<Float, Float>
+        var offset: Pair<Float, Float>
         var xOffset: Float
         var yOffset: Float
 
@@ -1089,8 +1105,8 @@ fun animateBallMovementsPerform(
 fun AnimateVictoryMessageSetup(
     solverViewModel: SolverViewModel,
     animateVictoryMessage: Animatable<Float, AnimationVector1D>,
-    onAnimationChange: (enableVictoryMessage: Boolean) -> Unit)
-{
+    onAnimationChange: (enableVictoryMessage: Boolean) -> Unit
+) {
     LaunchedEffect(Unit) {
         animateVictoryMessage.snapTo(0f)
         animateVictoryMessage.animateTo(
@@ -1120,13 +1136,15 @@ fun animateVictoryMsgPerform(
     drawScope: DrawScope,
     animateVictoryMsg: Animatable<Float, AnimationVector1D>,
     textMeasurer: TextMeasurer,
-    victoryMsgColor: Color)
-{
-    with (drawScope) {
-        drawVictoryMessage(this,
+    victoryMsgColor: Color
+) {
+    with(drawScope) {
+        drawVictoryMessage(
+            this,
             size.width, size.height,
             textMeasurer, animateVictoryMsg.value,
-            victoryMsgColor)
+            victoryMsgColor
+        )
     }
 }
 
@@ -1141,8 +1159,7 @@ fun animateVictoryMsgPerform(
  * forever.
  */
 @Composable
-private fun AnimatePreviewWinningMoveSetup(animateWinningMove: Animatable<Float, AnimationVector1D>)
-{
+private fun AnimatePreviewWinningMoveSetup(animateWinningMove: Animatable<Float, AnimationVector1D>) {
     LaunchedEffect(Unit) {
         animateWinningMove.snapTo(0f)
         animateWinningMove.animateTo(
@@ -1171,19 +1188,31 @@ private fun animatePreviewWinningMovePerform(
     uiState: SolverUiState,
     animate: Animatable<Float, AnimationVector1D>,
     gWinningMoveCount: Int,
-    displayBallImage: ImageBitmap)
-{
-    with (drawScope) {
+    displayBallImage: ImageBitmap
+) {
+    with(drawScope) {
         var xOffset = 0
         var yOffset = 0
 
         when (uiState.winningDirection) {
-            Direction.UP -> { yOffset = -1 * gridSize.toInt() * gWinningMoveCount }
-            Direction.DOWN -> { yOffset = 1 * gridSize.toInt() * gWinningMoveCount }
-            Direction.LEFT -> { xOffset = -1 * gridSize.toInt() * gWinningMoveCount }
-            Direction.RIGHT -> { xOffset = 1 * gridSize.toInt() * gWinningMoveCount }
+            Direction.UP -> {
+                yOffset = -1 * gridSize.toInt() * gWinningMoveCount
+            }
+
+            Direction.DOWN -> {
+                yOffset = 1 * gridSize.toInt() * gWinningMoveCount
+            }
+
+            Direction.LEFT -> {
+                xOffset = -1 * gridSize.toInt() * gWinningMoveCount
+            }
+
+            Direction.RIGHT -> {
+                xOffset = 1 * gridSize.toInt() * gWinningMoveCount
+            }
+
             else -> {
-                assert(true) { "Got unexpected Direction value: ${uiState.winningDirection}"}
+                assert(true) { "Got unexpected Direction value: ${uiState.winningDirection}" }
             }
         }
 
@@ -1191,15 +1220,20 @@ private fun animatePreviewWinningMovePerform(
             (xOffset) * animate.value,
             (yOffset) * animate.value
         ) {
-            drawBall(drawScope, gridSize, uiState.winningMovingChain[0].pos, displayBallImage, alpha = 0.4F)
+            drawBall(
+                drawScope,
+                gridSize,
+                uiState.winningMovingChain[0].pos,
+                displayBallImage,
+                alpha = 0.4F
+            )
         }
     }
 }
 
 @Composable
 @Preview(showBackground = true)
-private fun SolverScreenPreview()
-{
+private fun SolverScreenPreview() {
     val textMeasurer = rememberTextMeasurer()
     Canvas(modifier = Modifier.fillMaxSize()) {
         drawVictoryMessage(

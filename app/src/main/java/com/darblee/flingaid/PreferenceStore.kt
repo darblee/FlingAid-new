@@ -10,11 +10,10 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.darblee.flingaid.ui.theme.ColorThemeOption
 import kotlinx.coroutines.flow.first
 
-internal class PreferenceStore(private val context: Context)
-{
+internal class PreferenceStore(private val context: Context) {
     // Wrap the private variables in a "companion object" so they are not initialized more than once
     companion object {
-        private val Context.datastore : DataStore<Preferences> by preferencesDataStore(name = "GAME_SETTING_KEY")
+        private val Context.datastore: DataStore<Preferences> by preferencesDataStore(name = "GAME_SETTING_KEY")
         private val GAME_MUSIC_KEY = booleanPreferencesKey("gameMusicFlag")
         private val COLOR_MODE_KEY = stringPreferencesKey("ColorMode")
         private val PLAYER_NAME_KEY = stringPreferencesKey("PlayerName")
@@ -28,7 +27,7 @@ internal class PreferenceStore(private val context: Context)
     }
 
     // Get the data as a stand-alone method instead of Flow<boolean> method
-    suspend fun readGameMusicOnFlagFromSetting() : Boolean {
+    suspend fun readGameMusicOnFlagFromSetting(): Boolean {
         val preferences = context.datastore.data.first()
         return preferences[GAME_MUSIC_KEY] ?: false
     }
@@ -63,7 +62,7 @@ internal class PreferenceStore(private val context: Context)
     }
 
     // Get the data as a stand-alone method instead of Flow<boolean> method
-    suspend fun readPlayerNameFomSetting() : String {
+    suspend fun readPlayerNameFomSetting(): String {
         val preferences = context.datastore.data.first()
         return preferences[PLAYER_NAME_KEY] ?: ""
     }

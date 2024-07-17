@@ -42,17 +42,15 @@ object GameViewModel : ViewModel() {
     encapsulation for the implementation details
 
  */
-    internal var uiState : StateFlow<GameUIState> = _uiState.asStateFlow()
+    internal var uiState: StateFlow<GameUIState> = _uiState.asStateFlow()
         private set  // Public getter (read-only access from outside) and private setter (only internally modifiable)
 
 
-    fun ballPositionList() : SnapshotStateList<Pos>
-    {
+    fun ballPositionList(): SnapshotStateList<Pos> {
         return (_ballPositionList)
     }
 
-    fun MoveBallPos(row:Int, col:Int)
-    {
+    fun MoveBallPos(row: Int, col: Int) {
         _uiState.update { currentState ->
             currentState.copy(
                 state = GameState.MoveBall,

@@ -19,7 +19,7 @@ data class Pos(
  * (e.g. screen size change, screen rotation).
  *
  * It will be managed in a observable flow called "STateFlow" Android composable will listen for it.
-*/
+ */
 data class GameUIState(
     var state: GameState = GameState.Playing,
     var moveFromRow: Int = 0,

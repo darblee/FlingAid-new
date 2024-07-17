@@ -32,11 +32,12 @@ fun Float.dpToPx() = this * Resources.getSystem().displayMetrics.density
 
 private val random = Random
 fun Float.randomTillZero() = this * random.nextFloat()
-fun randomInRange(min:Float,max:Float) = min + (max - min).randomTillZero()
+fun randomInRange(min: Float, max: Float) = min + (max - min).randomTillZero()
 
 /**
  * Percentage of time to return "true"
  *
  * @param trueProbabilityPercentage Probability to return "true"
  */
-fun randomBoolean(trueProbabilityPercentage: Int) = random.nextFloat() < trueProbabilityPercentage/100f
+fun randomBoolean(trueProbabilityPercentage: Int) =
+    random.nextFloat() < trueProbabilityPercentage / 100f

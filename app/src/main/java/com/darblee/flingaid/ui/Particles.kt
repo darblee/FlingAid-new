@@ -41,7 +41,12 @@ class Particle(
         val trajectoryProgress =
             if (explosionProgress < visibilityThresholdLow || (explosionProgress > (1 - visibilityThresholdHigh))) {
                 alpha = 0f; return
-            } else (explosionProgress - visibilityThresholdLow).mapInRange(0f,1f - visibilityThresholdHigh - visibilityThresholdLow,0f, 1f)
+            } else (explosionProgress - visibilityThresholdLow).mapInRange(
+                0f,
+                1f - visibilityThresholdHigh - visibilityThresholdLow,
+                0f,
+                1f
+            )
         alpha = if (trajectoryProgress < 0.7f) 1f else (trajectoryProgress - 0.7f).mapInRange(
             0f,
             0.3f,
@@ -65,22 +70,26 @@ class Particle(
                 startX = startCol * gridSize
                 trajectoryY = trajectoryProgress
             }
+
             Direction.LEFT -> {
                 startY = (startRow * gridSize + (gridSize / 2))
                 startX = startCol * gridSize + gridSize
                 trajectoryY = -trajectoryProgress
             }
+
             Direction.UP -> {
                 startY = startRow * gridSize + gridSize
                 startX = startCol * gridSize + (gridSize / 2)
                 trajectoryX = trajectoryProgress
             }
+
             Direction.DOWN -> {
                 startY = startRow * gridSize
                 startX = (startCol * gridSize + (gridSize / 2))
                 trajectoryX = -trajectoryProgress
             }
-            else -> assert(true) { "Got unexpected direction in particle calculation"}
+
+            else -> assert(true) { "Got unexpected direction in particle calculation" }
         }
 
         currentYPosition = startY + initialXDisplacement - (verticalDisplacement * trajectoryY)

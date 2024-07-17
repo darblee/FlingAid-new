@@ -42,7 +42,7 @@ data class MovingRec(
  * will lead to a win.In a ball movement, it may involve multiple balls that needs to be moved,
  * The chain is used primarily to animate all the ball movements
  */
-data class SolverUiState (
+data class SolverUiState(
     var thinkingStatus: ThinkingMode = ThinkingMode.Idle,
     var winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
     val winningMovingChain: List<MovingRec> = listOf()
@@ -57,10 +57,12 @@ data class SolverUiState (
      */
     sealed class ThinkingMode {
         data object Active : ThinkingMode() {
-            var progressLevel : Float = 0.0f
+            var progressLevel: Float = 0.0f
         }
+
         data object Idle : ThinkingMode() {
             var IdleMode = IdleType.WaitingOnUser
+
             enum class IdleType {
                 WaitingOnUser,
                 NoSolutionFound,

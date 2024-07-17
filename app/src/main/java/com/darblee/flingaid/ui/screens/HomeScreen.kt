@@ -69,8 +69,8 @@ import kotlin.system.exitProcess
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    navController: NavHostController)
-{
+    navController: NavHostController
+) {
     // Intercept backPress key while on Game Solver screen..
     //
     // When doing back press on the current screen, confirm with the user whether
@@ -81,7 +81,7 @@ fun HomeScreen(
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
-        ExitAlertDialog(onDismiss = { backPressed = false}, onExit = { exitProcess(1)})
+        ExitAlertDialog(onDismiss = { backPressed = false }, onExit = { exitProcess(1) })
     }
 
     Column(
@@ -92,7 +92,7 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly,
 
-    ) {
+        ) {
         val view = LocalView.current
         Card(
             modifier = Modifier
@@ -108,15 +108,19 @@ fun HomeScreen(
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
-                modifier = Modifier.wrapContentSize()
+                modifier = Modifier
+                    .wrapContentSize()
                     .align(Alignment.CenterHorizontally),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ball), contentDescription = "Game",
-                    contentScale = ContentScale.Fit)
-                Text(text = "Game", style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 20.dp))
+                    contentScale = ContentScale.Fit
+                )
+                Text(
+                    text = "Game", style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 20.dp)
+                )
             }
         }
         Card(
@@ -133,15 +137,19 @@ fun HomeScreen(
             shape = RoundedCornerShape(12.dp)
         ) {
             Column(
-                modifier = Modifier.wrapContentSize()
+                modifier = Modifier
+                    .wrapContentSize()
                     .align(Alignment.CenterHorizontally),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ball), contentDescription = "Game",
-                    contentScale = ContentScale.Fit)
-                Text(text = "Solution Finder", style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 20.dp))
+                    contentScale = ContentScale.Fit
+                )
+                Text(
+                    text = "Solution Finder", style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 20.dp)
+                )
             }
         }
 
@@ -153,23 +161,24 @@ fun HomeScreen(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                 contentDescription = "Exit",
-                modifier = Modifier.padding(end = 5.dp))
+                modifier = Modifier.padding(end = 5.dp)
+            )
             Text(text = "Exit", style = MaterialTheme.typography.titleLarge)
         }
     }
 }
 
 @SuppressLint("UnrememberedMutableState")
-@Preview(name="Custom Dialog")
+@Preview(name = "Custom Dialog")
 @Composable
-private fun MyDialogUIPreview(){
+private fun MyDialogUIPreview() {
     Column(
         modifier = Modifier
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
-        Card (
+        Card(
             modifier = Modifier
                 .width(200.dp)
                 .height(200.dp),
@@ -177,8 +186,10 @@ private fun MyDialogUIPreview(){
             colors = CardDefaults.cardColors(containerColor = Color.Green),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Column(modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Image(painter = painterResource(id = R.drawable.ball), contentDescription = "Game")
                 Button(onClick = {
                 }) {
@@ -186,7 +197,7 @@ private fun MyDialogUIPreview(){
                 }
             }
         }
-        Card (
+        Card(
             modifier = Modifier
                 .width(200.dp)
                 .height(200.dp),
@@ -194,8 +205,10 @@ private fun MyDialogUIPreview(){
             colors = CardDefaults.cardColors(containerColor = Color.Cyan),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Column(modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Image(painter = painterResource(id = R.drawable.ball), contentDescription = "Game")
                 Button(onClick = {
                 }) {
@@ -219,13 +232,13 @@ private fun MyDialogUIPreview(){
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit)
-{
+private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
     Dialog(
         onDismissRequest = { onDismiss() },
         properties = DialogProperties(
             dismissOnBackPress = false,
-            dismissOnClickOutside = false)
+            dismissOnClickOutside = false
+        )
     ) {
         Card(
             shape = RoundedCornerShape(10.dp),

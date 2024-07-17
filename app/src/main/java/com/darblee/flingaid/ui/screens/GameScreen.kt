@@ -84,8 +84,7 @@ import kotlin.math.abs
  *  managing the back stack, and more
  */
 @Composable
-fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController)
-{
+fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) {
     var announceVictory by remember { mutableStateOf(false) }
 
     // Intercept backPress key while on Game Solver screen..
@@ -105,12 +104,12 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController)
     }
 
     val gameViewModel: GameViewModel = viewModel()
-    Column (
+    Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-          val uiState by gameViewModel.uiState.collectAsState()
+        val uiState by gameViewModel.uiState.collectAsState()
 
         var animateBalls by remember {
             mutableStateOf(false)
@@ -119,12 +118,16 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController)
         GameControlButtonsForGame(gameViewModel, uiState)
 
         if (!animateBalls) {
-            DrawGameBoard(modifier = Modifier.fillMaxSize(), gameViewModel, uiState, onSwipeBall = {needToAnimate -> animateBalls = needToAnimate }  )
+            DrawGameBoard(
+                modifier = Modifier.fillMaxSize(),
+                gameViewModel,
+                uiState,
+                onSwipeBall = { needToAnimate -> animateBalls = needToAnimate })
         } else {
             AnimateBalls(
                 modifier = Modifier.fillMaxSize(),
                 gameViewModel = gameViewModel,
-                onSwipeBall = {needToAnimate: Boolean -> animateBalls = needToAnimate }
+                onSwipeBall = { needToAnimate: Boolean -> animateBalls = needToAnimate }
             )
         }
     }
@@ -137,8 +140,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController)
  * when it is searching for the solution.
  */
 @Composable
-private fun InstructionLogo()
-{
+private fun InstructionLogo() {
     val logoSize = 125.dp
     Row(
         modifier = Modifier
@@ -159,8 +161,10 @@ private fun InstructionLogo()
             )
         }
         Column(Modifier.padding(5.dp)) {
-            Text(text = "Instruction:",
-                style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = "Instruction:",
+                style = MaterialTheme.typography.titleSmall
+            )
 
             val bullet = "\u2022"
             val messages = listOf(
@@ -177,8 +181,10 @@ private fun InstructionLogo()
                             append("\t")
                             append(it)
                         }
-                    }},
-                style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
@@ -187,8 +193,7 @@ private fun InstructionLogo()
 private fun GameControlButtonsForGame(
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUIState
-)
-{
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -222,8 +227,10 @@ private fun GameControlButtonsForGame(
                 .padding(5.dp),
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
-            Icon(imageVector = Icons.Filled.Refresh, contentDescription = "Undo",
-                modifier = Modifier.size(iconWidth))
+            Icon(
+                imageVector = Icons.Filled.Refresh, contentDescription = "Undo",
+                modifier = Modifier.size(iconWidth)
+            )
             Text("Undo")
         }
     }
@@ -235,8 +242,7 @@ private fun AnimateBalls(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
     onSwipeBall: (animateBalls: Boolean) -> Unit
-)
-{
+) {
     Log.i(Global.DEBUG_PREFIX, "Recompose animateBalls  grid ")
 
     val animate1 = remember { Animatable(initialValue = 0f) }
@@ -249,11 +255,12 @@ private fun AnimateBalls(
     val sX2 = 3
     val sY2 = 3
 
-    LaunchedEffect(Unit){
-        animate1.animateTo(targetValue = 1f, animationSpec =
+    LaunchedEffect(Unit) {
+        animate1.animateTo(
+            targetValue = 1f, animationSpec =
             repeatable(
                 iterations = 1,
-                animation = tween(500,easing = FastOutLinearInEasing),
+                animation = tween(500, easing = FastOutLinearInEasing),
             )
         )
         animate2.animateTo(
@@ -386,9 +393,11 @@ private fun AnimateBalls(
             val gridDrawScope = this
             drawGridForGame(gridDrawScope, gridSize, lineColor)
 
-            val ballSize =  (gridSize * 1.10).toInt()
-            val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
-                ballSize, ballSize, false).asImageBitmap()
+            val ballSize = (gridSize * 1.10).toInt()
+            val displayBallImage = Bitmap.createScaledBitmap(
+                ballImage.asAndroidBitmap(),
+                ballSize, ballSize, false
+            ).asImageBitmap()
 
             drawGameBalls(gridDrawScope, gameViewModel, gridSize, displayBallImage)
 
@@ -408,8 +417,8 @@ private fun AnimateBalls(
                 )
             }
 
-             xOffset = 0 * gridSize
-             yOffset = 4 * gridSize
+            xOffset = 0 * gridSize
+            yOffset = 4 * gridSize
 
             translate(
                 (xOffset) * animate2.value,
@@ -438,8 +447,7 @@ private fun DrawGameBoard(
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUIState,
     onSwipeBall: (animateBalls: Boolean) -> Unit
-)
-{
+) {
     Log.i(Global.DEBUG_PREFIX, "Recompose drawGame grid")
     /**
      * Launch the animation only once when it enters the composition. It will animate infinitely
@@ -451,11 +459,12 @@ private fun DrawGameBoard(
 
     var processSwipe by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit){
-        animate1.animateTo(targetValue = 1f, animationSpec =
+    LaunchedEffect(Unit) {
+        animate1.animateTo(
+            targetValue = 1f, animationSpec =
             repeatable(
                 iterations = 1,
-                animation = tween(1000,easing = FastOutSlowInEasing),
+                animation = tween(1000, easing = FastOutSlowInEasing),
             )
         )
         animate2.animateTo(
@@ -594,9 +603,11 @@ private fun DrawGameBoard(
             val gridDrawScope = this
             drawGridForGame(gridDrawScope, gridSize, lineColor)
 
-            val ballSize =  (gridSize * 1.10).toInt()
-            val displayBallImage = Bitmap.createScaledBitmap(ballImage.asAndroidBitmap(),
-                ballSize, ballSize, false).asImageBitmap()
+            val ballSize = (gridSize * 1.10).toInt()
+            val displayBallImage = Bitmap.createScaledBitmap(
+                ballImage.asAndroidBitmap(),
+                ballSize, ballSize, false
+            ).asImageBitmap()
 
             drawGameBalls(gridDrawScope, gameViewModel, gridSize, displayBallImage)
         }
@@ -607,9 +618,8 @@ private fun drawGridForGame(
     drawScope: DrawScope,
     gridSize: Float,
     lineColor: Color
-)
-{
-    with (drawScope) {
+) {
+    with(drawScope) {
         // Draw horizontal lines
         var currentY = 0F
         val gridWidth = gridSize * Global.MAX_COL_SIZE
@@ -639,10 +649,15 @@ private fun drawGridForGame(
         }
 
         // Draw the circle in the center of the grid
-        val offsetX = (gridSize  * ((Global.MAX_COL_SIZE / 2) + 0.5)).toFloat()
-        val offsetY = (gridSize  * ((Global.MAX_ROW_SIZE / 2)))
+        val offsetX = (gridSize * ((Global.MAX_COL_SIZE / 2) + 0.5)).toFloat()
+        val offsetY = (gridSize * ((Global.MAX_ROW_SIZE / 2)))
         val radiusLength = (gridSize * 0.66).toFloat()
-        drawCircle(lineColor, radius = radiusLength, center = Offset(x = offsetX, y= offsetY), style = Stroke(width = 4.dp.toPx()))
+        drawCircle(
+            lineColor,
+            radius = radiusLength,
+            center = Offset(x = offsetX, y = offsetY),
+            style = Stroke(width = 4.dp.toPx())
+        )
     }
 }
 
@@ -651,10 +666,10 @@ private fun drawGameBalls(
     drawScope: DrawScope,
     gameViewModel: GameViewModel,
     gridSize: Float,
-    displayBallImage: ImageBitmap)
-{
+    displayBallImage: ImageBitmap
+) {
     // Draw all the balls
-    with (drawScope) {
+    with(drawScope) {
         gameViewModel.ballPositionList().forEach { pos ->
             drawImage(
                 image = displayBallImage,
@@ -675,8 +690,7 @@ private fun drawGameBalls(
  * @param context  Current context to do a toast on
  * @param navController Navigator controller, which is used to navigate to the previous screen.
  */
-fun gameScreenBackPressed(context: Context, navController: NavHostController)
-{
+fun gameScreenBackPressed(context: Context, navController: NavHostController) {
     /* TODO
      * Add logic to handle backPress.
      * - Do not backPress while it is thinking.

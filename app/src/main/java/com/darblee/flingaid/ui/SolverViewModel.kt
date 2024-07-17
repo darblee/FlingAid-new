@@ -58,6 +58,8 @@ object SolverViewModel : ViewModel() {
      */
     internal var gThinkingProgress = 0
 
+
+
     /**
      * Store the winning direction for each corresponding task. Only 1 task will have the winning move
      * but we do not know which ones.

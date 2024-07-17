@@ -26,9 +26,9 @@ import kotlinx.serialization.Serializable
  * All the possible screen objects
  */
 @Serializable
-sealed class Screen(val stringTitleResourceID: Int){
+sealed class Screen(val stringTitleResourceID: Int) {
     @Serializable
-    data object Home: Screen(R.string.homepage_title)
+    data object Home : Screen(R.string.homepage_title)
 
     @Serializable
     data object Game : Screen(R.string.game_title)
@@ -57,32 +57,34 @@ fun SetUpNavGraph(
         navController = navController,
         startDestination = Screen.Home
     ) {
-        composable<Screen.Home>{
+        composable<Screen.Home> {
             currentScreen.value = Screen.Home
-            HomeScreen (
+            HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                navController = navController)
+                navController = navController
+            )
         }
 
-        composable<Screen.Game>{
+        composable<Screen.Game> {
             currentScreen.value = Screen.Game
             GameScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = Global.TopAppBarHeight),
                 navController = navController
-                )
+            )
         }
 
-        composable<Screen.Solver>{
+        composable<Screen.Solver> {
             currentScreen.value = Screen.Solver
             SolverScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = Global.TopAppBarHeight),
-                navController)  // Height of the TopAppBar
+                navController
+            )  // Height of the TopAppBar
         }
     }
 }

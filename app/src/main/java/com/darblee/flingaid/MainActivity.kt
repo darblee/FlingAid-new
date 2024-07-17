@@ -85,8 +85,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
-class MainActivity : ComponentActivity()
-{
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -113,13 +112,15 @@ class MainActivity : ComponentActivity()
             //
             LaunchedEffect(true) {
                 var keepSplashOnScreen = true
-                splashScreen.setKeepOnScreenCondition{ keepSplashOnScreen }
+                splashScreen.setKeepOnScreenCondition { keepSplashOnScreen }
 
                 colorTheme = PreferenceStore(applicationContext).readColorModeFromSetting()
 
                 gSoundOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
 
-                if (gSoundOn) { gAudio_gameMusic.start() }
+                if (gSoundOn) {
+                    gAudio_gameMusic.start()
+                }
 
                 keepSplashOnScreen = false // End the splash screen
             }
@@ -139,7 +140,9 @@ class MainActivity : ComponentActivity()
 
                             // Save the Color Theme setting
                             CoroutineScope(Dispatchers.IO).launch {
-                                PreferenceStore(applicationContext).saveColorModeToSetting(newColorThemeSetting)
+                                PreferenceStore(applicationContext).saveColorModeToSetting(
+                                    newColorThemeSetting
+                                )
                             }
                         }  // onColorThemeUpdated
                     )  // MainViewImplementation
@@ -148,15 +151,16 @@ class MainActivity : ComponentActivity()
         }
     }
 
-    override fun onResume()
-    {
+    override fun onResume() {
         super.onResume()
 
         // Jetpack compose does not change theme for status bar
         when (this.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
             Configuration.UI_MODE_NIGHT_NO -> {
                 window.statusBarColor = resources.getColor(R.color.white, null)
-            } else -> {
+            }
+
+            else -> {
                 window.statusBarColor = resources.getColor(R.color.black, null)
             }
         }
@@ -164,8 +168,7 @@ class MainActivity : ComponentActivity()
 
     @SuppressLint("SourceLockedOrientationActivity")
     @Composable
-    fun ForcePortraitMode()
-    {
+    fun ForcePortraitMode() {
         val activity = LocalContext.current as Activity
         activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
@@ -174,25 +177,31 @@ class MainActivity : ComponentActivity()
 @Composable
 private fun MainViewImplementation(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
-    currentTheme: ColorThemeOption)
-{
+    currentTheme: ColorThemeOption
+) {
     val currentScreen = remember { mutableStateOf<Screen>(Screen.Home) }
 
     val navController = rememberNavController()
 
-    Scaffold (
-        topBar = { FlingAidTopAppBar(onColorThemeUpdated, currentTheme, navController, currentScreen) }
+    Scaffold(
+        topBar = {
+            FlingAidTopAppBar(
+                onColorThemeUpdated,
+                currentTheme,
+                navController,
+                currentScreen
+            )
+        }
     ) { contentPadding ->
         SetUpNavGraph(navController = navController, contentPadding, currentScreen)
     }
 }
 
 @Composable
-private fun SetUpGameAudioOnAppStart()
-{
+private fun SetUpGameAudioOnAppStart() {
     // Initiate the media player instance with the media file from the raw folder
     gAudio_youWon = MediaPlayer.create(LocalContext.current, R.raw.you_won)
-    gAudio_gameMusic =  MediaPlayer.create(LocalContext.current, R.raw.music)
+    gAudio_gameMusic = MediaPlayer.create(LocalContext.current, R.raw.music)
 
     gAudio_gameMusic.isLooping = true
 
@@ -206,18 +215,21 @@ private fun SetUpGameAudioOnAppStart()
             when (event) {
                 Lifecycle.Event.ON_START -> {
                     if (gSoundOn) {
-                            gAudio_gameMusic.start()
+                        gAudio_gameMusic.start()
                     }
                 }
+
                 Lifecycle.Event.ON_RESUME -> {
                     if (gSoundOn) {
-                            gAudio_gameMusic.start()
+                        gAudio_gameMusic.start()
                     }
                 }
+
                 Lifecycle.Event.ON_STOP -> {
                     gAudio_gameMusic.pause()
                     Log.i(Global.DEBUG_PREFIX, "Music paused")
                 }
+
                 else -> {
                     Log.i(Global.DEBUG_PREFIX, "$event event ignored")
                 }
@@ -240,8 +252,8 @@ private fun FlingAidTopAppBar(
     onColorThemeUpdated: (colorThemeSetting: ColorThemeOption) -> Unit,
     currentTheme: ColorThemeOption,
     navController: NavHostController,
-    currentScreen: MutableState<Screen>)
-{
+    currentScreen: MutableState<Screen>
+) {
     var menuExpanded by remember { mutableStateOf(false) }
     var showAboutDialogBox by remember { mutableStateOf(false) }
     var showSettingDialogBox by remember { mutableStateOf(false) }
@@ -262,13 +274,25 @@ private fun FlingAidTopAppBar(
                     IconButton(onClick = { /* Do nothing */ })
                     { Icon(Icons.Filled.Home, contentDescription = "Home screen") }
                 }
+
                 Screen.Solver -> {
                     IconButton(onClick = { solverScreenBackPressed(context, navController) })
-                    { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back to home screen") }
+                    {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Navigate back to home screen"
+                        )
+                    }
                 }
+
                 Screen.Game -> {
                     IconButton(onClick = { navController.popBackStack() })
-                    { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Navigate back to home screen") }
+                    {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Navigate back to home screen"
+                        )
+                    }
                 }
             }
         },
@@ -373,9 +397,10 @@ private fun FlingAidTopAppBar(
 }
 
 @Composable
-private fun AboutDialogPopup(onDismissRequest: () -> Unit,
-                             onConfirmation: () -> Unit)
-{
+private fun AboutDialogPopup(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit
+) {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
@@ -408,8 +433,10 @@ private fun AboutDialogPopup(onDismissRequest: () -> Unit,
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            modifier = Modifier.padding(end = 5.dp))
-                        Text(text = stringResource(id = R.string.back )
+                            modifier = Modifier.padding(end = 5.dp)
+                        )
+                        Text(
+                            text = stringResource(id = R.string.back)
                         )
                     }
                 }
@@ -426,9 +453,9 @@ private fun SettingPopup(
     currentTheme: ColorThemeOption,
     onPlayerNameUpdated: (newPlayerName: String) -> Unit,
     currentPlayerName: String,
-    onSoundSettingUpdated: (soundOn : Boolean) -> Unit,
-    currentSoundSetting: Boolean)
-{
+    onSoundSettingUpdated: (soundOn: Boolean) -> Unit,
+    currentSoundSetting: Boolean
+) {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
@@ -449,16 +476,18 @@ private fun SettingPopup(
 
                 Row(
                     modifier = Modifier.wrapContentWidth(),
-                    horizontalArrangement = Arrangement.Center)
+                    horizontalArrangement = Arrangement.Center
+                )
                 {
                     Button(onClick = { onConfirmation() })
                     {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            modifier = Modifier.padding(end = 5.dp))
+                            modifier = Modifier.padding(end = 5.dp)
+                        )
                         Text(
-                            text = stringResource(id = R.string.back ),
+                            text = stringResource(id = R.string.back),
                             fontSize = 14.sp
                         )
                     }
@@ -471,8 +500,8 @@ private fun SettingPopup(
 @Composable
 private fun PlayerNameSetting(
     currentPlayerName: String,
-    onPlayerNameUpdated: (newPlayerName: String) -> Unit)
-{
+    onPlayerNameUpdated: (newPlayerName: String) -> Unit
+) {
     val preference = PreferenceStore(LocalContext.current)
     Row {
         var rawText by remember {
@@ -489,11 +518,14 @@ private fun PlayerNameSetting(
                     preference.savePlayerNameToSetting(rawText)
                 }
             },
-            label = { Text(text = stringResource(id = R.string.player_name))},
+            label = { Text(text = stringResource(id = R.string.player_name)) },
             singleLine = true,
             leadingIcon =
             {
-                Icon(imageVector = Icons.Filled.Person, contentDescription = stringResource(id = R.string.player_name))
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = stringResource(id = R.string.player_name)
+                )
             },
             trailingIcon =
             {
@@ -506,7 +538,10 @@ private fun PlayerNameSetting(
                         }
                     })
                 {
-                    Icon(imageVector = Icons.Filled.Clear, contentDescription = stringResource(id = R.string.clear_name))
+                    Icon(
+                        imageVector = Icons.Filled.Clear,
+                        contentDescription = stringResource(id = R.string.clear_name)
+                    )
                 }
             }
         )
@@ -514,8 +549,10 @@ private fun PlayerNameSetting(
 }
 
 @Composable
-private fun MusicSetting(onSoundSettingUpdated: (soundOn: Boolean) -> Unit, currentSoundSetting: Boolean)
-{
+private fun MusicSetting(
+    onSoundSettingUpdated: (soundOn: Boolean) -> Unit,
+    currentSoundSetting: Boolean
+) {
     Row(
         modifier = Modifier.wrapContentWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -556,26 +593,32 @@ private fun MusicSetting(onSoundSettingUpdated: (soundOn: Boolean) -> Unit, curr
 }
 
 @Composable
-private fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
-                      currentTheme: ColorThemeOption)
-{
-    Row (
+private fun ColorThemeSetting(
+    onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
+    currentTheme: ColorThemeOption
+) {
+    Row(
         modifier = Modifier
             .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp))
             .wrapContentWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        val colorThemeOptionsStringValues
-                = listOf(ColorThemeOption.System.toString(), ColorThemeOption.Light.toString(), ColorThemeOption.Dark.toString())
+        val colorThemeOptionsStringValues = listOf(
+            ColorThemeOption.System.toString(),
+            ColorThemeOption.Light.toString(),
+            ColorThemeOption.Dark.toString()
+        )
 
         val (selectedOption, onOptionSelected) = remember {
             // Make the initial selection match the global color theme
             // at the start of opening the Theme setting dialog box
             mutableStateOf(currentTheme.toString())
         }
-        Text(text = "Color Theme", modifier = Modifier
-            .padding(5.dp)
-            .wrapContentWidth())
+        Text(
+            text = "Color Theme", modifier = Modifier
+                .padding(5.dp)
+                .wrapContentWidth()
+        )
 
         // add weight modifier to the row composable to ensure
         // that the composable is measured after the other
@@ -587,7 +630,8 @@ private fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOp
             modifier = Modifier
                 .wrapContentWidth()
                 .selectableGroup()
-                .padding(5.dp)) {
+                .padding(5.dp)
+        ) {
             colorThemeOptionsStringValues.forEach { curColorString ->
                 Row(
                     Modifier
@@ -626,8 +670,7 @@ private fun ColorThemeSetting(onColorThemeUpdated: (colorThemeType: ColorThemeOp
     }
 }
 
-private fun setGameMusic(on: Boolean)
-{
+private fun setGameMusic(on: Boolean) {
     if (on) {
         if (!gAudio_gameMusic.isPlaying) {
             gAudio_gameMusic.start()
@@ -639,7 +682,6 @@ private fun setGameMusic(on: Boolean)
 
 @Composable
 @Preview(showBackground = true)
-private fun ScreenPreview()
-{
- //   ExitAlertDialog(onDismiss = { /* TODO */ }, onExit = { /* TODO */ })
+private fun ScreenPreview() {
+    //   ExitAlertDialog(onDismiss = { /* TODO */ }, onExit = { /* TODO */ })
 }
