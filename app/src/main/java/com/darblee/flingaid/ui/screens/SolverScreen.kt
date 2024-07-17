@@ -109,8 +109,6 @@ import java.io.File
 import java.util.Locale
 import kotlin.math.abs
 
-lateinit var gBoardFile: File
-
 /**
  *  The main Solver Game Screen
  *
@@ -142,12 +140,12 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val solverViewModel: SolverViewModel = viewModel()
     val uiState by solverViewModel.uiState.collectAsState()
 
-    gBoardFile = File(LocalContext.current.filesDir, Global.BOARD_FILENAME)
+    val boardFile = File(LocalContext.current.filesDir, Global.BOARD_FILENAME)
 
     val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
-    solverViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
+    solverViewModel.setFile(boardFile)
 
     var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
     findWinnableMoveButtonEnabled =
@@ -371,7 +369,7 @@ private fun ControlButtonsForSolver(
                     gameToast(context, "Unable to reset as it is currently busy finding a solution")
                 } else {
                     // Reset the board game and set it back to idle state
-                    solverViewModel.reset(gBoardFile)
+                    solverViewModel.reset()
                 }
             },
             shape = RoundedCornerShape(5.dp),
@@ -531,7 +529,6 @@ private fun DrawSolverBoard(
                                 if ((row < Global.MAX_ROW_SIZE) && (col < Global.MAX_COL_SIZE)) {
                                     solverViewModel.toggleBallPosition(SolverGridPos(row, col))
                                     view.playSoundEffect(SoundEffectConstants.CLICK)
-                                    solverViewModel.saveBallPositions(gBoardFile)
                                 }
                             } // if thinkingStatus != GameState.thinking
                         }, // onTap

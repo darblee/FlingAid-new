@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
-import com.darblee.flingaid.ui.screens.gBoardFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -58,7 +57,7 @@ object SolverViewModel : ViewModel() {
      */
     internal var gThinkingProgress = 0
 
-
+    private var gGameFile : File? = null
 
     /**
      * Store the winning direction for each corresponding task. Only 1 task will have the winning move
@@ -126,10 +125,8 @@ object SolverViewModel : ViewModel() {
 
     /**
      * Save the solver game board to a file
-     *
-     * @param file File to write to
      */
-    fun saveBallPositions(file: File)
+    private fun saveBallPositions()
     {
         val format = Json { prettyPrint = true }
         val ballList = mutableListOf<SolverGridPos>()
@@ -140,7 +137,7 @@ object SolverViewModel : ViewModel() {
         val output = format.encodeToString(ballList)
 
         try {
-            val writer = FileWriter(file)
+            val writer = FileWriter(gGameFile)
             writer.write(output)
             writer.close()
         } catch (e:Exception) {
@@ -149,14 +146,28 @@ object SolverViewModel : ViewModel() {
     }
 
     /**
-     * Load the saved game board from file
      *
-     * @param file  File to load from
      */
-    fun loadBallPositions(file: File)
+    fun setFile(file: File)
     {
+        gGameFile = file
+        loadBallPositions()
+    }
+
+    /**
+     * Load the saved game board from file
+     **/
+    private fun loadBallPositions()
+    {
+        // TODO Return immediately if ball is already loaded
+        // This is important for performance reason. This function gets call frequently from
+        // a composable function. We need to minimize the need to load file, which is an
+        // expensive operation.
+        // The following need causes crash. Need to understand why
+        //       if (_ballPositionList.size > 0) return
+
         try {
-            val reader = FileReader(file)
+            val reader = FileReader(gGameFile)
             val data = reader.readText()
             reader.close()
 
@@ -205,8 +216,7 @@ object SolverViewModel : ViewModel() {
      * Initialize the SolverViewModel
      */
     init {
-        val file : File? = null
-        reset(file)
+        reset()
         gThinkingProgress = 0
     }
 
@@ -215,10 +225,10 @@ object SolverViewModel : ViewModel() {
      * - Clear the board
      * - Remove any saved game file
      */
-    fun reset(file: File?)
+    fun reset()
     {
         _ballPositionList.clear()
-        file?.delete()
+        gGameFile?.delete()
 
         setIDLEstate()
     }
@@ -237,6 +247,7 @@ object SolverViewModel : ViewModel() {
             _ballPositionList.add(solverGridPos)
         }
 
+        saveBallPositions()
         setIDLEstate()
     }
 
@@ -383,7 +394,7 @@ object SolverViewModel : ViewModel() {
     }
 
     /**
-     * Update uistate  thinking status to Idle state.
+     * Update [uiState]  thinking status to Idle state.
      *
      * @param idleMode Specific idle type. If this is not provided, it defaults to "Waiting on User"
      * mode
@@ -639,7 +650,7 @@ object SolverViewModel : ViewModel() {
 
         _uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
 
-        saveBallPositions(gBoardFile)
+        saveBallPositions()
     }
 
     /**
