@@ -116,6 +116,8 @@ lateinit var gBoardFile : File
  *
  *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
+ *  @param navController Central coordinator for managing navigation between destination screens,
+ *  managing the back stack, and more
  */
 @Composable
 fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController)
@@ -200,7 +202,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
 /**
  * Perform the key back press action. CHeck if it has permission to do so.
- * Backpress is allow if:
+ * BackPress is allow if:
  * - THere is no active thinking
  *
  * @param context  Current context to do a toast on

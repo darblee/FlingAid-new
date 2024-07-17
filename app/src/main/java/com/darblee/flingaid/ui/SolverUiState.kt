@@ -3,12 +3,22 @@ package com.darblee.flingaid.ui
 import com.darblee.flingaid.Direction
 import kotlinx.serialization.Serializable
 
+/**
+ * Position on the game board
+ * - row
+ * - column
+ */
 @Serializable
 data class SolverGridPos(
     val row: Int,
     val col: Int,
 )
 
+/**
+ * Moving record.
+ * - pos: where to move from
+ * - distance: how far to move
+ */
 @Serializable
 data class MovingRec(
     val pos: SolverGridPos,

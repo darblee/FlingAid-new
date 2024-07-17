@@ -40,9 +40,10 @@ sealed class Screen(val stringTitleResourceID: Int){
 /**
  * Navigation set-up
  *
- * @param navController Navigation controller
+ * @param navController Central coordinator for managing navigation between destination screens,
+ * managing the back stack, and more
  * @param innerPadding Inner padding
- * @param currentScreen  The current screen
+ * @param currentScreen The current active screen
  */
 @SuppressLint("RestrictedApi")
 @Composable
@@ -70,7 +71,9 @@ fun SetUpNavGraph(
             GameScreen(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = Global.TopAppBarHeight))   // Height of the TopAppBar
+                    .padding(top = Global.TopAppBarHeight),
+                navController = navController
+                )
         }
 
         composable<Screen.Solver>{

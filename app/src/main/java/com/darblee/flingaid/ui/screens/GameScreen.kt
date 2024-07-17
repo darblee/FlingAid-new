@@ -1,5 +1,6 @@
 package com.darblee.flingaid.ui.screens
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.animation.core.Animatable
@@ -53,6 +54,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -63,16 +65,45 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
+import com.darblee.flingaid.utilities.gameToast
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
+/**
+ *  The Game Screen
+ *
+ *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
+ *  elements
+ *  @param navController Central coordinator for managing navigation between destination screens,
+ *  managing the back stack, and more
+ */
 @Composable
-fun GameScreen(modifier: Modifier = Modifier)
+fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController)
 {
+    var announceVictory by remember { mutableStateOf(false) }
+
+    // Intercept backPress key while on Game Solver screen..
+    //
+    // When doing back press on the current screen, confirm with the user whether
+    // it should exit this screen or not if it is middle of thinking.
+    // Do not exit this screen when:
+    // - It is middle of thinking
+    // - It is in middle of announcing victory message
+    var backPressed by remember { mutableStateOf(false) }
+    BackPressHandler(onBackPressed = { backPressed = true })
+    if (backPressed) {
+        backPressed = false
+        if (announceVictory) return
+        gameScreenBackPressed(LocalContext.current, navController)
+        return
+    }
+
     val gameViewModel: GameViewModel = viewModel()
     Column (
         modifier = modifier.fillMaxWidth(),
@@ -634,4 +665,25 @@ private fun drawGameBalls(
             )
         }
     }
+}
+
+/**
+ * Perform the key back press action. CHeck if it has permission to do so.
+ * BackPress is allow if:
+ * - THere is no active thinking
+ *
+ * @param context  Current context to do a toast on
+ * @param navController Navigator controller, which is used to navigate to the previous screen.
+ */
+fun gameScreenBackPressed(context: Context, navController: NavHostController)
+{
+    /* TODO
+     * Add logic to handle backPress.
+     * - Do not backPress while it is thinking.
+     * - other??
+     */
+    Log.i(Global.DEBUG_PREFIX, "Game: backPress detected")
+    gameToast(context, "Unable to go back home screen while thinking")
+
+    navController.popBackStack()
 }

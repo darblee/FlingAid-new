@@ -58,6 +58,14 @@ import com.darblee.flingaid.R
 import com.darblee.flingaid.Screen
 import kotlin.system.exitProcess
 
+/**
+ *  The Home Screen
+ *
+ *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
+ *  elements
+ *  @param navController Central coordinator for managing navigation between destination screens,
+ *  managing the back stack, and more
+ */
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,

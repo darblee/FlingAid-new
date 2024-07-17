@@ -507,7 +507,7 @@ object SolverViewModel : ViewModel() {
     }
 
     /**
-     * Update the uistate to latest accurate progress level while it is still searching for
+     * Update the [uiState] to latest accurate progress level while it is still searching for
      * winnable move.
      */
     private fun showProcessingActivity()
@@ -695,6 +695,7 @@ object SolverViewModel : ViewModel() {
      *  on the edge of the grid.
      *
      *  @see buildMovingChain
+     *
      *  @return Pair<Int, SolverGridPos?> where the first element is the number of free space and
      *  second element is the position of the next ball
      *

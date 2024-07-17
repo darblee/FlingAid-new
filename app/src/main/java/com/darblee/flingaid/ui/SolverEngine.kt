@@ -5,14 +5,20 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 
+/**
+ * Engine that look for winnable move based on game layout information
+ */
 internal class SolverEngine {
     private var flingGrid = Array(Global.MAX_ROW_SIZE) { BooleanArray(Global.MAX_COL_SIZE) }
 
     init {
-        reset()
+        clearGameBoard()
     }
 
-    private fun reset()
+    /**
+     * Clear the entire game board.
+     */
+    private fun clearGameBoard()
     {
         repeat (Global.MAX_ROW_SIZE) { row ->
             repeat(Global.MAX_COL_SIZE) { col ->
@@ -21,6 +27,11 @@ internal class SolverEngine {
         }
     }
 
+    /**
+     * Populate the game board with balls
+     *
+     * @param ballPositionList List of all the ball positions
+     */
     fun populateGrid(ballPositionList: SnapshotStateList<SolverGridPos>)
     {
         ballPositionList.forEach {pos ->
@@ -28,6 +39,10 @@ internal class SolverEngine {
         }
     }
 
+    /**
+     * Set-up another solver engine instance. The new instance will have exact
+     * copy of the current game board.
+     */
     private fun duplicate() : SolverEngine
     {
         val tempBoard = SolverEngine()
@@ -42,9 +57,23 @@ internal class SolverEngine {
         return (tempBoard)
     }
 
+    /**
+     * Find the winning move
+     *
+     * @param totalBallCnt Used together with [curSearchLevel] parameter to determine whether it has found a solution or not.
+     * @param curSearchLevel Current search level. Used together with [totalBallCnt] parameter determined whether it has found a solution or not.
+     * It is also used to calculate thinking progress
+     * @param thinkingDirectionOffset
+     *
+     * @return If winning move is found, it will return
+     * - winning direction
+     * - row position of winning ball
+     * - column position of the winning ball
+     *
+     * If no winning move is found, it will return direction = NO_WINNING_DIRECTION
+     */
     fun foundWinningMove(totalBallCnt : Int, curSearchLevel : Int, thinkingDirectionOffset : Int): Triple<Direction, Int, Int>
     {
-
         var direction = Direction.NO_WINNING_DIRECTION
         var winningRow = -1
         var winningCol = -1
