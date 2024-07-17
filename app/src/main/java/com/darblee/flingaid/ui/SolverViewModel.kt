@@ -57,7 +57,7 @@ object SolverViewModel : ViewModel() {
      */
     internal var gThinkingProgress = 0
 
-    private var gGameFile : File? = null
+    private var gGameFile: File? = null
 
     /**
      * Store the winning direction for each corresponding task. Only 1 task will have the winning move
@@ -75,7 +75,7 @@ object SolverViewModel : ViewModel() {
      * Current level is the number of balls x 4 direction
      * Total = (Next level) x (current level)
      */
-    private var _totalProcessCount : Float = 0.0F
+    private var _totalProcessCount: Float = 0.0F
     private var _totalBallInCurrentMove = 0
 
     /**
@@ -108,8 +108,7 @@ object SolverViewModel : ViewModel() {
      * list. This snapshot is a separate, immutable collection that represents the list's state at a specific
      * moment.
      */
-    fun ballPositionList() : SnapshotStateList<SolverGridPos>
-    {
+    fun ballPositionList(): SnapshotStateList<SolverGridPos> {
         return (_ballPositionList)
     }
 
@@ -118,16 +117,14 @@ object SolverViewModel : ViewModel() {
      *
      * @return Number of active balls
      */
-    fun ballCount():Int
-    {
+    fun ballCount(): Int {
         return _ballPositionList.count()
     }
 
     /**
      * Save the solver game board to a file
      */
-    private fun saveBallPositions()
-    {
+    private fun saveBallPositions() {
         val format = Json { prettyPrint = true }
         val ballList = mutableListOf<SolverGridPos>()
 
@@ -140,16 +137,17 @@ object SolverViewModel : ViewModel() {
             val writer = FileWriter(gGameFile)
             writer.write(output)
             writer.close()
-        } catch (e:Exception) {
-            Log.i(Global.DEBUG_PREFIX, "${e.message}" )
+        } catch (e: Exception) {
+            Log.i(Global.DEBUG_PREFIX, "${e.message}")
         }
     }
 
     /**
+     * Set the game file
      *
+     * @param file  game file
      */
-    fun setFile(file: File)
-    {
+    fun setFile(file: File) {
         gGameFile = file
         loadBallPositions()
     }
@@ -157,8 +155,7 @@ object SolverViewModel : ViewModel() {
     /**
      * Load the saved game board from file
      **/
-    private fun loadBallPositions()
-    {
+    private fun loadBallPositions() {
         // TODO Return immediately if ball is already loaded
         // This is important for performance reason. This function gets call frequently from
         // a composable function. We need to minimize the need to load file, which is an
@@ -209,8 +206,8 @@ object SolverViewModel : ViewModel() {
      * `private set` this is internally modifiable and read-only access from the outside.
      * This ensure information flow in one direction from the view model to the UI
      */
-    internal var uiState : StateFlow<SolverUiState> = _uiState.asStateFlow()
-    private set
+    internal var uiState: StateFlow<SolverUiState> = _uiState.asStateFlow()
+        private set
 
     /**
      * Initialize the SolverViewModel
@@ -225,8 +222,7 @@ object SolverViewModel : ViewModel() {
      * - Clear the board
      * - Remove any saved game file
      */
-    fun reset()
-    {
+    fun reset() {
         _ballPositionList.clear()
         gGameFile?.delete()
 
@@ -239,8 +235,7 @@ object SolverViewModel : ViewModel() {
      *
      * @param solverGridPos The position of the ball
      */
-    fun toggleBallPosition(solverGridPos: SolverGridPos)
-    {
+    fun toggleBallPosition(solverGridPos: SolverGridPos) {
         if (_ballPositionList.contains(solverGridPos)) {
             _ballPositionList.remove(solverGridPos)
         } else {
@@ -255,11 +250,12 @@ object SolverViewModel : ViewModel() {
      * Volatile is used to ensure each thread is reading exact same [gMultipleThread] value
      * from memory instead of from cpu-cache.
      */
-    @Volatile var gMultipleThread = false
+    @Volatile
+    var gMultipleThread = false
 
-    private lateinit var gThinkingThread1 : Thread
-    private lateinit var gThinkingThread2 : Thread
-    private lateinit var gShowProgressThread : Thread
+    private lateinit var gThinkingThread1: Thread
+    private lateinit var gThinkingThread2: Thread
+    private lateinit var gShowProgressThread: Thread
 
     private var task1WinningRow = -1
     private var task1WinningCol = -1
@@ -271,8 +267,7 @@ object SolverViewModel : ViewModel() {
      *
      * @param solverViewModel The ViewModel instance
      */
-    fun findWinningMove(solverViewModel: SolverViewModel)
-    {
+    fun findWinningMove(solverViewModel: SolverViewModel) {
         gThinkingProgress = 0
         val activeThinkingRec = SolverUiState.ThinkingMode.Active
         activeThinkingRec.progressLevel = 0.0f
@@ -285,7 +280,8 @@ object SolverViewModel : ViewModel() {
         viewModelScope.launch {
 
             // For explanation on the formula, see the description for _totalProcessCount
-            _totalProcessCount = (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
+            _totalProcessCount =
+                (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
 
             _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
             val gTotalBallCount = solverViewModel.ballCount()
@@ -296,11 +292,12 @@ object SolverViewModel : ViewModel() {
             gThinkingProgress = 0
             _totalBallInCurrentMove = solverViewModel.ballCount()
 
-            lateinit var cyclicBarrier : CyclicBarrier
+            lateinit var cyclicBarrier: CyclicBarrier
 
             if (gTotalBallCount > 12) {
                 gMultipleThread = true
-                _totalProcessCount = (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
+                _totalProcessCount =
+                    (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
                 cyclicBarrier = CyclicBarrier(2) {
                     Log.i(Global.DEBUG_PREFIX, "Reached a converged point between 2 parallel tasks")
                     recordThinkingResult()
@@ -315,12 +312,18 @@ object SolverViewModel : ViewModel() {
 
             gThinkingThread1 = Thread {
                 processTask1(gTotalBallCount)
-                Log.i("${Global.DEBUG_PREFIX} Task 1", "Task #1 is completed. Now waiting for all threads to complete.")
+                Log.i(
+                    "${Global.DEBUG_PREFIX} Task 1",
+                    "Task #1 is completed. Now waiting for all threads to complete."
+                )
                 cyclicBarrier.await()
             }
             gThinkingThread2 = Thread {
                 processTask2(gTotalBallCount)
-                Log.i("${Global.DEBUG_PREFIX}: Task 2", "Task #2 is completed. Now waiting for all threads to complete.")
+                Log.i(
+                    "${Global.DEBUG_PREFIX}: Task 2",
+                    "Task #2 is completed. Now waiting for all threads to complete."
+                )
                 cyclicBarrier.await()
             }
 
@@ -340,45 +343,53 @@ object SolverViewModel : ViewModel() {
     /**
      * Update the [_uiState] with the result of the thinking task(s).
      */
-    private fun recordThinkingResult()
-    {
+    private fun recordThinkingResult() {
         if ((task1_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
-            (task1_WinningDirection != Direction.INCOMPLETE))
-        {
+            (task1_WinningDirection != Direction.INCOMPLETE)
+        ) {
             // Task1 has the winning move
-            Log.i(Global.DEBUG_PREFIX,
-                "Task #1 has winning move with direction : $task1_WinningDirection")
+            Log.i(
+                Global.DEBUG_PREFIX,
+                "Task #1 has winning move with direction : $task1_WinningDirection"
+            )
             val winningSolverGridPos = SolverGridPos(task1WinningRow, task1WinningCol)
             val winningDir = task1_WinningDirection
 
             _winningDirection_from_tasks = task1_WinningDirection
 
-            val movingChain = buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
+            val movingChain =
+                buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
             setIDLEstate(
                 idleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound,
                 winningDirection = winningDir,
-                winningMovingChain = movingChain)
+                winningMovingChain = movingChain
+            )
 
         } else {
 
             // Task1 does not have the winning result. NOw check on task #2
             if ((task2_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
-                (task2_WinningDirection != Direction.INCOMPLETE)) {
-                Log.i(Global.DEBUG_PREFIX,
-                    "Task #2 has winning move with direction: $task2_WinningDirection")
+                (task2_WinningDirection != Direction.INCOMPLETE)
+            ) {
+                Log.i(
+                    Global.DEBUG_PREFIX,
+                    "Task #2 has winning move with direction: $task2_WinningDirection"
+                )
                 // Task2 has the winning move
                 val winningSolverGridPos = SolverGridPos(task2WinningRow, task2WinningCol)
                 val winningDir = task2_WinningDirection
 
                 _winningDirection_from_tasks = task2_WinningDirection
 
-                val movingChain = buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
+                val movingChain =
+                    buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
                 setIDLEstate(
                     idleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound,
                     winningDirection = winningDir,
-                    winningMovingChain = movingChain)
+                    winningMovingChain = movingChain
+                )
 
             } else {
 
@@ -387,7 +398,8 @@ object SolverViewModel : ViewModel() {
                 setIDLEstate(
                     idleMode = SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound,
                     winningDirection = Direction.NO_WINNING_DIRECTION,
-                    winningMovingChain = mutableStateListOf())
+                    winningMovingChain = mutableStateListOf()
+                )
             }
         }
         gThinkingProgress = 0
@@ -406,8 +418,8 @@ object SolverViewModel : ViewModel() {
     fun setIDLEstate(
         idleMode: SolverUiState.ThinkingMode.Idle.IdleType = SolverUiState.ThinkingMode.Idle.IdleType.WaitingOnUser,
         winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
-        winningMovingChain: List<MovingRec> = mutableListOf())
-    {
+        winningMovingChain: List<MovingRec> = mutableListOf()
+    ) {
         val idleRec = SolverUiState.ThinkingMode.Idle
         idleRec.IdleMode = idleMode
 
@@ -428,26 +440,30 @@ object SolverViewModel : ViewModel() {
      *
      * @param totalBallCnt Used to determine whether it has winnable move or not
      */
-    private fun processTask1(totalBallCnt :  Int)
-    {
+    private fun processTask1(totalBallCnt: Int) {
         try {
             Log.i("${Global.DEBUG_PREFIX} Task 1", "Task 1 has started")
             val game1 = SolverEngine()
             game1.populateGrid(_ballPositionList)
 
             val (direction, finalRow, finalCol) = game1.foundWinningMove(
-                totalBallCnt, 1, 1)
+                totalBallCnt, 1, 1
+            )
 
-            Log.i("${Global.DEBUG_PREFIX} Finish Task #1",
-                "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
+            Log.i(
+                "${Global.DEBUG_PREFIX} Finish Task #1",
+                "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol"
+            )
 
             task1_WinningDirection = direction
 
             when (direction) {
 
                 Direction.INCOMPLETE -> {
-                    Log.i(Global.DEBUG_PREFIX,
-                        "Task #1 got incomplete. It expect task2 has deterministic result")
+                    Log.i(
+                        Global.DEBUG_PREFIX,
+                        "Task #1 got incomplete. It expect task2 has deterministic result"
+                    )
                 }
 
                 Direction.NO_WINNING_DIRECTION -> {
@@ -478,24 +494,30 @@ object SolverViewModel : ViewModel() {
      *
      * @param totalBallCnt Used to determine whether it has winnable move or not
      */
-    private fun processTask2(totalBallCnt : Int)
-    {
+    private fun processTask2(totalBallCnt: Int) {
         try {
             Log.i("${Global.DEBUG_PREFIX} Task 2", "Task 2 has started")
             val game2 = SolverEngine()
             game2.populateGrid(_ballPositionList)
             task2_WinningDirection = Direction.INCOMPLETE
             val (direction, finalRow, finalCol) = game2.foundWinningMove(
-                totalBallCnt, 1, -1)
+                totalBallCnt, 1, -1
+            )
 
-            Log.i("${Global.DEBUG_PREFIX} Finish Task #2", "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol")
+            Log.i(
+                "${Global.DEBUG_PREFIX} Finish Task #2",
+                "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol"
+            )
 
             task2_WinningDirection = direction
 
             when (direction) {
 
                 Direction.INCOMPLETE -> {
-                    Log.i(Global.DEBUG_PREFIX, "Task #2 got incomplete. It expect task1 has deterministic result")
+                    Log.i(
+                        Global.DEBUG_PREFIX,
+                        "Task #2 got incomplete. It expect task1 has deterministic result"
+                    )
                 }
 
                 Direction.NO_WINNING_DIRECTION -> {
@@ -523,15 +545,16 @@ object SolverViewModel : ViewModel() {
      * Update the [uiState] to latest accurate progress level while it is still searching for
      * winnable move.
      */
-    private fun showProcessingActivity()
-    {
+    private fun showProcessingActivity() {
         var currentValue = 0.0F
-        _totalProcessCount = (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
+        _totalProcessCount =
+            (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
 
         while (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) {
 
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-            val newValue : Float = (gThinkingProgress.toFloat() / (_totalProcessCount) * 100.0).toFloat()
+            val newValue: Float =
+                (gThinkingProgress.toFloat() / (_totalProcessCount) * 100.0).toFloat()
 
             if (newValue > currentValue) {
                 currentValue = newValue
@@ -560,8 +583,7 @@ object SolverViewModel : ViewModel() {
      *
      * @return number of boxes to move the ball
      */
-    fun getWinningMoveCount(uiState: SolverUiState): Int
-    {
+    fun getWinningMoveCount(uiState: SolverUiState): Int {
         val game = SolverEngine()
         game.populateGrid(_ballPositionList)
 
@@ -605,8 +627,7 @@ object SolverViewModel : ViewModel() {
      *
      * @param uiState Current game UI state
      */
-    fun makeWinningMove(uiState: SolverUiState)
-    {
+    fun makeWinningMove(uiState: SolverUiState) {
         val game = SolverEngine()
         game.populateGrid(_ballPositionList)
 
@@ -664,8 +685,11 @@ object SolverViewModel : ViewModel() {
      * @return List of movement records, If this only has 1 move, then this will be a chain of
      * one movement record. It will return an empty list if there is no movement needed.
      */
-    private fun buildMovingChain(initialRow: Int, initialCol: Int, direction: Direction) : List<MovingRec>
-    {
+    private fun buildMovingChain(
+        initialRow: Int,
+        initialCol: Int,
+        direction: Direction
+    ): List<MovingRec> {
         val movingList = mutableListOf<MovingRec>()
 
         var chainRecInfo = findFreeSpaceCount(initialRow, initialCol, direction, firstMove = true)
@@ -675,7 +699,7 @@ object SolverViewModel : ViewModel() {
         // For the first ball in chain, we must have at least one free space to move
         if (movingDistance == 0) return movingList
 
-        movingList.add(MovingRec(SolverGridPos(initialRow,initialCol), movingDistance))
+        movingList.add(MovingRec(SolverGridPos(initialRow, initialCol), movingDistance))
 
         // For subsequent ball in the chain, it is fine to have zero distance
         var fallenOffEdge = false
@@ -685,7 +709,12 @@ object SolverViewModel : ViewModel() {
             } else {
                 val currentSourcePos = nextSourcePos
                 chainRecInfo =
-                    findFreeSpaceCount(currentSourcePos.row, currentSourcePos.col, direction, firstMove = false)
+                    findFreeSpaceCount(
+                        currentSourcePos.row,
+                        currentSourcePos.col,
+                        direction,
+                        firstMove = false
+                    )
                 movingDistance = chainRecInfo.first
                 nextSourcePos = chainRecInfo.second
                 movingList.add(MovingRec(currentSourcePos, movingDistance))
@@ -713,8 +742,12 @@ object SolverViewModel : ViewModel() {
      *  second element is the position of the next ball
      *
      */
-    private fun findFreeSpaceCount(row: Int, col: Int, direction: Direction, firstMove: Boolean) : Pair <Int, SolverGridPos?>
-    {
+    private fun findFreeSpaceCount(
+        row: Int,
+        col: Int,
+        direction: Direction,
+        firstMove: Boolean
+    ): Pair<Int, SolverGridPos?> {
         var xOffset = 0
         var yOffset = 0
         var sourceRow = row
@@ -725,43 +758,44 @@ object SolverViewModel : ViewModel() {
             Direction.LEFT -> yOffset = -1
             Direction.UP -> xOffset = -1
             Direction.DOWN -> xOffset = 1
-            else -> assert(true) {"Got unexpected direction value"}
+            else -> assert(true) { "Got unexpected direction value" }
         }
 
         if ((direction == Direction.LEFT) && (col == 0)) {
-            if (firstMove) return (Pair(0, null ))
-            return (Pair(2, null ))
+            if (firstMove) return (Pair(0, null))
+            return (Pair(2, null))
         }
 
         if ((direction == Direction.RIGHT) && (col == Global.MAX_COL_SIZE)) {
-            if (firstMove) return (Pair(0, null ))
-            return (Pair(2, null ))
+            if (firstMove) return (Pair(0, null))
+            return (Pair(2, null))
         }
 
         if ((direction == Direction.UP) && (row == 0)) {
-            if (firstMove) return (Pair(0, null ))
-            return (Pair(2, null ))
+            if (firstMove) return (Pair(0, null))
+            return (Pair(2, null))
         }
 
         if ((direction == Direction.DOWN) && (row == Global.MAX_ROW_SIZE)) {
-            if (firstMove) return (Pair(0, null ))
-            return (Pair(2, null ))
+            if (firstMove) return (Pair(0, null))
+            return (Pair(2, null))
         }
 
-        var newRow : Int
-        var newCol : Int
+        var newRow: Int
+        var newCol: Int
 
         var distance = 0
         var hitWall = false
 
-        var nextSourcePos : SolverGridPos? = null
+        var nextSourcePos: SolverGridPos? = null
 
         while (!hitWall) {
             newRow = sourceRow + xOffset
             newCol = sourceCol + yOffset
 
             if ((newRow == -1) || (newRow == Global.MAX_ROW_SIZE) ||
-                (newCol == -1) || (newCol == Global.MAX_COL_SIZE)) {
+                (newCol == -1) || (newCol == Global.MAX_COL_SIZE)
+            ) {
                 distance++ // Add two to make it fall off the edge
                 distance++
                 hitWall = true

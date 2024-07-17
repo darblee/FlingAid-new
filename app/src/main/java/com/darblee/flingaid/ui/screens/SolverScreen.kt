@@ -121,6 +121,7 @@ import kotlin.math.abs
 @Composable
 fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController) {
     var announceVictory by remember { mutableStateOf(false) }
+    var needToLoadGameFile by remember { mutableStateOf(true) }
 
     // Intercept backPress key while on Game Solver screen..
     //
@@ -146,7 +147,10 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
-    solverViewModel.setFile(boardFile)
+    if (needToLoadGameFile) {
+        solverViewModel.setFile(boardFile)
+     /* TODO    needToLoadGameFile = false */
+    }
 
     var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
     findWinnableMoveButtonEnabled =
@@ -508,7 +512,7 @@ private fun DrawSolverBoard(
         Canvas(
             modifier = modifier
                 .fillMaxSize()
-                .drawBehind {  }  // Performance optimization. Prevent recomposing other elements outside the canvas
+                .drawBehind { }  // Performance optimization. Prevent recomposing other elements outside the canvas
                 .padding(15.dp)
                 .pointerInput(Unit) {
                     detectTapGestures(
