@@ -140,43 +140,43 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         return
     }
 
+    val solverViewModel: SolverViewModel = viewModel()
+    val uiState by solverViewModel.uiState.collectAsState()
+
+    gBoardFile = File(LocalContext.current.filesDir, Global.BOARD_FILENAME)
+
+    val onEnableVictoryMsg = { setting:Boolean -> announceVictory = setting }
+    val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
+
+    solverViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
+
+    var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
+    findWinnableMoveButtonEnabled =
+        ((solverViewModel.ballCount() > 1) && (!hasFoundWinnableMove(uiState)))
+
+    var showWinnableMoveToUser by remember { mutableStateOf(false) }
+    showWinnableMoveToUser =
+        (uiState.winningDirection != Direction.NO_WINNING_DIRECTION)
+
+    /**
+     * Keep track of when to do the ball movement animation
+     */
+    var showBallMovementAnimation by remember { mutableStateOf(false) }
+    val onBallMovementAnimationChange = { enableBallMovements:Boolean -> showBallMovementAnimation = enableBallMovements }
+
+    if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
+        val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
+        if (idleRec.IdleMode == (SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound)) {
+            gameToast(LocalContext.current, "There is no winnable move", displayLonger = true)
+            solverViewModel.setIDLEstate()
+        }
+    }
+
     Column (
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val solverViewModel: SolverViewModel = viewModel()
-        val uiState by solverViewModel.uiState.collectAsState()
-
-        gBoardFile = File(LocalContext.current.filesDir, Global.BOARD_FILENAME)
-
-        val onEnableVictoryMsg = { setting:Boolean -> announceVictory = setting }
-        val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
-
-        solverViewModel.loadBallPositions(gBoardFile)  // Load balls from previous game save
-
-        var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
-        findWinnableMoveButtonEnabled =
-            ((solverViewModel.ballCount() > 1) && (!hasFoundWinnableMove(uiState)))
-
-        var showWinnableMoveToUser by remember { mutableStateOf(false) }
-        showWinnableMoveToUser =
-            (uiState.winningDirection != Direction.NO_WINNING_DIRECTION)
-
-        /**
-         * Keep track of when to do the ball movement animation
-         */
-        var showBallMovementAnimation by remember { mutableStateOf(false) }
-        val onBallMovementAnimationChange = { enableBallMovements:Boolean -> showBallMovementAnimation = enableBallMovements }
-
-        if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
-            val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
-            if (idleRec.IdleMode == (SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound)) {
-                gameToast(LocalContext.current, "There is no winnable move", displayLonger = true)
-                solverViewModel.setIDLEstate()
-            }
-        }
-
         Instruction_DynamicLogo(uiState)
         ControlButtonsForSolver(
             solverViewModel = solverViewModel,
