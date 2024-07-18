@@ -275,12 +275,11 @@ object SolverViewModel : ViewModel() {
      */
     fun findWinningMove(solverViewModel: SolverViewModel) {
         gThinkingProgress = 0
-        val activeThinkingRec = SolverUiState.ThinkingMode.Active
-        activeThinkingRec.progressLevel = 0.0f
 
         _uiState.update { currentStatus ->
             currentStatus.copy(
-                thinkingStatus = activeThinkingRec
+                solverGameState = SolverUiState.SolverGameMode.Thinking,
+                thinkingProgressLevel = 0.0f
             )
         }
         viewModelScope.launch {
@@ -367,10 +366,9 @@ object SolverViewModel : ViewModel() {
                 buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
             setIDLEstate(
-                idleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound,
                 winningDirection = winningDir,
-                winningMovingChain = movingChain
-            )
+                winningMovingChain = movingChain,
+                mode = SolverUiState.SolverGameMode.IdleFoundSolution)
 
         } else {
 
@@ -392,20 +390,23 @@ object SolverViewModel : ViewModel() {
                     buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
                 setIDLEstate(
-                    idleMode = SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound,
                     winningDirection = winningDir,
-                    winningMovingChain = movingChain
+                    winningMovingChain = movingChain,
+                    mode = SolverUiState.SolverGameMode.IdleFoundSolution
                 )
 
             } else {
 
                 // Neither Task #1 nor Task #2 has winning result
                 _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
-                setIDLEstate(
-                    idleMode = SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound,
-                    winningDirection = Direction.NO_WINNING_DIRECTION,
-                    winningMovingChain = mutableStateListOf()
-                )
+
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        winningDirection = Direction.NO_WINNING_DIRECTION,
+                        winningMovingChain = mutableStateListOf(),
+                        solverGameState = SolverUiState.SolverGameMode.IdleAnnounceNoPossibleWin
+                    )
+                }
             }
         }
         gThinkingProgress = 0
@@ -414,26 +415,22 @@ object SolverViewModel : ViewModel() {
     /**
      * Update [uiState]  thinking status to Idle state.
      *
-     * @param idleMode Specific idle type. If this is not provided, it defaults to "Waiting on User"
-     * mode
      * @param winningDirection If this is idle with winning move, then this is direction of winning move.
      * Otherwise it defaults to "No winning direction"
      * @param winningMovingChain If this is idle with winning move, then this describe the movement
      * details.
+     * @param mode Solver game state
      */
     fun setIDLEstate(
-        idleMode: SolverUiState.ThinkingMode.Idle.IdleType = SolverUiState.ThinkingMode.Idle.IdleType.WaitingOnUser,
         winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
-        winningMovingChain: List<MovingRec> = mutableListOf()
+        winningMovingChain: List<MovingRec> = mutableListOf(),
+        mode: SolverUiState.SolverGameMode = SolverUiState.SolverGameMode.Idle
     ) {
-        val idleRec = SolverUiState.ThinkingMode.Idle
-        idleRec.IdleMode = idleMode
-
         _uiState.update { currentState ->
             currentState.copy(
-                thinkingStatus = idleRec,
                 winningDirection = winningDirection,
-                winningMovingChain = winningMovingChain
+                winningMovingChain = winningMovingChain,
+                solverGameState = mode
             )
         }
         gThinkingProgress = 0
@@ -556,28 +553,26 @@ object SolverViewModel : ViewModel() {
         _totalProcessCount =
             (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
 
-        while (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) {
-
+        while (_uiState.value.solverGameState == SolverUiState.SolverGameMode.Thinking) {
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
             val newValue: Float =
                 (gThinkingProgress.toFloat() / (_totalProcessCount) * 100.0).toFloat()
 
             if (newValue > currentValue) {
                 currentValue = newValue
-                val activeThinking = SolverUiState.ThinkingMode.Active
-                activeThinking.progressLevel = currentValue
                 _uiState.update { currentState ->
                     currentState.copy(
-                        thinkingStatus = activeThinking,
+                        thinkingProgressLevel = currentValue,
+                        solverGameState = SolverUiState.SolverGameMode.Thinking
                     )
                 }
             }
 
             // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
             // loop breakout when it has finished thinking
-            if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
-            if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
-            if (_uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) Thread.sleep(500)
+            if (_uiState.value.solverGameState == SolverUiState.SolverGameMode.Thinking) Thread.sleep(500)
+            if (_uiState.value.solverGameState == SolverUiState.SolverGameMode.Thinking) Thread.sleep(500)
+            if (_uiState.value.solverGameState == SolverUiState.SolverGameMode.Thinking) Thread.sleep(500)
         }
         Log.i(Global.DEBUG_PREFIX, "Finished thinking")
     }

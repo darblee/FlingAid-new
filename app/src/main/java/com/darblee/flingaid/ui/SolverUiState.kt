@@ -33,7 +33,8 @@ data class MovingRec(
  *
  * [Solver State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
  *
- * @param thinkingStatus Whether it is in active thinking mode or just idle
+ * @param solverGameState Solver game state. It is whether it is in active thinking mode or one of
+ * possible idle state
  * @param winningDirection The direction of the ball to move that will lead to a win. This is also
  * used to do ball animation as animation always move toward winning.
  * A value of "Direction.NO_WINNING_DIRECTION" means there is no winning direction found in the
@@ -43,31 +44,15 @@ data class MovingRec(
  * The chain is used primarily to animate all the ball movements
  */
 data class SolverUiState(
-    var thinkingStatus: ThinkingMode = ThinkingMode.Idle,
+    var solverGameState : SolverGameMode = SolverGameMode.Idle,
+    var thinkingProgressLevel: Float = 0.0f,
     var winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
     val winningMovingChain: List<MovingRec> = listOf()
 ) {
-    /**
-     * There are two different thinking modes:
-     * - Active : Actively searching for solution with 'progressLevel' thinking progress
-     * - Idle : With one of the following idle mode:
-     *      - Waiting on the user
-     *      - No Solution is found
-     *      - Solution is found
-     */
-    sealed class ThinkingMode {
-        data object Active : ThinkingMode() {
-            var progressLevel: Float = 0.0f
-        }
-
-        data object Idle : ThinkingMode() {
-            var IdleMode = IdleType.WaitingOnUser
-
-            enum class IdleType {
-                WaitingOnUser,
-                NoSolutionFound,
-                SolutionFound
-            }
-        }
+    sealed class SolverGameMode {
+        data object Thinking : SolverGameMode()
+        data object Idle : SolverGameMode()
+        data object IdleFoundSolution: SolverGameMode()
+        data object IdleAnnounceNoPossibleWin: SolverGameMode()
     }
 }

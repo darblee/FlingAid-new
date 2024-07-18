@@ -120,6 +120,9 @@ import kotlin.math.abs
  */
 @Composable
 fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController) {
+
+    Log.i(Global.DEBUG_PREFIX, "Solver Screen - recompose")
+
     var announceVictory by remember { mutableStateOf(false) }
     var needToLoadGameFile by remember { mutableStateOf(true) }
 
@@ -152,7 +155,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     // Also need to minimize the need to do expensive time consuming file i/o operation.
     if (needToLoadGameFile) {
         solverViewModel.loadGameFile(boardFile)
-    // TODO    needToLoadGameFile = false
+        needToLoadGameFile = false
     }
 
     var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
@@ -170,13 +173,9 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val onBallMovementAnimationChange =
         { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
 
-    if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
-        Log.i(Global.DEBUG_PREFIX, "DAVID: Recompose idle state")
-        val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
-        if (idleRec.IdleMode == (SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound)) {
+    if (uiState.solverGameState == SolverUiState.SolverGameMode.IdleAnnounceNoPossibleWin) {
             gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
             solverViewModel.setIDLEstate()
-        }
     }
 
     Column(
@@ -216,7 +215,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
  * @param navController Navigator controller, which is used to navigate to the previous screen.
  */
 fun solverScreenBackPressed(context: Context, navController: NavHostController) {
-    if (SolverViewModel.uiState.value.thinkingStatus == SolverUiState.ThinkingMode.Active) {
+    if (SolverViewModel.uiState.value.solverGameState == SolverUiState.SolverGameMode.Thinking) {
         gameToast(context, "Unable to go back to home while it is thinking")
     } else {
         navController.popBackStack()
@@ -242,7 +241,7 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState) {
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         Box {
-            if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
+            if (uiState.solverGameState != SolverUiState.SolverGameMode.Thinking) {
                 val imageModifier = Modifier
                     .size(logoSize)
                     .align(Alignment.Center)
@@ -261,10 +260,8 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState) {
                 )
 
                 //  Track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-                val newPercentageValue =
-                    (uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Active }).progressLevel
                 val percentComplete =
-                    String.format(Locale.getDefault(), "%.1f%%", newPercentageValue)
+                    String.format(Locale.getDefault(), "%.1f%%", uiState.thinkingProgressLevel)
                 Text(
                     "$percentComplete Complete",
                     style = MaterialTheme.typography.bodySmall,
@@ -358,7 +355,7 @@ private fun ControlButtonsForSolver(
                 .weight(3F)
                 .padding(5.dp),
             enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) &&
-                    (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle))
+                    (uiState.solverGameState != SolverUiState.SolverGameMode.Thinking))
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(
@@ -374,7 +371,7 @@ private fun ControlButtonsForSolver(
         Button(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Active) {
+                if (uiState.solverGameState == SolverUiState.SolverGameMode.Thinking) {
                     gameToast(context, "Unable to reset as it is currently busy finding a solution")
                 } else {
                     // Reset the board game and set it back to idle state
@@ -392,8 +389,7 @@ private fun ControlButtonsForSolver(
                 .padding(5.dp),
             // Disable button while it is in active thinking mode or in the middle of announce
             // victory message
-            enabled = ((uiState.thinkingStatus != SolverUiState.ThinkingMode.Active) ||
-                    announceVictory)
+            enabled = ((uiState.solverGameState != SolverUiState.SolverGameMode.Thinking) || announceVictory)
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(
@@ -441,11 +437,8 @@ private fun DrawSolverBoard(
     val textMeasurer = rememberTextMeasurer()
 
     if (solverViewModel.ballCount() == 1) {
-        if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
-            val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
-            if (idleRec.IdleMode == (SolverUiState.ThinkingMode.Idle.IdleType.SolutionFound)) {
-                onEnableVictoryMsg(true)
-            }
+        if (uiState.solverGameState == SolverUiState.SolverGameMode.IdleFoundSolution) {
+            onEnableVictoryMsg(true)
         }
     }
 
@@ -525,7 +518,7 @@ private fun DrawSolverBoard(
 
                             view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
-                            if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Active) {
+                            if (uiState.solverGameState == SolverUiState.SolverGameMode.Thinking) {
                                 Toast
                                     .makeText(
                                         context,
