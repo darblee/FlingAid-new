@@ -147,9 +147,12 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
+    // Load the game file only once. This is done primarily for performance reason.
+    // Loading game file will trigger non-stop recomposition.
+    // Also need to minimize the need to do expensive time consuming file i/o operation.
     if (needToLoadGameFile) {
-        solverViewModel.setFile(boardFile)
-     /* TODO    needToLoadGameFile = false */
+        solverViewModel.loadGameFile(boardFile)
+    // TODO    needToLoadGameFile = false
     }
 
     var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
@@ -168,9 +171,10 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
 
     if (uiState.thinkingStatus == SolverUiState.ThinkingMode.Idle) {
+        Log.i(Global.DEBUG_PREFIX, "DAVID: Recompose idle state")
         val idleRec = uiState.thinkingStatus.let { SolverUiState.ThinkingMode.Idle }
         if (idleRec.IdleMode == (SolverUiState.ThinkingMode.Idle.IdleType.NoSolutionFound)) {
-            gameToast(LocalContext.current, "There is no winnable move", displayLonger = true)
+            gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
             solverViewModel.setIDLEstate()
         }
     }
@@ -941,7 +945,6 @@ fun AnimatePreviewBallMovementsSetup(
                     } // if-else currentMovingRec.distance
                 }
                 animateBallMovementChain.clear()
-                delay(500)
 
                 onAnimationChange(false)
                 solverViewModel.makeWinningMove(uiState)
@@ -951,7 +954,7 @@ fun AnimatePreviewBallMovementsSetup(
                 }
             }
 
-            launch {  // If there is  multiple ball chain movements, we only animate explosion on the first ball
+            launch {  // Animate explosion on the first ball only
                 val totalTimeLength = (movingChain[0].distance * 100) + 100
                 animateParticleExplosion.animateTo(
                     targetValue = 0.5f,
@@ -1053,10 +1056,22 @@ fun animateBallMovementsPerform(
     particles: MutableList<Particle>,
     uiState: SolverUiState
 ) {
-    with(drawScope) {
-        val movingDirection = uiState.winningDirection
-        val movingChain = uiState.winningMovingChain
+    val movingDirection = uiState.winningDirection
+    val movingChain = uiState.winningMovingChain
 
+    if (movingChain.isEmpty()) {
+        return
+    }
+
+    if (movingDirection == Direction.NO_WINNING_DIRECTION) {
+        return
+    }
+
+    if (animateBallMovementChain.isEmpty()) {
+        return
+    }
+
+    with(drawScope) {
         var movingSourcePos: SolverGridPos
         var offset: Pair<Float, Float>
         var xOffset: Float

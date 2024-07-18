@@ -35,8 +35,7 @@ import java.util.concurrent.CyclicBarrier
  *
  * **Ball Management**
  * Managing the ball on the game board
- * - [saveBallPositions]
- * - [loadBallPositions]
+ * - [loadGameFile] : Define the file to store the ball position information
  * - [toggleBallPosition]
  * - [ballCount]
  * - [ballPositionList]
@@ -147,7 +146,7 @@ object SolverViewModel : ViewModel() {
      *
      * @param file  game file
      */
-    fun setFile(file: File) {
+    fun loadGameFile(file: File) {
         gGameFile = file
         loadBallPositions()
     }
@@ -156,13 +155,6 @@ object SolverViewModel : ViewModel() {
      * Load the saved game board from file
      **/
     private fun loadBallPositions() {
-        // TODO Return immediately if ball is already loaded
-        // This is important for performance reason. This function gets call frequently from
-        // a composable function. We need to minimize the need to load file, which is an
-        // expensive operation.
-        // The following need causes crash. Need to understand why
-        //       if (_ballPositionList.size > 0) return
-
         try {
             val reader = FileReader(gGameFile)
             val data = reader.readText()
@@ -177,6 +169,20 @@ object SolverViewModel : ViewModel() {
         } catch (e: Exception) {
             Log.i(Global.DEBUG_PREFIX, "An error occurred while reading the file: ${e.message}")
         }
+    }
+
+
+    /**
+     * Print the ball positions. Used for debugging purposes
+     */
+    private fun printPositions() {
+
+        Log.i(Global.DEBUG_PREFIX, "============== Ball Listing ================)")
+
+        for ((index, value) in _ballPositionList.withIndex()) {
+            Log.i(Global.DEBUG_PREFIX, "Ball $index: (${value.row}, ${value.col})")
+        }
+
     }
 
     /********************************* SOLVER GAME MANAGEMENT ****************************/
