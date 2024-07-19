@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.darblee.flingaid.BackPressHandler
@@ -73,10 +74,11 @@ import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.utilities.gameToast
 import kotlinx.coroutines.delay
+import java.io.File
 import kotlin.math.abs
 
 /**
- *  The Game Screen
+ *  **The main Game Screen**
  *
  *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
@@ -85,15 +87,18 @@ import kotlin.math.abs
  */
 @Composable
 fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) {
-    val announceVictory by remember { mutableStateOf(false) }
+    var announceVictory by remember { mutableStateOf(false) }
+    var needToLoadGameFile by remember { mutableStateOf(true) }
 
-    // Intercept backPress key while on Game Solver screen..
-    //
-    // When doing back press on the current screen, confirm with the user whether
-    // it should exit this screen or not if it is middle of thinking.
-    // Do not exit this screen when:
-    // - It is middle of thinking
-    // - It is in middle of announcing victory message
+
+    /**
+     * Intercept backPress key while on Game screen.
+     *
+     * When doing back press on the current screen, confirm with the user whether it should exit
+     * this screen or not if it is middle of thinking. Do not exit this screen when:
+     * - It is middle of thinking
+     * - It is in middle of announcing victory message
+     */
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
@@ -104,6 +109,21 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     }
 
     val gameViewModel: GameViewModel = viewModel()
+    val uiState by gameViewModel.uiState.collectAsStateWithLifecycle()
+
+    val boardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
+
+    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
+    val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
+
+    // Load the game file only once. This is done primarily for performance reason.
+    // Loading game file will trigger non-stop recomposition.
+    // Also need to minimize the need to do expensive time consuming file i/o operation.
+    if (needToLoadGameFile) {
+ //       gameViewModel.loadGameFile(boardFile)  // TODO
+        needToLoadGameFile = false
+    }
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,

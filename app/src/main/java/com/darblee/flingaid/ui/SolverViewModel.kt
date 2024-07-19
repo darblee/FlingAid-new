@@ -56,11 +56,13 @@ object SolverViewModel : ViewModel() {
      */
     internal var gThinkingProgress = 0
 
-    private var gGameFile: File? = null
+    private var gSolverGameFile: File? = null
 
     /**
      * Store the winning direction for each corresponding task. Only 1 task will have the winning move
      * but we do not know which ones.
+     * - Winning Direction from thread #1
+     * - Winning Direction from thread #2
      */
     var task2_WinningDirection = Direction.NO_WINNING_DIRECTION
     var task1_WinningDirection = Direction.NO_WINNING_DIRECTION
@@ -133,7 +135,7 @@ object SolverViewModel : ViewModel() {
         val output = format.encodeToString(ballList)
 
         try {
-            val writer = FileWriter(gGameFile)
+            val writer = FileWriter(gSolverGameFile)
             writer.write(output)
             writer.close()
         } catch (e: Exception) {
@@ -147,7 +149,7 @@ object SolverViewModel : ViewModel() {
      * @param file  game file
      */
     fun loadGameFile(file: File) {
-        gGameFile = file
+        gSolverGameFile = file
         loadBallPositions()
     }
 
@@ -156,7 +158,7 @@ object SolverViewModel : ViewModel() {
      **/
     private fun loadBallPositions() {
         try {
-            val reader = FileReader(gGameFile)
+            val reader = FileReader(gSolverGameFile)
             val data = reader.readText()
             reader.close()
 
@@ -230,7 +232,7 @@ object SolverViewModel : ViewModel() {
      */
     fun reset() {
         _ballPositionList.clear()
-        gGameFile?.delete()
+        gSolverGameFile?.delete()
 
         setIDLEstate()
     }

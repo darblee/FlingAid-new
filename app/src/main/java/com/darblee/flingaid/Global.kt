@@ -24,6 +24,7 @@ internal object Global {
     const val MAX_COL_SIZE = 7
     const val MAX_ROW_SIZE = 8
     const val DEBUG_PREFIX = "Flicker:"
-    const val BOARD_FILENAME = "Board.txt"
+    const val SOLVER_BOARD_FILENAME = "SolverBoard.txt"
+    const val GAME_BOARD_FILENAME = "MainBoard.txt"
     val TopAppBarHeight = 48.0.dp
 }

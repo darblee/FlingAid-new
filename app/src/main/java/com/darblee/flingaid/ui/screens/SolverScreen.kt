@@ -44,7 +44,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -112,7 +111,7 @@ import java.util.Locale
 import kotlin.math.abs
 
 /**
- *  The main Solver Game Screen
+ *  **The main Solver Game Screen**
  *
  *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
@@ -125,15 +124,16 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     Log.i(Global.DEBUG_PREFIX, "Solver Screen - recompose")
 
     var announceVictory by remember { mutableStateOf(false) }
-    var needToLoadGameFile by remember { mutableStateOf(true) }
+    var needToLoadSolverGameFile by remember { mutableStateOf(true) }
 
-    // Intercept backPress key while on Game Solver screen..
-    //
-    // When doing back press on the current screen, confirm with the user whether
-    // it should exit this screen or not if it is middle of thinking.
-    // Do not exit this screen when:
-    // - It is middle of thinking
-    // - It is in middle of announcing victory message
+
+    /**
+     * Intercept backPress key while on Game Solver screen.
+     * When doing back press on the current screen, confirm with the user whether it should exit
+     * this screen or not if it is middle of thinking. Do not exit this screen when:
+     * - It is middle of thinking
+     * - It is in middle of announcing victory message
+     */
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
@@ -146,7 +146,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val solverViewModel: SolverViewModel = viewModel()
     val uiState by solverViewModel.uiState.collectAsStateWithLifecycle()
 
-    val boardFile = File(LocalContext.current.filesDir, Global.BOARD_FILENAME)
+    val boardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
 
     val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -154,9 +154,9 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     // Load the game file only once. This is done primarily for performance reason.
     // Loading game file will trigger non-stop recomposition.
     // Also need to minimize the need to do expensive time consuming file i/o operation.
-    if (needToLoadGameFile) {
+    if (needToLoadSolverGameFile) {
         solverViewModel.loadGameFile(boardFile)
-        needToLoadGameFile = false
+        needToLoadSolverGameFile = false
     }
 
     var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }

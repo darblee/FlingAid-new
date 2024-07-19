@@ -3,13 +3,85 @@ package com.darblee.flingaid.ui
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
+import com.darblee.flingaid.Direction
+import com.darblee.flingaid.ui.SolverViewModel.ballCount
+import com.darblee.flingaid.ui.SolverViewModel.findWinningMove
+import com.darblee.flingaid.ui.SolverViewModel.loadGameFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.io.File
 
+/**
+ * **View Model for the Game**
+ *
+ * - It manage the business logic for the game. This includes the thinking activity.
+ * - It is the sole source of truth for the solve game state.
+ * - It prepare data for the UI. All information flow one direction to the UI
+ * - It has a longer lifetime than the composable
+ *
+ * [State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
+ *
+ * There can only be one GameViewModel instance. Hence, use the singleton class (object)
+ *
+ * [SolverUiState] State of UI
+ *
+ * **Ball Management**
+ * Managing the ball on the game board
+ * - [loadGameFile] : Define the file to store the ball position information
+ * - [ballCount]
+ * - [ballPositionList]
+ *
+ * **Game Play Functions**
+ * - [findWinningMove]
+ */
 object GameViewModel : ViewModel() {
+
+    /**
+     * _Developer's note:_ `internal` means it will only be visible within that module. A module
+     * is a set of Kotlin files that are compiled together e.g. a library or application. It provides real
+     * encapsulation for the implementation details. In this case, it is shared wit the SolverEngine class.
+     */
+    internal var gThinkingProgress = 0
+
+    private var gGameFile: File? = null
+
+    /**
+     * Store the winning direction for each corresponding task. Only 1 task will have the winning move
+     * but we do not know which ones.
+     * - Winning Direction from thread #1
+     * - Winning Direction from thread #2
+     */
+    var task2_WinningDirection = Direction.NO_WINNING_DIRECTION
+    var task1_WinningDirection = Direction.NO_WINNING_DIRECTION
+
+
+    /**
+     * [_totalProcessCount] is the total amount of thinking process involved in the current move.
+     * [_totalBallInCurrentMove] total number of balls in the current move and current level
+     *
+     * The total is 2 levels of thinking.
+     * Next level is (number of balls - 1) x 4 directions
+     * Current level is the number of balls x 4 direction
+     * Total = (Next level) x (current level)
+     */
+    private var _totalProcessCount: Float = 0.0F
+    private var _totalBallInCurrentMove = 0
+
+
+    /********************************* BALL MANAGEMENT ****************************/
+
+    /**
+     * List of all the balls and its position on the game board
+     *
+     * _Developer's Note_
+     * Use of mutableStateListOf to preserve the composable state of the ball position. The state
+     * are kept appropriately isolated and can be performed in a safe manner without race condition
+     * when they are used in multiple threads (e.g. LaunchEffects).
+     */
     private var _ballPositionList = mutableStateListOf<Pos>()
+
 
     /*
 
