@@ -85,6 +85,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.airbnb.lottie.compose.LottieAnimation
@@ -143,7 +144,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     }
 
     val solverViewModel: SolverViewModel = viewModel()
-    val uiState by solverViewModel.uiState.collectAsState()
+    val uiState by solverViewModel.uiState.collectAsStateWithLifecycle()
 
     val boardFile = File(LocalContext.current.filesDir, Global.BOARD_FILENAME)
 
