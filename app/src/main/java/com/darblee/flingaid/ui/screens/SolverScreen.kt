@@ -173,7 +173,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val onBallMovementAnimationChange =
         { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
 
-    if (uiState.solverGameState == SolverUiState.SolverGameMode.IdleAnnounceNoPossibleWin) {
+    if (uiState.solverGameState == SolverUiState.SolverGameMode.IdleNoSolution) {
             gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
             solverViewModel.setIDLEstate()
     }

@@ -53,6 +53,6 @@ data class SolverUiState(
         data object Thinking : SolverGameMode()
         data object Idle : SolverGameMode()
         data object IdleFoundSolution: SolverGameMode()
-        data object IdleAnnounceNoPossibleWin: SolverGameMode()
+        data object IdleNoSolution: SolverGameMode()
     }
 }

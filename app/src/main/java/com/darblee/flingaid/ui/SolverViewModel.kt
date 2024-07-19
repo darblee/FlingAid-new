@@ -404,7 +404,7 @@ object SolverViewModel : ViewModel() {
                     currentState.copy(
                         winningDirection = Direction.NO_WINNING_DIRECTION,
                         winningMovingChain = mutableStateListOf(),
-                        solverGameState = SolverUiState.SolverGameMode.IdleAnnounceNoPossibleWin
+                        solverGameState = SolverUiState.SolverGameMode.IdleNoSolution
                     )
                 }
             }
