@@ -50,7 +50,7 @@ object GameViewModel : ViewModel() {
         return (_ballPositionList)
     }
 
-    fun MoveBallPos(row: Int, col: Int) {
+    fun moveBallPos(row: Int, col: Int) {
         _uiState.update { currentState ->
             currentState.copy(
                 state = GameState.MoveBall,

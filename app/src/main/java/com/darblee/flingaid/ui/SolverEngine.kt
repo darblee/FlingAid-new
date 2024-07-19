@@ -9,8 +9,11 @@ import com.darblee.flingaid.Global
  * Engine that look for winnable move based on game layout information
  */
 internal class SolverEngine {
-    private var flingGrid = Array(Global.MAX_ROW_SIZE) { BooleanArray(Global.MAX_COL_SIZE) }
+    private var flickerGrid = Array(Global.MAX_ROW_SIZE) { BooleanArray(Global.MAX_COL_SIZE) }
 
+    /**
+     * Initialize SolverEngine class
+     */
     init {
         clearGameBoard()
     }
@@ -21,7 +24,7 @@ internal class SolverEngine {
     private fun clearGameBoard() {
         repeat(Global.MAX_ROW_SIZE) { row ->
             repeat(Global.MAX_COL_SIZE) { col ->
-                flingGrid[row][col] = false
+                flickerGrid[row][col] = false
             }
         }
     }
@@ -33,7 +36,7 @@ internal class SolverEngine {
      */
     fun populateGrid(ballPositionList: SnapshotStateList<SolverGridPos>) {
         ballPositionList.forEach { pos ->
-            flingGrid[pos.row][pos.col] = true
+            flickerGrid[pos.row][pos.col] = true
         }
     }
 
@@ -47,7 +50,7 @@ internal class SolverEngine {
         // Clone the board
         repeat(Global.MAX_ROW_SIZE) { curRow ->
             repeat(Global.MAX_COL_SIZE) { curCol ->
-                tempBoard.flingGrid[curRow][curCol] = flingGrid[curRow][curCol]
+                tempBoard.flickerGrid[curRow][curCol] = flickerGrid[curRow][curCol]
             }
         }
 
@@ -120,7 +123,7 @@ internal class SolverEngine {
 
                     curCol = currentCol
 
-                    if (flingGrid[curRow][curCol]) {
+                    if (flickerGrid[curRow][curCol]) {
                         if (curSearchLevel == 1) Log.i(
                             "${Global.DEBUG_PREFIX}: Top level",
                             "Processing row=$curRow, col = $curCol"
@@ -227,6 +230,19 @@ internal class SolverEngine {
         return Triple(direction, winningRow, winningCol)
     }
 
+    /**
+     * Determine if moving up is a winning move or not
+     *
+     * @param totalBallCnt Used together with [curSearchLevel] parameter to determine whether it has found a solution or not.
+     * @param curSearchLevel Current search level. Used together with [totalBallCnt] parameter determined whether it has found a solution or not.
+     * It is also used to calculate thinking progress
+     * @param srcRow Row position of the ball to move up from
+     * @param col Column of the ball to move from
+     *
+     * @return
+     * - True if this is a winning move
+     * - false if this is NOT a winning move
+     */
     private fun winnableByMovingUp(
         totalBallCnt: Int,
         curSearchLevel: Int,
@@ -262,6 +278,19 @@ internal class SolverEngine {
         return true
     }
 
+    /**
+     * Determine if moving down is a winning move or not
+     *
+     * @param totalBallCnt Used together with [curSearchLevel] parameter to determine whether it has found a solution or not.
+     * @param curSearchLevel Current search level. Used together with [totalBallCnt] parameter determined whether it has found a solution or not.
+     * It is also used to calculate thinking progress
+     * @param srcRow Row position of the ball to move down from
+     * @param col Column of the ball to move from
+     *
+     * @return
+     * - True if this is a winning move
+     * - false if this is NOT a winning move
+     */
     private fun winnableByMovingDown(
         totalBallCnt: Int,
         curSearchLevel: Int,
@@ -296,6 +325,19 @@ internal class SolverEngine {
         return true
     }
 
+    /**
+     * Determine if moving right is a winning move or not
+     *
+     * @param totalBallCnt Used together with [curSearchLevel] parameter to determine whether it has found a solution or not.
+     * @param curSearchLevel Current search level. Used together with [totalBallCnt] parameter determined whether it has found a solution or not.
+     * It is also used to calculate thinking progress
+     * @param row Row position of the ball to move from
+     * @param srcCol Column of the ball to move right from
+     *
+     * @return
+     * - True if this is a winning move
+     * - false if this is NOT a winning move
+     */
     private fun winnableByMovingRight(
         totalBallCnt: Int,
         curSearchLevel: Int,
@@ -333,6 +375,19 @@ internal class SolverEngine {
         return true
     }
 
+    /**
+     * Determine if moving left is a winning move or not
+     *
+     * @param totalBallCnt Used together with [curSearchLevel] parameter to determine whether it has found a solution or not.
+     * @param curSearchLevel Current search level. Used together with [totalBallCnt] parameter determined whether it has found a solution or not.
+     * It is also used to calculate thinking progress
+     * @param row Row position of the ball to move from
+     * @param srcCol Column of the ball to move left from
+     *
+     * @return
+     * - True if this is a winning move
+     * - false if this is NOT a winning move
+     */
     private fun winnableByMovingLeft(
         totalBallCnt: Int,
         curSearchLevel: Int,
@@ -383,18 +438,18 @@ internal class SolverEngine {
         }
 
         // If there is already a Ball right on top, then there is no room to move. You need at least 1 free grid box to start the move
-        if (flingGrid[srcRow - 1][col]) {
+        if (flickerGrid[srcRow - 1][col]) {
             return -1
         }
 
         // Now we have room to move, so let's find the target row
         var targetRow = (srcRow - 2)
 
-        while ((!flingGrid[targetRow][col]) && (targetRow > 0)) {
+        while ((!flickerGrid[targetRow][col]) && (targetRow > 0)) {
             targetRow--
         }
 
-        if ((targetRow == 0) && (!flingGrid[0][col])) {
+        if ((targetRow == 0) && (!flickerGrid[0][col])) {
             return -1
         }
 
@@ -419,18 +474,18 @@ internal class SolverEngine {
         }
 
         // If there is already a Ball right on bottom, then there is no room to move. You need at least 1 free grid box to start the move
-        if (flingGrid[srcRow + 1][col]) {
+        if (flickerGrid[srcRow + 1][col]) {
             return -1
         }
 
         // Now we have room to move, so let's find the target row
         var targetRow = (srcRow + 2)
 
-        while ((!flingGrid[targetRow][col]) && (targetRow < (Global.MAX_ROW_SIZE - 1))) {
+        while ((!flickerGrid[targetRow][col]) && (targetRow < (Global.MAX_ROW_SIZE - 1))) {
             targetRow++
         }
 
-        if ((targetRow == (Global.MAX_ROW_SIZE - 1)) && (!flingGrid[(Global.MAX_ROW_SIZE - 1)][col])) {
+        if ((targetRow == (Global.MAX_ROW_SIZE - 1)) && (!flickerGrid[(Global.MAX_ROW_SIZE - 1)][col])) {
             return -1
         }
 
@@ -455,18 +510,18 @@ internal class SolverEngine {
         }
 
         // If there is already a Ball right on right, then there is no room to move. You need at least 1 free grid to start the move
-        if (flingGrid[row][(srcCol + 1)]) {
+        if (flickerGrid[row][(srcCol + 1)]) {
             return -1
         }
 
         // Now we have room to move, so let's find the target col
         var targetCol = (srcCol + 2)
 
-        while ((!flingGrid[row][targetCol]) && (targetCol < (Global.MAX_COL_SIZE - 1))) {
+        while ((!flickerGrid[row][targetCol]) && (targetCol < (Global.MAX_COL_SIZE - 1))) {
             targetCol++
         }
 
-        if ((targetCol == (Global.MAX_COL_SIZE - 1)) && (!flingGrid[row][(Global.MAX_COL_SIZE - 1)])) {
+        if ((targetCol == (Global.MAX_COL_SIZE - 1)) && (!flickerGrid[row][(Global.MAX_COL_SIZE - 1)])) {
             return -1
         }
 
@@ -491,18 +546,18 @@ internal class SolverEngine {
         }
 
         // If there is already a Ball right on left, then there is no room to move. You need at least 1 free grid box to start the move
-        if (flingGrid[row][(srcCol - 1)]) {
+        if (flickerGrid[row][(srcCol - 1)]) {
             return -1
         }
 
         // Now we have room to move, so let's find the target row
         var targetCol = (srcCol - 2)
 
-        while ((!flingGrid[row][targetCol]) && (targetCol > 0)) {
+        while ((!flickerGrid[row][targetCol]) && (targetCol > 0)) {
             targetCol--
         }
 
-        if ((targetCol == 0) && (!flingGrid[row][0])) {
+        if ((targetCol == 0) && (!flickerGrid[row][0])) {
             return -1
         }
 
@@ -511,33 +566,42 @@ internal class SolverEngine {
         return (targetCol)
     }
 
+    /**
+     * Move the ball upward from the source row to the target row
+     * Bump adjacent balls as needed
+     *
+     * @param srcRow Row position of the ball to move from
+     * @param targetRow Target row to move to
+     * @param col column involved
+     *
+     * @return Return the number of column it can move to. If it can not find any room, it will return -1
+     */
     fun moveUp(srcRow: Int, targetRow: Int, col: Int) {
         // Do the first move
-        if (!flingGrid[srcRow][col]) error("Unexpected ball status. row=$srcRow, col=$col should be true")
-        if (flingGrid[targetRow][col]) error("Unexpected ball status. row=$targetRow, col=$col should be false")
+        if (!flickerGrid[srcRow][col]) error("Unexpected ball status. row=$srcRow, col=$col should be true")
+        if (flickerGrid[targetRow][col]) error("Unexpected ball status. row=$targetRow, col=$col should be false")
 
-        flingGrid[srcRow][col] = false
-        flingGrid[targetRow][col] = true
+        flickerGrid[srcRow][col] = false
+        flickerGrid[targetRow][col] = true
 
         // There must be a ball adjacent.
         var nextSrcRow = targetRow - 1
-        if (!(flingGrid[nextSrcRow][col])) error("Unexpected grid value. This adjacent box must have a ball, i.e. true")
+        if (!(flickerGrid[nextSrcRow][col])) error("Unexpected grid value. This adjacent box must have a ball, i.e. true")
 
         // Handle the edge first. If the next row is already at the top, then just move it out of the grid and you're done
         if (nextSrcRow == 0) {
-            flingGrid[0][col] = false // Fell of the edge. One less ball
-            // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
+            flickerGrid[0][col] = false // Fell of the edge. One less ball
             return
         }
 
         // If the next row is at 2nd row (e.g. row = 1), then handle it special since we are near the edge
         if (nextSrcRow == 1) {
-            if (flingGrid[0][col]) {
+            if (flickerGrid[0][col]) {
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
-                flingGrid[0][col] = false // Fell of the edge. One less ball
+                flickerGrid[0][col] = false // Fell of the edge. One less ball
             } else {
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
-                flingGrid[1][col] = false // Fell of the edge. One less ball
+                flickerGrid[1][col] = false // Fell of the edge. One less ball
             }
             return
         }
@@ -546,36 +610,33 @@ internal class SolverEngine {
 
         var indexRow = nextSrcRow - 1
         // Move nextSrcRow pointer to the next one that has space to move the ball
-        while ((flingGrid[indexRow][col]) && (indexRow > 0)) {
+        while ((flickerGrid[indexRow][col]) && (indexRow > 0)) {
             // There is no space. Then move nextRow pointer until there is space
             indexRow--
         }
 
         // Check if we have continuous balls all the way to the edge
         if (indexRow == 0) {
-            if (flingGrid[0][col]) {
-                flingGrid[0][col] = false // Fell of the edge. One less ball
+            if (flickerGrid[0][col]) {
+                flickerGrid[0][col] = false // Fell of the edge. One less ball
             } else {
-                if (flingGrid[1][col]) {
-                    flingGrid[1][col] = false
+                if (flickerGrid[1][col]) {
+                    flickerGrid[1][col] = false
                 }
             }
-            // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             return
         }
 
         nextSrcRow = indexRow + 1
 
-        /**
-         * If there is space, then need to check if there is any more ball above it
-         * If no ball above it, then remove this ball from grid and you are done.
-         * Otherwise, we need re-iterate the process in the next chain
-         */
+        // If there is space, then need to check if there is any more ball above it
+        // If no ball above it, then remove this ball from grid and you are done.
+        // Otherwise, we need re-iterate the process in the next chain
         var foundBallBeforeEdge = false
         indexRow = nextSrcRow - 1
 
         while ((indexRow > 0) && (!foundBallBeforeEdge)) {
-            if (flingGrid[indexRow][col])
+            if (flickerGrid[indexRow][col])
                 foundBallBeforeEdge = true
             else
                 indexRow--
@@ -583,12 +644,11 @@ internal class SolverEngine {
 
         // Need to handle one more edge case
         if ((!foundBallBeforeEdge) && (indexRow == 0)) {
-            if (flingGrid[0][col]) foundBallBeforeEdge = true
+            if (flickerGrid[0][col]) foundBallBeforeEdge = true
         }
 
         if ((indexRow == 0) && (!foundBallBeforeEdge)) {
-            // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
-            flingGrid[nextSrcRow][col] = false  // Fell of the edge. One less ball
+            flickerGrid[nextSrcRow][col] = false  // Fell of the edge. One less ball
             return
         }
 
@@ -602,30 +662,30 @@ internal class SolverEngine {
 
     fun moveDown(srcRow: Int, targetRow: Int, col: Int) {
         // Do the first move
-        if (!flingGrid[srcRow][col]) error("Unexpected ball status. row=$srcRow, col=$col should be true")
-        if (flingGrid[targetRow][col]) error("Unexpected ball status. row=$targetRow, col=$col should be false")
-        flingGrid[srcRow][col] = false
-        flingGrid[targetRow][col] = true
+        if (!flickerGrid[srcRow][col]) error("Unexpected ball status. row=$srcRow, col=$col should be true")
+        if (flickerGrid[targetRow][col]) error("Unexpected ball status. row=$targetRow, col=$col should be false")
+        flickerGrid[srcRow][col] = false
+        flickerGrid[targetRow][col] = true
 
         // There must be a ball adjacent.
         var nextSrcRow = targetRow + 1
-        if (!(flingGrid[nextSrcRow][col])) error("Unexpected grid value. This adjacent box must have a ball, i.e. true")
+        if (!(flickerGrid[nextSrcRow][col])) error("Unexpected grid value. This adjacent box must have a ball, i.e. true")
 
         // Handle the edge first
         // If the next row is already at the bottom, then just move it out of the grid and you're done
         if (nextSrcRow == (Global.MAX_ROW_SIZE - 1)) {
-            flingGrid[(Global.MAX_ROW_SIZE - 1)][col] = false // Fell of the edge. One less ball
+            flickerGrid[(Global.MAX_ROW_SIZE - 1)][col] = false // Fell of the edge. One less ball
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             return
         }
 
         // If the next row is at 2nd last row (e.g. row = (Max Row - 2))), then handle it special since we are near the edge
         if (nextSrcRow == (Global.MAX_ROW_SIZE - 2)) {
-            if (flingGrid[(Global.MAX_ROW_SIZE - 1)][col]) {
-                flingGrid[(Global.MAX_ROW_SIZE - 1)][col] = false // Fell of the edge. One less ball
+            if (flickerGrid[(Global.MAX_ROW_SIZE - 1)][col]) {
+                flickerGrid[(Global.MAX_ROW_SIZE - 1)][col] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             } else {
-                flingGrid[(Global.MAX_ROW_SIZE - 2)][col] = false // Fell of the edge. One less ball
+                flickerGrid[(Global.MAX_ROW_SIZE - 2)][col] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             }
             return
@@ -635,18 +695,18 @@ internal class SolverEngine {
 
         var indexRow = nextSrcRow + 1
         // Move nextSrcRow pointer to the next one that has space to move the ball
-        while ((flingGrid[indexRow][col]) && (indexRow < (Global.MAX_ROW_SIZE - 1))) {
+        while ((flickerGrid[indexRow][col]) && (indexRow < (Global.MAX_ROW_SIZE - 1))) {
             // There is no space. Then move indexRow pointer until there is space
             indexRow++
         }
 
         // Check if we have continuous balls all the way to the edge
         if (indexRow == (Global.MAX_ROW_SIZE - 1)) {
-            if (flingGrid[Global.MAX_ROW_SIZE - 1][col]) {
-                flingGrid[Global.MAX_ROW_SIZE - 1][col] = false // Fell of the edge. One less ball
+            if (flickerGrid[Global.MAX_ROW_SIZE - 1][col]) {
+                flickerGrid[Global.MAX_ROW_SIZE - 1][col] = false // Fell of the edge. One less ball
             } else {
-                if (flingGrid[Global.MAX_ROW_SIZE - 2][col]) {
-                    flingGrid[Global.MAX_ROW_SIZE - 2][col] = false
+                if (flickerGrid[Global.MAX_ROW_SIZE - 2][col]) {
+                    flickerGrid[Global.MAX_ROW_SIZE - 2][col] = false
                 }
             }
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
@@ -661,7 +721,7 @@ internal class SolverEngine {
         var foundBallBeforeEdge = false
         indexRow = nextSrcRow + 1
         while ((indexRow < (Global.MAX_ROW_SIZE - 1)) && (!foundBallBeforeEdge)) {
-            if (flingGrid[indexRow][col])
+            if (flickerGrid[indexRow][col])
                 foundBallBeforeEdge = true
             else
                 indexRow++
@@ -669,12 +729,12 @@ internal class SolverEngine {
 
         // Need to handle one more edge case
         if ((!foundBallBeforeEdge) && (indexRow == (Global.MAX_ROW_SIZE - 1))) {
-            if (flingGrid[Global.MAX_ROW_SIZE - 1][col]) foundBallBeforeEdge = true
+            if (flickerGrid[Global.MAX_ROW_SIZE - 1][col]) foundBallBeforeEdge = true
         }
 
         if ((indexRow == (Global.MAX_ROW_SIZE - 1)) && (!foundBallBeforeEdge)) {
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
-            flingGrid[nextSrcRow][col] = false  // Fell of the edge. One less ball
+            flickerGrid[nextSrcRow][col] = false  // Fell of the edge. One less ball
             return
         }
 
@@ -688,30 +748,30 @@ internal class SolverEngine {
 
     fun moveRight(srcCol: Int, targetCol: Int, row: Int) {
         // Do the first move
-        if (!flingGrid[row][srcCol]) error("Unexpected ball status. row=$row, col=$srcCol should be true")
-        if (flingGrid[row][targetCol]) error("Unexpected ball status. row=$row, col=$targetCol should be false")
-        flingGrid[row][srcCol] = false
-        flingGrid[row][targetCol] = true
+        if (!flickerGrid[row][srcCol]) error("Unexpected ball status. row=$row, col=$srcCol should be true")
+        if (flickerGrid[row][targetCol]) error("Unexpected ball status. row=$row, col=$targetCol should be false")
+        flickerGrid[row][srcCol] = false
+        flickerGrid[row][targetCol] = true
 
         // There must be a ball adjacent. to its right
         var nextSrcCol = targetCol + 1
-        if (!(flingGrid[row][nextSrcCol])) error("Unexpected grid value. This adjacent box must have a ball, i.e. true")
+        if (!(flickerGrid[row][nextSrcCol])) error("Unexpected grid value. This adjacent box must have a ball, i.e. true")
 
         // Handle the edge first
         // If the next column is already at the right, then just move it out of the grid and you're done
         if (nextSrcCol == (Global.MAX_COL_SIZE - 1)) {
-            flingGrid[row][Global.MAX_COL_SIZE - 1] = false // Fell of the edge. One less ball
+            flickerGrid[row][Global.MAX_COL_SIZE - 1] = false // Fell of the edge. One less ball
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             return
         }
 
         // If the next row is at 2nd last column (e.g. col = (Max Col - 2))), then handle it special since we are near the edge
         if (nextSrcCol == (Global.MAX_COL_SIZE - 2)) {
-            if (flingGrid[row][(Global.MAX_COL_SIZE - 1)]) {
-                flingGrid[row][(Global.MAX_COL_SIZE - 1)] = false // Fell of the edge. One less ball
+            if (flickerGrid[row][(Global.MAX_COL_SIZE - 1)]) {
+                flickerGrid[row][(Global.MAX_COL_SIZE - 1)] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             } else {
-                flingGrid[row][(Global.MAX_COL_SIZE - 2)] = false // Fell of the edge. One less ball
+                flickerGrid[row][(Global.MAX_COL_SIZE - 2)] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             }
             return
@@ -721,7 +781,7 @@ internal class SolverEngine {
 
         var indexCol = nextSrcCol + 1
         // Move nextSrcCol pointer to the next one that has space to move the ball
-        while ((flingGrid[row][indexCol]) && (indexCol < (Global.MAX_COL_SIZE - 1))) {
+        while ((flickerGrid[row][indexCol]) && (indexCol < (Global.MAX_COL_SIZE - 1))) {
             // There is no space. Then move indexCol pointer until there is space
             indexCol++
         }
@@ -729,11 +789,11 @@ internal class SolverEngine {
         // Check if we have continuous balls all the way to the edge
         if (indexCol == (Global.MAX_COL_SIZE - 1)) {
 
-            if (flingGrid[row][Global.MAX_COL_SIZE - 1]) {
-                flingGrid[row][Global.MAX_COL_SIZE - 1] = false // Fell of the edge. One less ball
+            if (flickerGrid[row][Global.MAX_COL_SIZE - 1]) {
+                flickerGrid[row][Global.MAX_COL_SIZE - 1] = false // Fell of the edge. One less ball
             } else {
-                if (flingGrid[row][Global.MAX_COL_SIZE - 2]) {
-                    flingGrid[row][Global.MAX_COL_SIZE - 2] = false
+                if (flickerGrid[row][Global.MAX_COL_SIZE - 2]) {
+                    flickerGrid[row][Global.MAX_COL_SIZE - 2] = false
                 }
             }
 
@@ -751,7 +811,7 @@ internal class SolverEngine {
 
         // while ((indexCol < MaxColSize) && (!foundBallBeforeEdge)) {
         while ((indexCol < (Global.MAX_COL_SIZE - 1)) && (!foundBallBeforeEdge)) {
-            if (flingGrid[row][indexCol])
+            if (flickerGrid[row][indexCol])
                 foundBallBeforeEdge = true
             else
                 indexCol++
@@ -759,12 +819,12 @@ internal class SolverEngine {
 
         // Need to handle one more edge case
         if ((!foundBallBeforeEdge) && (indexCol == (Global.MAX_COL_SIZE - 1))) {
-            if (flingGrid[row][Global.MAX_COL_SIZE - 1]) foundBallBeforeEdge = true
+            if (flickerGrid[row][Global.MAX_COL_SIZE - 1]) foundBallBeforeEdge = true
         }
 
         if ((indexCol == (Global.MAX_COL_SIZE - 1)) && (!foundBallBeforeEdge)) {
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
-            flingGrid[row][nextSrcCol] = false  // Fell of the edge. One less ball
+            flickerGrid[row][nextSrcCol] = false  // Fell of the edge. One less ball
             return
         }
 
@@ -778,30 +838,30 @@ internal class SolverEngine {
 
     fun moveLeft(srcCol: Int, targetCol: Int, row: Int) {
         // Do the first move
-        if (!flingGrid[row][srcCol]) error("Unexpected ball status. row=$row, col=$srcCol should be true")
-        if (flingGrid[row][targetCol]) error("Unexpected ball status. row=$row, col=$targetCol should be false")
-        flingGrid[row][srcCol] = false
-        flingGrid[row][targetCol] = true
+        if (!flickerGrid[row][srcCol]) error("Unexpected ball status. row=$row, col=$srcCol should be true")
+        if (flickerGrid[row][targetCol]) error("Unexpected ball status. row=$row, col=$targetCol should be false")
+        flickerGrid[row][srcCol] = false
+        flickerGrid[row][targetCol] = true
 
         // There must be a ball adjacent.
         var nextSrcCol = targetCol - 1
-        if (!(flingGrid[row][nextSrcCol])) error("Unexpected grid value. This adjacent box must have a ball, i.e. true")
+        if (!(flickerGrid[row][nextSrcCol])) error("Unexpected grid value. This adjacent box must have a ball, i.e. true")
 
         // Handle the edge first
         // If the next column is already at the left, then just move it out of the grid and you're done
         if (nextSrcCol == 0) {
-            flingGrid[row][0] = false // Fell of the edge. One less ball
+            flickerGrid[row][0] = false // Fell of the edge. One less ball
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             return
         }
 
         // If the next col is at 2nd last column (e.g. col == 1))), then handle it special since we are near the edge
         if (nextSrcCol == 1) {
-            if (flingGrid[row][0]) {
-                flingGrid[row][0] = false // Fell of the edge. One less ball
+            if (flickerGrid[row][0]) {
+                flickerGrid[row][0] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             } else {
-                flingGrid[row][1] = false // Fell of the edge. One less ball
+                flickerGrid[row][1] = false // Fell of the edge. One less ball
                 // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
             }
             return
@@ -811,7 +871,7 @@ internal class SolverEngine {
 
         var indexCol = nextSrcCol - 1
         // Move nextSrcCol pointer to the next one that has space to move the ball
-        while ((flingGrid[row][indexCol]) && (indexCol > 0)) {
+        while ((flickerGrid[row][indexCol]) && (indexCol > 0)) {
             // There is no space. Then move indexCol pointer until there is space
             indexCol--
         }
@@ -819,11 +879,11 @@ internal class SolverEngine {
         // Check if we have continuous balls all the way to the edge
         if (indexCol == 0) {
 
-            if (flingGrid[row][0]) {
-                flingGrid[row][0] = false // Fell of the edge. One less ball
+            if (flickerGrid[row][0]) {
+                flickerGrid[row][0] = false // Fell of the edge. One less ball
             } else {
-                if (flingGrid[row][1]) {
-                    flingGrid[row][1] = false
+                if (flickerGrid[row][1]) {
+                    flickerGrid[row][1] = false
                 }
             }
 
@@ -839,7 +899,7 @@ internal class SolverEngine {
         var foundBallBeforeEdge = false
         indexCol = nextSrcCol - 1
         while ((indexCol > 0) && (!foundBallBeforeEdge)) {
-            if (flingGrid[row][indexCol])
+            if (flickerGrid[row][indexCol])
                 foundBallBeforeEdge = true
             else
                 indexCol--
@@ -847,12 +907,12 @@ internal class SolverEngine {
 
         // Need to handle one more edge case
         if ((!foundBallBeforeEdge) && (indexCol == 0)) {
-            if (flingGrid[row][0]) foundBallBeforeEdge = true
+            if (flickerGrid[row][0]) foundBallBeforeEdge = true
         }
 
         if ((indexCol == 0) && (!foundBallBeforeEdge)) {
             // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
-            flingGrid[row][nextSrcCol] = false  // Fell of the edge. One less ball
+            flickerGrid[row][nextSrcCol] = false  // Fell of the edge. One less ball
             return
         }
 
@@ -870,7 +930,7 @@ internal class SolverEngine {
             // Clone the board
             repeat(Global.MAX_ROW_SIZE) { curRow ->
                 repeat(Global.MAX_COL_SIZE) { curCol ->
-                    if (flingGrid[curRow][curCol]) {
+                    if (flickerGrid[curRow][curCol]) {
                         val solverGridPos = SolverGridPos(curRow, curCol)
                         add(solverGridPos)
                     }

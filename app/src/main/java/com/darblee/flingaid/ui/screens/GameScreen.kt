@@ -85,7 +85,7 @@ import kotlin.math.abs
  */
 @Composable
 fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) {
-    var announceVictory by remember { mutableStateOf(false) }
+    val announceVictory by remember { mutableStateOf(false) }
 
     // Intercept backPress key while on Game Solver screen..
     //
@@ -249,8 +249,8 @@ private fun AnimateBalls(
     val animate2 = remember { Animatable(initialValue = 0f) }
     val animate3 = remember { Animatable(initialValue = 0f) }
 
-    var sX1 = 2
-    var sY1 = 2
+    val sX1 = 2
+    val sY1 = 2
 
     val sX2 = 3
     val sY2 = 3
@@ -540,7 +540,7 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe left from $dragRow, $dragCol for length $offsetX"
                                     )
-                                    gameViewModel.MoveBallPos(1, 1)
+                                    gameViewModel.moveBallPos(1, 1)
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -553,7 +553,7 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe right from $dragRow, $dragCol for length $offsetX"
                                     )
-                                    gameViewModel.MoveBallPos(1, 2)
+                                    gameViewModel.moveBallPos(1, 2)
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -566,7 +566,7 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe Up from $dragRow, $dragCol for length $offsetY"
                                     )
-                                    gameViewModel.MoveBallPos(1, 3)
+                                    gameViewModel.moveBallPos(1, 3)
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -579,7 +579,7 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe down from $dragRow, $dragCol for length $offsetY"
                                     )
-                                    gameViewModel.MoveBallPos(1, 4)
+                                    gameViewModel.moveBallPos(1, 4)
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
