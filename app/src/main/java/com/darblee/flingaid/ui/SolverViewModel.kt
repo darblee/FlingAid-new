@@ -7,17 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
+import com.darblee.flingaid.utilities.BallPosition
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.io.File
-import java.io.FileReader
-import java.io.FileWriter
 import java.util.concurrent.CyclicBarrier
 
 /**
@@ -57,8 +54,6 @@ object SolverViewModel : ViewModel() {
      */
     internal var gThinkingProgress = 0
 
-    private var gGameFile: File? = null
-
     /**
      * Store the winning direction for each corresponding task. Only 1 task will have the winning move
      * but we do not know which ones.
@@ -87,15 +82,7 @@ object SolverViewModel : ViewModel() {
 
     /********************************* BALL MANAGEMENT ****************************/
 
-    /**
-     * List of all the balls and its position on the game board
-     *
-     * _Developer's Note_
-     * Use of mutableStateListOf to preserve the composable state of the ball position. The state
-     * are kept appropriately isolated and can be performed in a safe manner without race condition
-     * when they are used in multiple threads (e.g. LaunchEffects).
-     */
-    private var _ballPositionList = mutableStateListOf<Pos>()
+    private var _solverBallPos = BallPosition()
 
     /**
      * Get the list of balls and its position.
@@ -111,7 +98,7 @@ object SolverViewModel : ViewModel() {
      * moment. For more info, see [Compose Snapshot System](https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn)
      */
     fun ballPositionList(): SnapshotStateList<Pos> {
-        return (_ballPositionList)
+        return (_solverBallPos.ballList)
     }
 
     /**
@@ -120,71 +107,17 @@ object SolverViewModel : ViewModel() {
      * @return Number of active balls
      */
     fun ballCount(): Int {
-        return _ballPositionList.count()
+        return (_solverBallPos.getBallCount())
     }
 
     /**
-     * Save the solver game board to a file
-     */
-    private fun saveBallPositions() {
-        val format = Json { prettyPrint = true }
-        val ballList = mutableListOf<Pos>()
-
-        for (currentPos in _ballPositionList) {
-            ballList += currentPos
-        }
-        val output = format.encodeToString(ballList)
-
-        try {
-            val writer = FileWriter(gGameFile)
-            writer.write(output)
-            writer.close()
-        } catch (e: Exception) {
-            Log.i(Global.DEBUG_PREFIX, "${e.message}")
-        }
-    }
-
-    /**
-     * Set the game file
+     * Load the game file
      *
      * @param file game file
      */
     fun loadGameFile(file: File) {
-        gGameFile = file
-        loadBallPositions()
-    }
-
-    /**
-     * Load the saved game board from file
-     **/
-    private fun loadBallPositions() {
-        try {
-            val reader = FileReader(gGameFile)
-            val data = reader.readText()
-            reader.close()
-
-            val list = Json.decodeFromString<List<Pos>>(data)
-
-            _ballPositionList.clear()
-            for (pos in list) {
-                _ballPositionList.add(pos)
-            }
-        } catch (e: Exception) {
-            Log.i(Global.DEBUG_PREFIX, "An error occurred while reading the file: ${e.message}")
-        }
-    }
-
-    /**
-     * Print the ball positions. Used for debugging purposes
-     */
-    private fun printPositions() {
-
-        Log.i(Global.DEBUG_PREFIX, "============== Ball Listing ================)")
-
-        for ((index, value) in _ballPositionList.withIndex()) {
-            Log.i(Global.DEBUG_PREFIX, "Ball $index: (${value.row}, ${value.col})")
-        }
-
+        _solverBallPos.setGameFile(file)
+        _solverBallPos.loadBallListFromFile()
     }
 
     /********************************* SOLVER GAME MANAGEMENT ****************************/
@@ -231,8 +164,8 @@ object SolverViewModel : ViewModel() {
      * - Remove any saved game file
      */
     fun reset() {
-        _ballPositionList.clear()
-        gGameFile?.delete()
+        _solverBallPos.ballList.clear()
+        _solverBallPos.removeGameFile()
 
         setIDLEstate()
     }
@@ -244,13 +177,13 @@ object SolverViewModel : ViewModel() {
      * @param solverGridPos The position of the ball
      */
     fun toggleBallPosition(solverGridPos: Pos) {
-        if (_ballPositionList.contains(solverGridPos)) {
-            _ballPositionList.remove(solverGridPos)
+        if (_solverBallPos.ballList.contains(solverGridPos)) {
+            _solverBallPos.ballList.remove(solverGridPos)
         } else {
-            _ballPositionList.add(solverGridPos)
+            _solverBallPos.ballList.add(solverGridPos)
         }
 
-        saveBallPositions()
+        _solverBallPos.saveBallListToFile()
         setIDLEstate()
     }
 
@@ -449,7 +382,7 @@ object SolverViewModel : ViewModel() {
         try {
             Log.i("${Global.DEBUG_PREFIX} Task 1", "Task 1 has started")
             val game1 = SolverEngine()
-            game1.populateGrid(_ballPositionList)
+            game1.populateGrid(_solverBallPos.ballList)
 
             val (direction, finalRow, finalCol) = game1.foundWinningMove(
                 totalBallCnt, 1, 1
@@ -503,7 +436,7 @@ object SolverViewModel : ViewModel() {
         try {
             Log.i("${Global.DEBUG_PREFIX} Task 2", "Task 2 has started")
             val game2 = SolverEngine()
-            game2.populateGrid(_ballPositionList)
+            game2.populateGrid(_solverBallPos.ballList)
             task2_WinningDirection = Direction.INCOMPLETE
             val (direction, finalRow, finalCol) = game2.foundWinningMove(
                 totalBallCnt, 1, -1
@@ -588,7 +521,7 @@ object SolverViewModel : ViewModel() {
      */
     fun getWinningMoveCount(uiState: SolverUiState): Int {
         val game = SolverEngine()
-        game.populateGrid(_ballPositionList)
+        game.populateGrid((_solverBallPos.ballList))
 
         var winningMoveCount = 0
 
@@ -632,7 +565,7 @@ object SolverViewModel : ViewModel() {
      */
     fun makeWinningMove(uiState: SolverUiState) {
         val game = SolverEngine()
-        game.populateGrid(_ballPositionList)
+        game.populateGrid((_solverBallPos.ballList))
 
         var targetRow: Int
         var targetCol: Int
@@ -647,34 +580,34 @@ object SolverViewModel : ViewModel() {
         if (uiState.winningDirection == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(winningRow, winningCol)
             game.moveUp(winningRow, targetRow, winningCol)
-            _ballPositionList.clear()
-            _ballPositionList = game.updateBallList()
+            _solverBallPos.ballList.clear()
+            _solverBallPos.ballList = game.updateBallList()
         }
 
         if (uiState.winningDirection == Direction.DOWN) {
             targetRow = game.findTargetRowOnMoveDown(winningRow, winningCol)
             game.moveDown(winningRow, targetRow, winningCol)
-            _ballPositionList.clear()
-            _ballPositionList = game.updateBallList()
+            _solverBallPos.ballList.clear()
+            _solverBallPos.ballList = game.updateBallList()
         }
 
         if (uiState.winningDirection == Direction.RIGHT) {
             targetCol = game.findTargetColOnMoveRight(winningRow, winningCol)
             game.moveRight(winningCol, targetCol, winningRow)
-            _ballPositionList.clear()
-            _ballPositionList = game.updateBallList()
+            _solverBallPos.ballList.clear()
+            _solverBallPos.ballList = game.updateBallList()
         }
 
         if (uiState.winningDirection == Direction.LEFT) {
             targetCol = game.findTargetColOnMoveLeft(winningRow, winningCol)
             game.moveLeft(winningCol, targetCol, winningRow)
-            _ballPositionList.clear()
-            _ballPositionList = game.updateBallList()
+            _solverBallPos.ballList.clear()
+            _solverBallPos.ballList = game.updateBallList()
         }
 
         _uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
 
-        saveBallPositions()
+        _solverBallPos.saveBallListToFile()
     }
 
     /**
@@ -803,7 +736,7 @@ object SolverViewModel : ViewModel() {
                 distance++
                 hitWall = true
             } else {
-                if (_ballPositionList.contains(Pos(newRow, newCol))) {
+                if (_solverBallPos.ballList.contains(Pos(newRow, newCol))) {
                     nextSourcePos = Pos(newRow, newCol)
                     hitWall = true
                 } else {

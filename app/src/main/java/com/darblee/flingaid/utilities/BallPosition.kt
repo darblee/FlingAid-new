@@ -26,11 +26,12 @@ data class Pos(
  *
  * Common routine to manage the ball positions
  *
- * [bPositionList] List of all the ball positions. It is in mutableStateListOf<Pos> format. Intended
+ * [ballList] List of all the ball positions. It is in mutableStateListOf<Pos> format. Intended
  * to be used in composable
  *
  * [getBallCount] Get the number of active balls in the grid
- * [setGameFile] Setup file pointer
+ * [setGameFile] Setup file pointer file
+ * [removeGameFile] Delete the file
  * [saveBallListToFile]  Save the list of position in the file
  * [loadBallListFromFile] Load the list of ball positions from the file
  * [printPositions] Print all the ball positions. It is intended for debugging purposes.
@@ -45,7 +46,7 @@ class BallPosition {
      * are kept appropriately isolated and can be performed in a safe manner without race condition
      * when they are used in multiple threads (e.g. LaunchEffects).
      */
-    var bPositionList = mutableStateListOf<Pos>()
+    var ballList = mutableStateListOf<Pos>()
 
     /**
      * Return the number of active ball
@@ -53,7 +54,7 @@ class BallPosition {
      * @return Number of active balls
      */
     fun getBallCount(): Int {
-        return bPositionList.count()
+        return ballList.count()
     }
 
     private var _gameFile: File? = null
@@ -68,13 +69,20 @@ class BallPosition {
     }
 
     /**
+     * Delete the game file
+     */
+    fun removeGameFile() {
+        _gameFile?.delete()
+    }
+
+    /**
      * Save the game board to a file
      */
     fun saveBallListToFile() {
         val format = Json { prettyPrint = true }
         val ballList = mutableListOf<Pos>()
 
-        for (currentPos in bPositionList) {
+        for (currentPos in this.ballList) {
             ballList += currentPos
         }
         val output = format.encodeToString(ballList)
@@ -99,9 +107,9 @@ class BallPosition {
 
             val list = Json.decodeFromString<List<Pos>>(data)
 
-            bPositionList.clear()
+            ballList.clear()
             for (pos in list) {
-                bPositionList.add(pos)
+                ballList.add(pos)
             }
         } catch (e: Exception) {
             Log.i(Global.DEBUG_PREFIX, "An error occurred while reading the file: ${e.message}")
@@ -115,7 +123,7 @@ class BallPosition {
 
         Log.i(Global.DEBUG_PREFIX, "============== Ball Listing ================)")
 
-        for ((index, value) in bPositionList.withIndex()) {
+        for ((index, value) in ballList.withIndex()) {
             Log.i(Global.DEBUG_PREFIX, "Ball $index: (${value.row}, ${value.col})")
         }
 

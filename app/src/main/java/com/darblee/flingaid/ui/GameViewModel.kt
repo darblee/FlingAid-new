@@ -1,12 +1,10 @@
 package com.darblee.flingaid.ui
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import com.darblee.flingaid.Direction
-import com.darblee.flingaid.ui.SolverViewModel.ballCount
 import com.darblee.flingaid.ui.SolverViewModel.findWinningMove
-import com.darblee.flingaid.ui.SolverViewModel.loadGameFile
+import com.darblee.flingaid.utilities.BallPosition
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -77,15 +75,7 @@ object GameViewModel : ViewModel() {
 
     /********************************* BALL MANAGEMENT ****************************/
 
-    /**
-     * List of all the balls and its position on the game board
-     *
-     * _Developer's Note_
-     * Use of mutableStateListOf to preserve the composable state of the ball position. The state
-     * are kept appropriately isolated and can be performed in a safe manner without race condition
-     * when they are used in multiple threads (e.g. LaunchEffects).
-     */
-    private var _ballPositionList = mutableStateListOf<Pos>()
+    private var _ballPosition = BallPosition()
 
     /**
      * Get the list of balls and its position.
@@ -101,7 +91,7 @@ object GameViewModel : ViewModel() {
      * moment. For more info, see [Compose Snapshot System](https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn)
      */
     fun ballPositionList(): SnapshotStateList<Pos> {
-        return (_ballPositionList)
+        return (_ballPosition.ballList)
     }
 
 
