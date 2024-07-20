@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
+import com.darblee.flingaid.Pos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -94,7 +95,7 @@ object SolverViewModel : ViewModel() {
      * are kept appropriately isolated and can be performed in a safe manner without race condition
      * when they are used in multiple threads (e.g. LaunchEffects).
      */
-    private var _ballPositionList = mutableStateListOf<SolverGridPos>()
+    private var _ballPositionList = mutableStateListOf<Pos>()
 
     /**
      * Get the list of balls and its position.
@@ -109,7 +110,7 @@ object SolverViewModel : ViewModel() {
      * list. This snapshot is a separate, immutable collection that represents the list's state at a specific
      * moment. For more info, see [Compose Snapshot System](https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn)
      */
-    fun ballPositionList(): SnapshotStateList<SolverGridPos> {
+    fun ballPositionList(): SnapshotStateList<Pos> {
         return (_ballPositionList)
     }
 
@@ -127,7 +128,7 @@ object SolverViewModel : ViewModel() {
      */
     private fun saveBallPositions() {
         val format = Json { prettyPrint = true }
-        val ballList = mutableListOf<SolverGridPos>()
+        val ballList = mutableListOf<Pos>()
 
         for (currentPos in _ballPositionList) {
             ballList += currentPos
@@ -162,7 +163,7 @@ object SolverViewModel : ViewModel() {
             val data = reader.readText()
             reader.close()
 
-            val list = Json.decodeFromString<List<SolverGridPos>>(data)
+            val list = Json.decodeFromString<List<Pos>>(data)
 
             _ballPositionList.clear()
             for (pos in list) {
@@ -243,7 +244,7 @@ object SolverViewModel : ViewModel() {
      *
      * @param solverGridPos The position of the ball
      */
-    fun toggleBallPosition(solverGridPos: SolverGridPos) {
+    fun toggleBallPosition(solverGridPos: Pos) {
         if (_ballPositionList.contains(solverGridPos)) {
             _ballPositionList.remove(solverGridPos)
         } else {
@@ -359,7 +360,7 @@ object SolverViewModel : ViewModel() {
                 Global.DEBUG_PREFIX,
                 "Task #1 has winning move with direction : $task1_WinningDirection"
             )
-            val winningSolverGridPos = SolverGridPos(task1WinningRow, task1WinningCol)
+            val winningSolverGridPos = Pos(task1WinningRow, task1WinningCol)
             val winningDir = task1_WinningDirection
 
             _winningDirection_from_tasks = task1_WinningDirection
@@ -383,7 +384,7 @@ object SolverViewModel : ViewModel() {
                     "Task #2 has winning move with direction: $task2_WinningDirection"
                 )
                 // Task2 has the winning move
-                val winningSolverGridPos = SolverGridPos(task2WinningRow, task2WinningCol)
+                val winningSolverGridPos = Pos(task2WinningRow, task2WinningCol)
                 val winningDir = task2_WinningDirection
 
                 _winningDirection_from_tasks = task2_WinningDirection
@@ -702,7 +703,7 @@ object SolverViewModel : ViewModel() {
         // For the first ball in chain, we must have at least one free space to move
         if (movingDistance == 0) return movingList
 
-        movingList.add(MovingRec(SolverGridPos(initialRow, initialCol), movingDistance))
+        movingList.add(MovingRec(Pos(initialRow, initialCol), movingDistance))
 
         // For subsequent ball in the chain, it is fine to have zero distance
         var fallenOffEdge = false
@@ -750,7 +751,7 @@ object SolverViewModel : ViewModel() {
         col: Int,
         direction: Direction,
         firstMove: Boolean
-    ): Pair<Int, SolverGridPos?> {
+    ): Pair<Int, Pos?> {
         var xOffset = 0
         var yOffset = 0
         var sourceRow = row
@@ -790,7 +791,7 @@ object SolverViewModel : ViewModel() {
         var distance = 0
         var hitWall = false
 
-        var nextSourcePos: SolverGridPos? = null
+        var nextSourcePos: Pos? = null
 
         while (!hitWall) {
             newRow = sourceRow + xOffset
@@ -803,8 +804,8 @@ object SolverViewModel : ViewModel() {
                 distance++
                 hitWall = true
             } else {
-                if (_ballPositionList.contains(SolverGridPos(newRow, newCol))) {
-                    nextSourcePos = SolverGridPos(newRow, newCol)
+                if (_ballPositionList.contains(Pos(newRow, newCol))) {
+                    nextSourcePos = Pos(newRow, newCol)
                     hitWall = true
                 } else {
                     distance++

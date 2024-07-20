@@ -94,12 +94,12 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
+import com.darblee.flingaid.Pos
 import com.darblee.flingaid.R
 import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
-import com.darblee.flingaid.ui.SolverGridPos
 import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.randomInRange
 import com.darblee.flingaid.utilities.toPx
@@ -531,7 +531,7 @@ private fun DrawSolverBoard(
                                 val row = (tapOffset.y / gridSize).toInt()
                                 val col = (tapOffset.x / gridSize).toInt()
                                 if ((row < Global.MAX_ROW_SIZE) && (col < Global.MAX_COL_SIZE)) {
-                                    solverViewModel.toggleBallPosition(SolverGridPos(row, col))
+                                    solverViewModel.toggleBallPosition(Pos(row, col))
                                     view.playSoundEffect(SoundEffectConstants.CLICK)
                                 }
                             } // if thinkingStatus != GameState.thinking
@@ -752,7 +752,7 @@ private fun drawSolverBalls(
 private fun drawBall(
     drawScope: DrawScope,
     gridSize: Float,
-    pos: SolverGridPos,
+    pos: Pos,
     displayBallImage: ImageBitmap,
     alpha: Float = 1.0F
 ) {
@@ -1066,7 +1066,7 @@ fun animateBallMovementsPerform(
     }
 
     with(drawScope) {
-        var movingSourcePos: SolverGridPos
+        var movingSourcePos: Pos
         var offset: Pair<Float, Float>
         var xOffset: Float
         var yOffset: Float

@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
+import com.darblee.flingaid.Pos
 
 /**
  * Engine that look for winnable move based on game layout information
@@ -34,7 +35,7 @@ internal class SolverEngine {
      *
      * @param ballPositionList List of all the ball positions
      */
-    fun populateGrid(ballPositionList: SnapshotStateList<SolverGridPos>) {
+    fun populateGrid(ballPositionList: SnapshotStateList<Pos>) {
         ballPositionList.forEach { pos ->
             flickerGrid[pos.row][pos.col] = true
         }
@@ -924,14 +925,14 @@ internal class SolverEngine {
         return
     }
 
-    fun updateBallList(): SnapshotStateList<SolverGridPos> {
-        val ballList: SnapshotStateList<SolverGridPos> = SnapshotStateList<SolverGridPos>().apply {
+    fun updateBallList(): SnapshotStateList<Pos> {
+        val ballList: SnapshotStateList<Pos> = SnapshotStateList<Pos>().apply {
 
             // Clone the board
             repeat(Global.MAX_ROW_SIZE) { curRow ->
                 repeat(Global.MAX_COL_SIZE) { curCol ->
                     if (flickerGrid[curRow][curCol]) {
-                        val solverGridPos = SolverGridPos(curRow, curCol)
+                        val solverGridPos = Pos(curRow, curCol)
                         add(solverGridPos)
                     }
                 }
