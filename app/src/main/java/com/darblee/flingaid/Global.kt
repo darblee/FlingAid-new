@@ -2,6 +2,7 @@ package com.darblee.flingaid
 
 import android.media.MediaPlayer
 import androidx.compose.ui.unit.dp
+import kotlinx.serialization.Serializable
 
 /**
  * Winning Ball direction.
@@ -15,6 +16,17 @@ import androidx.compose.ui.unit.dp
  *  reach a conclusive result whether it has a solution or not
  */
 enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
+
+/**
+ * Position on the game board
+ * - row
+ * - column
+ */
+@Serializable
+data class Pos(
+    val row: Int,
+    val col: Int,
+)
 
 lateinit var gAudio_gameMusic: MediaPlayer
 lateinit var gAudio_youWon: MediaPlayer

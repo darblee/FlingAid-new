@@ -107,7 +107,7 @@ object SolverViewModel : ViewModel() {
      * which updates the UI. Only the respective item in the list will be (re)compose. When a change is
      * made to a SnapshotStateList, a new snapshot is created instead of directly modifying the original
      * list. This snapshot is a separate, immutable collection that represents the list's state at a specific
-     * moment.
+     * moment. For more info, see [Compose Snapshot System](https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn)
      */
     fun ballPositionList(): SnapshotStateList<SolverGridPos> {
         return (_ballPositionList)
