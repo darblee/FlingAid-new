@@ -70,6 +70,10 @@ object GameViewModel : ViewModel() {
     private var _totalProcessCount: Float = 0.0F
     private var _totalBallInCurrentMove = 0
 
+    /**
+     * The direction of the winning move obtained from the tasks calculation
+     */
+    private var _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
 
     /********************************* BALL MANAGEMENT ****************************/
 
@@ -99,6 +103,9 @@ object GameViewModel : ViewModel() {
     fun ballPositionList(): SnapshotStateList<Pos> {
         return (_ballPositionList)
     }
+
+
+
 
 
     // Game UI state
