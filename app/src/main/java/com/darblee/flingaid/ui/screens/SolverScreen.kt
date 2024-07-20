@@ -94,12 +94,12 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
-import com.darblee.flingaid.Pos
 import com.darblee.flingaid.R
 import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
+import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.randomInRange
 import com.darblee.flingaid.utilities.toPx

@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
-import com.darblee.flingaid.Pos
+import com.darblee.flingaid.utilities.Pos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -173,7 +173,6 @@ object SolverViewModel : ViewModel() {
             Log.i(Global.DEBUG_PREFIX, "An error occurred while reading the file: ${e.message}")
         }
     }
-
 
     /**
      * Print the ball positions. Used for debugging purposes

@@ -17,16 +17,6 @@ import kotlinx.serialization.Serializable
  */
 enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
 
-/**
- * Position on the game board
- * - row
- * - column
- */
-@Serializable
-data class Pos(
-    val row: Int,
-    val col: Int,
-)
 
 lateinit var gAudio_gameMusic: MediaPlayer
 lateinit var gAudio_youWon: MediaPlayer

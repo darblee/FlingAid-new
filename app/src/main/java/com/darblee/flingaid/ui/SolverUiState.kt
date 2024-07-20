@@ -1,7 +1,7 @@
 package com.darblee.flingaid.ui
 
 import com.darblee.flingaid.Direction
-import com.darblee.flingaid.Pos
+import com.darblee.flingaid.utilities.Pos
 import kotlinx.serialization.Serializable
 
 /**

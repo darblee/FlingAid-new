@@ -4,10 +4,10 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import com.darblee.flingaid.Direction
-import com.darblee.flingaid.Pos
 import com.darblee.flingaid.ui.SolverViewModel.ballCount
 import com.darblee.flingaid.ui.SolverViewModel.findWinningMove
 import com.darblee.flingaid.ui.SolverViewModel.loadGameFile
+import com.darblee.flingaid.utilities.Pos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

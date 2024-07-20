@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
-import com.darblee.flingaid.Pos
+import com.darblee.flingaid.utilities.Pos
 
 /**
  * Engine that look for winnable move based on game layout information
