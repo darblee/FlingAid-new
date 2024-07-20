@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.repeatable
 import androidx.compose.animation.core.tween
@@ -24,6 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -32,7 +33,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -51,7 +51,6 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -60,6 +59,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -70,10 +70,11 @@ import androidx.navigation.NavHostController
 import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
+import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
+import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.gameToast
-import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.math.abs
 
@@ -87,9 +88,11 @@ import kotlin.math.abs
  */
 @Composable
 fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) {
+
+    Log.i(Global.DEBUG_PREFIX, "Game Screen - recompose")
+
     var announceVictory by remember { mutableStateOf(false) }
     var needToLoadGameFile by remember { mutableStateOf(true) }
-
 
     /**
      * Intercept backPress key while on Game screen.
@@ -111,7 +114,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     val gameViewModel: GameViewModel = viewModel()
     val uiState by gameViewModel.uiState.collectAsStateWithLifecycle()
 
-    val boardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
+    val boardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
 
     val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -120,36 +123,40 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     // Loading game file will trigger non-stop recomposition.
     // Also need to minimize the need to do expensive time consuming file i/o operation.
     if (needToLoadGameFile) {
- //       gameViewModel.loadGameFile(boardFile)  // TODO
+        gameViewModel.loadGameFile(boardFile)
         needToLoadGameFile = false
     }
+
+    /**
+     * Keep track of when to do the ball movement animation
+     */
+    var showBallMovementAnimation by remember { mutableStateOf(false) }
+    val onBallMovementAnimationChange =
+        { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val uiState by gameViewModel.uiState.collectAsState()
-
-        var animateBalls by remember {
+        var animateBallSwipe by remember {
             mutableStateOf(false)
         }
         InstructionLogo()
-        GameControlButtonsForGame(gameViewModel, uiState)
+        GameControlButtonsForGame(
+            gameViewModel,
+            uiState,
+            onBallMovementAnimationChange,
+            announceVictory
+        )
 
-        if (!animateBalls) {
-            DrawGameBoard(
-                modifier = Modifier.fillMaxSize(),
-                gameViewModel,
-                uiState,
-                onSwipeBall = { needToAnimate -> animateBalls = needToAnimate })
-        } else {
-            AnimateBalls(
-                modifier = Modifier.fillMaxSize(),
-                gameViewModel = gameViewModel,
-                onSwipeBall = { needToAnimate: Boolean -> animateBalls = needToAnimate }
-            )
-        }
+        DrawGameBoard(
+            modifier = Modifier.fillMaxSize(),
+            gameViewModel,
+            uiState,
+            onSwipeBall = { needToAnimate -> animateBallSwipe = needToAnimate },
+            onEnableVictoryMsg
+        )
     }
 }
 
@@ -209,11 +216,24 @@ private fun InstructionLogo() {
     }
 }
 
+/**
+ * Show all the control buttons on top of the screen. These buttons
+ * are "find the solution" button and "reset" button
+ *
+ * @param gameViewModel  Game View model
+ * @param uiState Current UI state of the solver game
+ * @param onBallMovementAnimationChange Determine whether the ball movement animation is done or not
+ * @param announceVictory Indicate whether we need to announce victory message or not
+ */
 @Composable
 private fun GameControlButtonsForGame(
     gameViewModel: GameViewModel = viewModel(),
-    uiState: GameUIState
+    uiState: GameUIState,
+    onBallMovementAnimationChange: (Boolean) -> Unit,
+    announceVictory: Boolean
 ) {
+    val iconWidth = Icons.Filled.Refresh.defaultWidth
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -222,7 +242,7 @@ private fun GameControlButtonsForGame(
         horizontalArrangement = Arrangement.SpaceAround,
     ) {
         Button(
-            onClick = { }, // OnClick
+            onClick = { gameViewModel.generateNewGame(1) },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
@@ -230,231 +250,57 @@ private fun GameControlButtonsForGame(
                 contentColor = MaterialTheme.colorScheme.primaryContainer
             ),
             modifier = Modifier
-                .weight(3F)
-                .padding(5.dp)
-        ) { Text(text = "New Game") }
+                .weight(5F)
+                .padding(2.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Create, contentDescription = "New Game",
+                modifier = Modifier.size(iconWidth)
+            )
+            Text(text = "New Game")
+        }
 
         Button(
             onClick = { },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.error
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.secondaryContainer
             ),
             modifier = Modifier
-                .weight(2F)
-                .padding(5.dp),
+                .weight(4F)
+                .padding(2.dp),
         ) {
-            val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(
                 imageVector = Icons.Filled.Refresh, contentDescription = "Undo",
                 modifier = Modifier.size(iconWidth)
             )
             Text("Undo")
         }
-    }
-}
 
-
-@Composable
-private fun AnimateBalls(
-    modifier: Modifier = Modifier,
-    gameViewModel: GameViewModel = viewModel(),
-    onSwipeBall: (animateBalls: Boolean) -> Unit
-) {
-    Log.i(Global.DEBUG_PREFIX, "Recompose animateBalls  grid ")
-
-    val animate1 = remember { Animatable(initialValue = 0f) }
-    val animate2 = remember { Animatable(initialValue = 0f) }
-    val animate3 = remember { Animatable(initialValue = 0f) }
-
-    val sX1 = 2
-    val sY1 = 2
-
-    val sX2 = 3
-    val sY2 = 3
-
-    LaunchedEffect(Unit) {
-        animate1.animateTo(
-            targetValue = 1f, animationSpec =
-            repeatable(
-                iterations = 1,
-                animation = tween(500, easing = FastOutLinearInEasing),
-            )
-        )
-        animate2.animateTo(
-            targetValue = 1f, animationSpec =
-            repeatable(
-                iterations = 1,
-                animation = tween(500, easing = FastOutLinearInEasing),
-            )
-        )
-        animate3.animateTo(
-            targetValue = 1f, animationSpec =
-            repeatable(
-                iterations = 1,
-                animation = tween(500, easing = FastOutSlowInEasing),
-            )
-        )
-        delay(300)
-        onSwipeBall.invoke(false)
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .aspectRatio(Global.MAX_COL_SIZE.toFloat() / Global.MAX_ROW_SIZE.toFloat())
-            .shadow(
-                elevation = 10.dp,
-                shape = RoundedCornerShape(20.dp)
-            )
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center,
-    ) {
-        Log.i(Global.DEBUG_PREFIX, "Recompose box grid")
-        val lineColor = MaterialTheme.colorScheme.outline
-        var gridSize by rememberSaveable {
-            mutableFloatStateOf(0f)
-        }
-
-        val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
-
-        var offsetX by remember { mutableFloatStateOf(0f) }
-        var offsetY by remember { mutableFloatStateOf(0f) }
-        var dragRow by remember { mutableIntStateOf(-1) }
-        var dragCol by remember { mutableIntStateOf(-1) }
-
-        val minSwipeOffset = gridSize
-
-        Canvas(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(15.dp)
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { offset: Offset ->
-                            dragRow = (offset.y / gridSize).toInt()
-                            dragCol = (offset.x / gridSize).toInt()
-                            Log.i(Global.DEBUG_PREFIX, "Offset is row: $dragRow, col: $dragCol")
-                        },
-                        onDrag = { change, dragAmount ->
-
-                            /*
-                             * Need to consume this event, so that its parent knows not to react to
-                             * it anymore. What change.consume() does is it prevent pointerInput
-                             * above it to receive events by returning PointerInputChange.positionChange()
-                             * Offset.Zero PointerInputChange.isConsumed true.
-                             */
-                            change.consume()
-                            offsetX += dragAmount.x
-                            offsetY += dragAmount.y
-                        },
-                        onDragEnd = {
-                            when {
-                                (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Log.i(
-                                        Global.DEBUG_PREFIX,
-                                        "Swipe left from $dragRow, $dragCol for length $offsetX"
-                                    )
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
-
-                                (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Log.i(
-                                        Global.DEBUG_PREFIX,
-                                        "Swipe right from $dragRow, $dragCol for length $offsetX"
-                                    )
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
-
-                                (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Log.i(
-                                        Global.DEBUG_PREFIX,
-                                        "Swipe Up from $dragRow, $dragCol for length $offsetY"
-                                    )
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
-
-                                (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Log.i(
-                                        Global.DEBUG_PREFIX,
-                                        "Swipe down from $dragRow, $dragCol for length $offsetY"
-                                    )
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
-                            }
-                        }
-                    ) // detectDragGestures
-                } // .pointerInput
+        Button(
+            onClick = { },
+            shape = RoundedCornerShape(5.dp),
+            elevation = ButtonDefaults.buttonElevation(5.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.tertiaryContainer
+            ),
+            modifier = Modifier
+                .weight(4F)
+                .padding(2.dp),
         ) {
-            Log.i(Global.DEBUG_PREFIX, "Recompose canvas")
-            val canvasWidth = size.width
-            val canvasHeight = size.height
-
-            val gridSizeWidth = (canvasWidth / (Global.MAX_COL_SIZE))
-            val gridSizeHeight = (canvasHeight / (Global.MAX_ROW_SIZE))
-
-            gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
-
-            val gridDrawScope = this
-            drawGridForGame(gridDrawScope, gridSize, lineColor)
-
-            val ballSize = (gridSize * 1.10).toInt()
-            val displayBallImage = Bitmap.createScaledBitmap(
-                ballImage.asAndroidBitmap(),
-                ballSize, ballSize, false
-            ).asImageBitmap()
-
-            drawGameBalls(gridDrawScope, gameViewModel, gridSize, displayBallImage)
-
-            var xOffset = 0 * gridSize
-            var yOffset = 4 * gridSize
-
-            translate(
-                (xOffset) * animate1.value,
-                (yOffset) * animate1.value
-            ) {
-                drawImage(
-                    image = displayBallImage,
-                    topLeft = Offset(
-                        x = sX1 * gridSize,
-                        y = sY1 * gridSize
-                    )
-                )
-            }
-
-            xOffset = 0 * gridSize
-            yOffset = 4 * gridSize
-
-            translate(
-                (xOffset) * animate2.value,
-                (yOffset) * animate2.value
-            ) {
-                drawImage(
-                    image = displayBallImage,
-                    topLeft = Offset(
-                        x = sX2 * gridSize,
-                        y = sY2 * gridSize
-                    )
-                )
-            }
+            Icon(
+                imageVector = Icons.Filled.Info, contentDescription = "Hint",
+                modifier = Modifier.size(iconWidth)
+            )
+            Text("Hint")
         }
+
     }
 }
+
 
 /*
  *  Draw the  Game Board:
@@ -466,9 +312,23 @@ private fun DrawGameBoard(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUIState,
-    onSwipeBall: (animateBalls: Boolean) -> Unit
+    onSwipeBall: (animateBalls: Boolean) -> Unit,
+    onEnableVictoryMsg: (Boolean) -> Unit
 ) {
-    Log.i(Global.DEBUG_PREFIX, "Recompose drawGame grid")
+    val context = LocalContext.current
+
+    /**
+     * Create textMeasurer instance, which is responsible for measuring a text in its entirety so
+     * that it can be drawn on the canvas (drawScope). This is used to draw animated victory message
+     */
+    val textMeasurer = rememberTextMeasurer()
+
+    if (gameViewModel.ballCount() == 1) {
+        if (uiState.state == GameState.IdleFoundSOlution) {
+            onEnableVictoryMsg(true)
+        }
+    }
+
     /**
      * Launch the animation only once when it enters the composition. It will animate infinitely
      * until it is removed from the composition
@@ -515,7 +375,6 @@ private fun DrawGameBoard(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
-        Log.i(Global.DEBUG_PREFIX, "Recompose box grid ")
         val lineColor = MaterialTheme.colorScheme.outline
         var gridSize by rememberSaveable {
             mutableFloatStateOf(0f)
@@ -560,12 +419,15 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe left from $dragRow, $dragCol for length $offsetX"
                                     )
-                                    gameViewModel.moveBallPos(1, 1)
+
+                                    if (gameViewModel.ballPositionList().contains(Pos(dragRow, dragCol))) {
+                                        Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $dragRow, $dragCol")
+                                        onSwipeBall.invoke(true)
+                                    }
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
                                     dragCol = -1
-                                    onSwipeBall.invoke(true)
                                 }
 
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
@@ -573,12 +435,15 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe right from $dragRow, $dragCol for length $offsetX"
                                     )
-                                    gameViewModel.moveBallPos(1, 2)
+                                    if (gameViewModel.ballPositionList().contains(Pos(dragRow, dragCol))) {
+                                        Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $dragRow, $dragCol")
+                                        onSwipeBall.invoke(true)
+                                    }
+
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
                                     dragCol = -1
-                                    onSwipeBall.invoke(true)
                                 }
 
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
@@ -586,12 +451,15 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe Up from $dragRow, $dragCol for length $offsetY"
                                     )
-                                    gameViewModel.moveBallPos(1, 3)
+                                    if (gameViewModel.ballPositionList().contains(Pos(dragRow, dragCol))) {
+                                        Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $dragRow, $dragCol")
+                                        onSwipeBall.invoke(true)
+                                    }
+
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
                                     dragCol = -1
-                                    onSwipeBall.invoke(true)
                                 }
 
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
@@ -599,19 +467,21 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe down from $dragRow, $dragCol for length $offsetY"
                                     )
-                                    gameViewModel.moveBallPos(1, 4)
+
+                                    if (gameViewModel.ballPositionList().contains(Pos(dragRow, dragCol))) {
+                                        Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $dragRow, $dragCol")
+                                        onSwipeBall.invoke(true)
+                                    }
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
                                     dragCol = -1
-                                    onSwipeBall.invoke(true)
                                 }
                             }
                         }
                     ) // detectDragGestures
                 } // .pointerInput
         ) {
-            Log.i(Global.DEBUG_PREFIX, "Recompose canvas")
             val canvasWidth = size.width
             val canvasHeight = size.height
 
@@ -690,6 +560,10 @@ private fun drawGameBalls(
 ) {
     // Draw all the balls
     with(drawScope) {
+        // Draw all the balls
+        //
+        // NOTE: ballPositionList is a SnapshotList type. It is observation system that will trigger a recompose
+        // to redraw the grid.
         gameViewModel.ballPositionList().forEach { pos ->
             drawImage(
                 image = displayBallImage,

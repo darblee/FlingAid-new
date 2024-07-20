@@ -3,6 +3,8 @@ package com.darblee.flingaid.ui
 import kotlinx.serialization.Serializable
 
 enum class GameState {
+    Idle,
+    IdleFoundSOlution,
     Won,
     Playing,
     MoveBall,

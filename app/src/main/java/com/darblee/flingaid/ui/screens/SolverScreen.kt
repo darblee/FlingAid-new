@@ -126,7 +126,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var announceVictory by remember { mutableStateOf(false) }
     var needToLoadSolverGameFile by remember { mutableStateOf(true) }
 
-
     /**
      * Intercept backPress key while on Game Solver screen.
      * When doing back press on the current screen, confirm with the user whether it should exit
@@ -146,7 +145,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val solverViewModel: SolverViewModel = viewModel()
     val uiState by solverViewModel.uiState.collectAsStateWithLifecycle()
 
-    val boardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
+    val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
 
     val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -155,7 +154,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     // Loading game file will trigger non-stop recomposition.
     // Also need to minimize the need to do expensive time consuming file i/o operation.
     if (needToLoadSolverGameFile) {
-        solverViewModel.loadGameFile(boardFile)
+        solverViewModel.loadGameFile(solverBoardFile)
         needToLoadSolverGameFile = false
     }
 
@@ -176,7 +175,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     if (uiState.solverGameState == SolverUiState.SolverGameMode.IdleNoSolution) {
             gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
-            solverViewModel.setIDLEstate()
+            solverViewModel.solverSetIDLEstate()
     }
 
     Column(
@@ -311,6 +310,8 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState) {
  * @param showWinnableMoveToUser Determine whether to show the preview of the next winnable
  * move or not
  * @param uiState Current UI state of the solver game
+ * @param onBallMovementAnimationChange Determine whether the ball movement animation is done or not
+ * @param announceVictory Indicate whether we need to announce victory message or not
  */
 @Composable
 private fun ControlButtonsForSolver(
@@ -729,6 +730,9 @@ private fun drawSolverBalls(
     eraseAnimatedBallPositions: List<MovingRec> = listOf()
 ) {
     // Draw all the balls
+    //
+    // NOTE: ballPositionList is a SnapshotList type. It is observation system that will trigger a recompose
+    // to redraw the grid.
     solverViewModel.ballPositionList().forEach { pos ->
         var skipDraw = false
         eraseAnimatedBallPositions.forEach { eraseRec ->
@@ -1130,7 +1134,7 @@ fun AnimateVictoryMessageSetup(
         )
         delay(1000)
         onAnimationChange(false)
-        solverViewModel.setIDLEstate()
+        solverViewModel.solverSetIDLEstate()
         animateVictoryMessage.snapTo(0f)
     }
 }

@@ -3,7 +3,6 @@ package com.darblee.flingaid.ui
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import com.darblee.flingaid.Direction
-import com.darblee.flingaid.ui.SolverViewModel.findWinningMove
 import com.darblee.flingaid.utilities.BallPosition
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,9 +30,10 @@ import java.io.File
  * - [loadGameFile] : Define the file to store the ball position information
  * - [ballCount]
  * - [ballPositionList]
+ * - [printBalls] Print all the ball positions. Used for debugging purposes.
  *
  * **Game Play Functions**
- * - [findWinningMove]
+ * - [generateNewGame]  Generate a new game based on provided level
  */
 object GameViewModel : ViewModel() {
 
@@ -42,9 +42,7 @@ object GameViewModel : ViewModel() {
      * is a set of Kotlin files that are compiled together e.g. a library or application. It provides real
      * encapsulation for the implementation details. In this case, it is shared wit the SolverEngine class.
      */
-    internal var gThinkingProgress = 0
-
-    private var gGameFile: File? = null
+    internal var gHintThinkingProgress = 0
 
     /**
      * Store the winning direction for each corresponding task. Only 1 task will have the winning move
@@ -75,7 +73,7 @@ object GameViewModel : ViewModel() {
 
     /********************************* BALL MANAGEMENT ****************************/
 
-    private var _ballPosition = BallPosition()
+    private var _gameBallPos = BallPosition()
 
     /**
      * Get the list of balls and its position.
@@ -91,44 +89,124 @@ object GameViewModel : ViewModel() {
      * moment. For more info, see [Compose Snapshot System](https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn)
      */
     fun ballPositionList(): SnapshotStateList<Pos> {
-        return (_ballPosition.ballList)
+        return (_gameBallPos.ballList)
     }
 
+    /**
+     * Return the number of active ball
+     *
+     * @return Number of active balls
+     */
+    fun ballCount(): Int {
+        return (_gameBallPos.getBallCount())
+    }
 
+    /**
+     * Load the game file
+     *
+     * @param file game file
+     */
+    fun loadGameFile(file: File) {
+        _gameBallPos.setGameFile(file)
+        _gameBallPos.loadBallListFromFile()
+    }
 
+    /********************************* SOLVER GAME MANAGEMENT ****************************/
 
+    /**
+     * Contain the UI state of the solver game. This is used by the game screens to display
+     * proper UI elements. Various composable will automatically update when that state changes
+     *
+     * For reference, see [ https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn ]
+     */
+    private val _uiGameState = MutableStateFlow(GameUIState())
 
-    // Game UI state
-    private val _uiState = MutableStateFlow(GameUIState())
+    /**
+     * Holds the [_uiGameState] as a state flow.
+     *
+     * __Developer's note__:
+     * StateFlow is a data holder observable flow that emits the current and new state updates.
+     * Its value property reflects the current state value. To update state and send it to the flow,
+     * assign a new value to the value property of the MutableStateFlow class.
+     *
+     * In Android, StateFlow works well with classes that must maintain an observable immutable state.
+     * A StateFlow can be exposed from the GameUiState so that the composable can listen for UI state
+     * updates and make the screen state survive configuration changes.
+     *
+     * In the GameViewModel class, add the following [_uiGameState] property.
+     *
+     * `private set` this is internally modifiable and read-only access from the outside.
+     * This ensure information flow in one direction from the view model to the UI
+     */
+    internal var uiState: StateFlow<GameUIState> = _uiGameState.asStateFlow()
+        private set
 
-    /*
-    Developer's note:
-    StateFlow is a data holder observable flow that emits the current and new state updates.
-    Its value property reflects the current state value. To update state and send it to the flow,
-    assign a new value to the value property of the MutableStateFlow class.
+    /**
+     * Initialize the SolverViewModel
+     */
+    init {
+        reset()
+        gHintThinkingProgress = 0
+    }
 
-    In Android, StateFlow works well with classes that must maintain an observable immutable state.
-    A StateFlow can be exposed from the GameUiState so that the composable can listen for UI state
-    updates and make the screen state survive configuration changes.
+    /**
+     * Reset the entire solver game
+     * - Clear the board
+     * - Remove any saved game file
+     */
+    fun reset() {
+        _gameBallPos.ballList.clear()
+        _gameBallPos.removeGameFile()
 
-    In the GameViewModel class, add the following _uiState property.
+        gameSetIDLEstate()
+    }
 
-    "internal" means it will only be visible within that module. A module is a set of Kotlin
-    files that are compiled together e.g. a library or application. It provides real
-    encapsulation for the implementation details
+    /**
+     * Update [uiState]  thinking status to Idle state.
+     *
+     */
+    fun gameSetIDLEstate(
+    ) {
+        _uiGameState.update { currentState ->
+            currentState.copy(
+                state = GameState.Idle,
+                moveFromRow = 0,
+                moveFromCol = 0
+            )
+        }
+        gHintThinkingProgress = 0
+    }
 
- */
-    internal var uiState: StateFlow<GameUIState> = _uiState.asStateFlow()
-        private set  // Public getter (read-only access from outside) and private setter (only internally modifiable)
-
+    /**
+     * Generate a new game based on level.
+     *
+     * It will add balls to the ball list
+     */
+    fun generateNewGame(level: Int) {
+        _gameBallPos.ballList.add(Pos(1, 2))
+        _gameBallPos.ballList.add(Pos(2, 2))
+        _gameBallPos.ballList.add(Pos(3, 4))
+        _gameBallPos.ballList.add(Pos(5, 6))
+        _gameBallPos.saveBallListToFile()
+    }
 
     fun moveBallPos(row: Int, col: Int) {
-        _uiState.update { currentState ->
+        _uiGameState.update { currentState ->
             currentState.copy(
                 state = GameState.MoveBall,
                 moveFromRow = row,
                 moveFromCol = col,
             )
         }
+    }
+
+    /**
+     * Print all the balls.
+     *
+     * Used primarily for debugging purposes
+     */
+    fun printBalls()
+    {
+        _gameBallPos.printPositions()
     }
 }

@@ -40,7 +40,7 @@ import java.util.concurrent.CyclicBarrier
  *
  * **Game Play Functions**
  * - [reset]
- * - [setIDLEstate]
+ * - [solverSetIDLEstate]
  * - [findWinningMove]
  * - [getWinningMoveCount]
  * - [makeWinningMove]
@@ -142,7 +142,7 @@ object SolverViewModel : ViewModel() {
      * A StateFlow can be exposed from the GameUiState so that the composable can listen for UI state
      * updates and make the screen state survive configuration changes.
      *
-     * In the GameViewModel class, add the following [_uiState] property.
+     * In the SolverViewModel class, add the following [_uiState] property.
      *
      * `private set` this is internally modifiable and read-only access from the outside.
      * This ensure information flow in one direction from the view model to the UI
@@ -167,7 +167,7 @@ object SolverViewModel : ViewModel() {
         _solverBallPos.ballList.clear()
         _solverBallPos.removeGameFile()
 
-        setIDLEstate()
+        solverSetIDLEstate()
     }
 
     /**
@@ -184,7 +184,7 @@ object SolverViewModel : ViewModel() {
         }
 
         _solverBallPos.saveBallListToFile()
-        setIDLEstate()
+        solverSetIDLEstate()
     }
 
     /**
@@ -300,7 +300,7 @@ object SolverViewModel : ViewModel() {
             val movingChain =
                 buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
-            setIDLEstate(
+            solverSetIDLEstate(
                 winningDirection = winningDir,
                 winningMovingChain = movingChain,
                 mode = SolverUiState.SolverGameMode.IdleFoundSolution)
@@ -324,7 +324,7 @@ object SolverViewModel : ViewModel() {
                 val movingChain =
                     buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
-                setIDLEstate(
+                solverSetIDLEstate(
                     winningDirection = winningDir,
                     winningMovingChain = movingChain,
                     mode = SolverUiState.SolverGameMode.IdleFoundSolution
@@ -356,7 +356,7 @@ object SolverViewModel : ViewModel() {
      * details.
      * @param mode Solver game state
      */
-    fun setIDLEstate(
+    fun solverSetIDLEstate(
         winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
         winningMovingChain: List<MovingRec> = mutableListOf(),
         mode: SolverUiState.SolverGameMode = SolverUiState.SolverGameMode.Idle
