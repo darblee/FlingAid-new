@@ -38,6 +38,9 @@ import java.io.File
 object GameViewModel : ViewModel() {
 
     /**
+     *
+     * Track the thinking process to find the winning move on the user's hint request
+     *
      * _Developer's note:_ `internal` means it will only be visible within that module. A module
      * is a set of Kotlin files that are compiled together e.g. a library or application. It provides real
      * encapsulation for the implementation details. In this case, it is shared wit the SolverEngine class.

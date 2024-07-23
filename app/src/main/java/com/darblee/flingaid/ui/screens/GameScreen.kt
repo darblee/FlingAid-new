@@ -92,6 +92,15 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     Log.i(Global.DEBUG_PREFIX, "Game Screen - recompose")
 
     var announceVictory by remember { mutableStateOf(false) }
+
+    /**
+     * Need to ensure we only load the file once when we start the the solver game screen.
+     * If we load the file everytime we go down this path during recompose, it will trigger more
+     * recompose. This will cause unnecessary performance overload.
+     *
+     * __Developer's Note:__  Use [rememberSaveable] instead of [remember] because we want to
+     * preserve this even after config change (e.g. screen rotation)
+     */
     var needToLoadGameFile by remember { mutableStateOf(true) }
 
     /**
