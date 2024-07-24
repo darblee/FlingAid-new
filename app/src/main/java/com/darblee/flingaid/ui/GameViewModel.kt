@@ -1,8 +1,10 @@
 package com.darblee.flingaid.ui
 
+import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import com.darblee.flingaid.Direction
+import com.darblee.flingaid.Global
 import com.darblee.flingaid.utilities.BallPosition
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +33,7 @@ import java.io.File
  * - [ballCount]
  * - [ballPositionList]
  * - [printBalls] Print all the ball positions. Used for debugging purposes.
+ * - [buildMovingChain] Moving chain to set-up ball movement animation
  *
  * **Game Play Functions**
  * - [generateNewGame]  Generate a new game based on provided level
@@ -186,11 +189,39 @@ object GameViewModel : ViewModel() {
      * It will add balls to the ball list
      */
     fun generateNewGame(level: Int) {
+        _gameBallPos.ballList.clear()
         _gameBallPos.ballList.add(Pos(1, 2))
         _gameBallPos.ballList.add(Pos(2, 2))
+        _gameBallPos.ballList.add(Pos(5, 2))
         _gameBallPos.ballList.add(Pos(3, 4))
         _gameBallPos.ballList.add(Pos(5, 6))
         _gameBallPos.saveBallListToFile()
+    }
+
+    var gMovingChain : List<MovingRec> = mutableListOf()
+
+    /**
+     * Confirm if this is a valid move to process. If not, then return false.
+     * If true, then set-up moving chain, which will be used in next step
+     *
+     * @param initialRow Row position to move the ball from
+     * @param initialCol Column position to move the ball from
+     * @param direction Direction of the ball movement
+     *
+     * @return
+     * - true - This is a valid move. Set-up moving chain
+     * - false. This is not a valid move. It either has no space to move or there is no ball in the
+     * provided position.
+     */
+    fun validMove(initialRow: Int, initialCol: Int, direction : Direction): Boolean
+    {
+        if (!(_gameBallPos.ballList.contains(Pos(initialRow, initialCol)))) return false
+
+        gMovingChain = mutableListOf()
+
+        Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $initialRow, $initialCol")
+        gMovingChain = _gameBallPos.buildMovingChain(initialRow, initialCol, direction)
+        return gMovingChain.isNotEmpty()
     }
 
     fun moveBallPos(row: Int, col: Int) {

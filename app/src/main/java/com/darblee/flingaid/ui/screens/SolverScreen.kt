@@ -206,7 +206,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             modifier = Modifier.fillMaxSize(),
             solverViewModel = solverViewModel,
             uiState = uiState,
-            showPreviewBallMovementAnimation = showBallMovementAnimation,
+            showBallMovementAnimation = showBallMovementAnimation,
             onBallMovementAnimationChange = onBallMovementAnimationChange,
             announceVictory,
             onEnableVictoryMsg,
@@ -433,7 +433,7 @@ private fun DrawSolverBoard(
     modifier: Modifier = Modifier,
     solverViewModel: SolverViewModel = viewModel(),
     uiState: SolverUiState,
-    showPreviewBallMovementAnimation: Boolean,
+    showBallMovementAnimation: Boolean,
     onBallMovementAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit,
     announceVictory: Boolean,
     onEnableVictoryMsg: (Boolean) -> Unit,
@@ -474,18 +474,18 @@ private fun DrawSolverBoard(
         )
     }
 
-    if (showPreviewBallMovementAnimation) {
+    if (showBallMovementAnimation) {
 
-        // Set-up the particles. which is used for the explosion animated effect
+        // Set-up the particles, which is used for the explosion animated effect
         particles = remember {
             generateExplosionParticles(uiState)
         }.toMutableList()
 
-        AnimatePreviewBallMovementsSetup(
+        AnimateBallMovementsSetup(
             solverViewModel, uiState, animateBallMovementChain,
             animateParticleExplosion, onBallMovementAnimationChange
         )
-    } else {  // else need ball movement animation
+    } else {  // else we longer need ball movement animation. So clear animation set-up
 
         // Make sure we do not show any more particle explosion when ball animation is done
         particles.clear()
@@ -595,10 +595,14 @@ private fun DrawSolverBoard(
             ).asImageBitmap()
             displayBallImage.prepareToDraw()   // cache it
 
-            if (showPreviewBallMovementAnimation) {
+            if (showBallMovementAnimation) {
                 val ballsToErase = uiState.winningMovingChain
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage, ballsToErase)
             } else {
+
+                // No need to animate ball movement, but now need to chech if we need to show
+                // preview of next winning ball movement
+
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage)
 
                 if (solverViewModel.ballCount() > 1) {
@@ -616,12 +620,12 @@ private fun DrawSolverBoard(
                 }
             }
 
-            if (showPreviewBallMovementAnimation) {
+            if (showBallMovementAnimation) {
                 animateBallMovementsPerform(
                     this, gridSize, displayBallImage, animateBallMovementChain,
                     animateParticleExplosion, particles, uiState
                 )
-            }  // if needToAnimateMovingBall
+            }
 
             if (announceVictory) {
                 animateVictoryMsgPerform(
@@ -910,7 +914,7 @@ private fun drawVictoryMessage(
  * @param onAnimationChange Change the state on whether to perform the animation or not
  */
 @Composable
-fun AnimatePreviewBallMovementsSetup(
+fun AnimateBallMovementsSetup(
     solverViewModel: SolverViewModel,
     uiState: SolverUiState,
     animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
@@ -982,7 +986,7 @@ fun AnimatePreviewBallMovementsSetup(
 /**
  * Statically defined animated Keyframe specification to wiggle the ball
  *
- * @see AnimatePreviewBallMovementsSetup
+ * @see AnimateBallMovementsSetup
  */
 private val wiggleBallAnimatedSpec = keyframes {
     durationMillis = 80
@@ -996,7 +1000,7 @@ private val wiggleBallAnimatedSpec = keyframes {
  * and a bounce effect at the end.
  *
  * The following functions all work together to create end-to-end animation of ball movement and particle explosion:
- *  - [AnimatePreviewBallMovementsSetup]
+ *  - [AnimateBallMovementsSetup]
  *  - [ballMovementKeyframeSpec]
  *  - [wiggleBallAnimatedSpec]
  *  - [particleExplosionAnimatedSpec]

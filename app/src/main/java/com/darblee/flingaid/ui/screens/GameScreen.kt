@@ -68,12 +68,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.darblee.flingaid.BackPressHandler
+import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
 import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
-import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.gameToast
 import java.io.File
 import kotlin.math.abs
@@ -429,10 +429,12 @@ private fun DrawGameBoard(
                                         "Swipe left from $dragRow, $dragCol for length $offsetX"
                                     )
 
-                                    if (gameViewModel.ballPositionList().contains(Pos(dragRow, dragCol))) {
-                                        Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $dragRow, $dragCol")
+                                    // Check if there is a valid move, If there is, then set-up
+                                    // the move.
+                                    if (gameViewModel.validMove(dragRow, dragCol, Direction.LEFT)) {
                                         onSwipeBall.invoke(true)
                                     }
+
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -444,8 +446,10 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe right from $dragRow, $dragCol for length $offsetX"
                                     )
-                                    if (gameViewModel.ballPositionList().contains(Pos(dragRow, dragCol))) {
-                                        Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $dragRow, $dragCol")
+
+                                    // Check if there is a valid move, If there is, then set-up
+                                    // the move.
+                                    if (gameViewModel.validMove(dragRow, dragCol, Direction.RIGHT)) {
                                         onSwipeBall.invoke(true)
                                     }
 
@@ -460,8 +464,9 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe Up from $dragRow, $dragCol for length $offsetY"
                                     )
-                                    if (gameViewModel.ballPositionList().contains(Pos(dragRow, dragCol))) {
-                                        Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $dragRow, $dragCol")
+                                    // Check if there is a valid move, If there is, then set-up
+                                    // the move.
+                                    if (gameViewModel.validMove(dragRow, dragCol, Direction.UP)) {
                                         onSwipeBall.invoke(true)
                                     }
 
@@ -477,8 +482,9 @@ private fun DrawGameBoard(
                                         "Swipe down from $dragRow, $dragCol for length $offsetY"
                                     )
 
-                                    if (gameViewModel.ballPositionList().contains(Pos(dragRow, dragCol))) {
-                                        Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $dragRow, $dragCol")
+                                    // Check if there is a valid move, If there is, then set-up
+                                    // the move.
+                                    if (gameViewModel.validMove(dragRow, dragCol, Direction.DOWN)) {
                                         onSwipeBall.invoke(true)
                                     }
                                     offsetX = 0F
@@ -573,12 +579,12 @@ private fun drawGameBalls(
         //
         // NOTE: ballPositionList is a SnapshotList type. It is observation system that will trigger a recompose
         // to redraw the grid.
-        gameViewModel.ballPositionList().forEach { pos ->
+        gameViewModel.ballPositionList().forEach { curPosition ->
             drawImage(
                 image = displayBallImage,
                 topLeft = Offset(
-                    (pos.col * gridSize),
-                    (pos.row * gridSize)
+                    (curPosition.col * gridSize),
+                    (curPosition.row * gridSize)
                 )
             )
         }

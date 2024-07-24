@@ -299,8 +299,7 @@ object SolverViewModel : ViewModel() {
 
             _winningDirection_from_tasks = task1_WinningDirection
 
-            val movingChain =
-                buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
+            val movingChain = _solverBallPos.buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
             solverSetIDLEstate(
                 winningDirection = winningDir,
@@ -323,8 +322,7 @@ object SolverViewModel : ViewModel() {
 
                 _winningDirection_from_tasks = task2_WinningDirection
 
-                val movingChain =
-                    buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
+                val movingChain = _solverBallPos.buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
                 solverSetIDLEstate(
                     winningDirection = winningDir,
@@ -610,146 +608,6 @@ object SolverViewModel : ViewModel() {
         _uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
 
         _solverBallPos.saveBallListToFile()
-    }
-
-    /**
-     * Build a list of move records on this single move. If only one ball is involved, then this
-     * will be a chain of 1 ball record movement.
-     *
-     * @param initialRow Row of position to move from
-     * @param initialCol Column of position to move from
-     * @param direction Direction to move to
-     *
-     * @return List of movement records, If this only has 1 move, then this will be a chain of
-     * one movement record. It will return an empty list if there is no movement needed.
-     */
-    private fun buildMovingChain(
-        initialRow: Int,
-        initialCol: Int,
-        direction: Direction
-    ): List<MovingRec> {
-        val movingList = mutableListOf<MovingRec>()
-
-        var chainRecInfo = findFreeSpaceCount(initialRow, initialCol, direction, firstMove = true)
-        var movingDistance = chainRecInfo.first
-        var nextSourcePos = chainRecInfo.second
-
-        // For the first ball in chain, we must have at least one free space to move
-        if (movingDistance == 0) return movingList
-
-        movingList.add(MovingRec(Pos(initialRow, initialCol), movingDistance))
-
-        // For subsequent ball in the chain, it is fine to have zero distance
-        var fallenOffEdge = false
-        while (!fallenOffEdge) {
-            if (nextSourcePos == null) {
-                fallenOffEdge = true
-            } else {
-                val currentSourcePos = nextSourcePos
-                chainRecInfo =
-                    findFreeSpaceCount(
-                        currentSourcePos.row,
-                        currentSourcePos.col,
-                        direction,
-                        firstMove = false
-                    )
-                movingDistance = chainRecInfo.first
-                nextSourcePos = chainRecInfo.second
-                movingList.add(MovingRec(currentSourcePos, movingDistance))
-            }
-        }
-
-        return (movingList)
-    }
-
-    /**
-     *  Find the number of free space in front of the ball doing on a specific direction. If the
-     *  ball is on the edge, then automatically provide 2 free spaces. The caller [buildMovingChain]
-     *  will send the ball off the grid. We need to see it fall off the edge of the phone screen, which is why
-     *  two space is provided instead of one space.
-     *
-     *  @param row Row of existing ball
-     *  @param col Column of existing ball
-     *  @param direction Direction to look for free space
-     *  @param firstMove If this is the first move, we need to do special check when the ball is
-     *  on the edge of the grid.
-     *
-     *  @see buildMovingChain
-     *
-     *  @return Pair<Int, SolverGridPos?> where the first element is the number of free space and
-     *  second element is the position of the next ball
-     *
-     */
-    private fun findFreeSpaceCount(
-        row: Int,
-        col: Int,
-        direction: Direction,
-        firstMove: Boolean
-    ): Pair<Int, Pos?> {
-        var xOffset = 0
-        var yOffset = 0
-        var sourceRow = row
-        var sourceCol = col
-
-        when (direction) {
-            Direction.RIGHT -> yOffset = 1
-            Direction.LEFT -> yOffset = -1
-            Direction.UP -> xOffset = -1
-            Direction.DOWN -> xOffset = 1
-            else -> assert(true) { "Got unexpected direction value" }
-        }
-
-        if ((direction == Direction.LEFT) && (col == 0)) {
-            if (firstMove) return (Pair(0, null))
-            return (Pair(2, null))
-        }
-
-        if ((direction == Direction.RIGHT) && (col == Global.MAX_COL_SIZE)) {
-            if (firstMove) return (Pair(0, null))
-            return (Pair(2, null))
-        }
-
-        if ((direction == Direction.UP) && (row == 0)) {
-            if (firstMove) return (Pair(0, null))
-            return (Pair(2, null))
-        }
-
-        if ((direction == Direction.DOWN) && (row == Global.MAX_ROW_SIZE)) {
-            if (firstMove) return (Pair(0, null))
-            return (Pair(2, null))
-        }
-
-        var newRow: Int
-        var newCol: Int
-
-        var distance = 0
-        var hitWall = false
-
-        var nextSourcePos: Pos? = null
-
-        while (!hitWall) {
-            newRow = sourceRow + xOffset
-            newCol = sourceCol + yOffset
-
-            if ((newRow == -1) || (newRow == Global.MAX_ROW_SIZE) ||
-                (newCol == -1) || (newCol == Global.MAX_COL_SIZE)
-            ) {
-                distance++ // Add two to make it fall off the edge
-                distance++
-                hitWall = true
-            } else {
-                if (_solverBallPos.ballList.contains(Pos(newRow, newCol))) {
-                    nextSourcePos = Pos(newRow, newCol)
-                    hitWall = true
-                } else {
-                    distance++
-                    sourceRow = newRow
-                    sourceCol = newCol
-                }
-            }
-        }
-
-        return (Pair(distance, nextSourcePos))
     }
 }
 
