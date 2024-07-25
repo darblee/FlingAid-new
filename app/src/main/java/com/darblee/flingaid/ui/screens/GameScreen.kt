@@ -4,7 +4,14 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.KeyframesSpec
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.repeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -51,6 +58,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -71,10 +79,16 @@ import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
+import com.darblee.flingaid.gAudio_doink
 import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
+import com.darblee.flingaid.ui.MovingRec
+import com.darblee.flingaid.utilities.Pos
+import com.darblee.flingaid.utilities.drawBallOnGrid
 import com.darblee.flingaid.utilities.gameToast
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.abs
 
@@ -121,7 +135,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     }
 
     val gameViewModel: GameViewModel = viewModel()
-    val uiState by gameViewModel.uiState.collectAsStateWithLifecycle()
+    val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
 
     val boardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
 
@@ -140,31 +154,38 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
      * Keep track of when to do the ball movement animation
      */
     var showBallMovementAnimation by remember { mutableStateOf(false) }
-    val onBallMovementAnimationChange =
+    val onBallMovementAnimationEnablement =
         { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
+
+    /**
+     * Show shadow movement only. This is used to show invalid move
+     */
+    var showShadowMovement by remember { mutableStateOf(false) }
+    val onShadowMovementAnimationEnablement =
+        { enableShadowMovement: Boolean -> showShadowMovement = enableShadowMovement }
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        var animateBallSwipe by remember {
-            mutableStateOf(false)
-        }
         InstructionLogo()
         GameControlButtonsForGame(
             gameViewModel,
-            uiState,
-            onBallMovementAnimationChange,
+            gameUIState,
+            onBallMovementAnimationEnablement,
             announceVictory
         )
 
         DrawGameBoard(
             modifier = Modifier.fillMaxSize(),
-            gameViewModel,
-            uiState,
-            onSwipeBall = { needToAnimate -> animateBallSwipe = needToAnimate },
-            onEnableVictoryMsg
+            gameViewModel = gameViewModel,
+            gameUIState = gameUIState,
+            showBallMovementAnimation = showBallMovementAnimation,
+            onBallMovementAnimationEnablement = onBallMovementAnimationEnablement,
+            onEnableVictoryMsg = onEnableVictoryMsg,
+            showShadowMovement = showShadowMovement,
+            onShadowMovementAnimationEnablement = onShadowMovementAnimationEnablement
         )
     }
 }
@@ -320,9 +341,12 @@ private fun GameControlButtonsForGame(
 private fun DrawGameBoard(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
-    uiState: GameUIState,
-    onSwipeBall: (animateBalls: Boolean) -> Unit,
-    onEnableVictoryMsg: (Boolean) -> Unit
+    gameUIState: GameUIState,
+    showBallMovementAnimation: Boolean,
+    onEnableVictoryMsg: (Boolean) -> Unit,
+    onBallMovementAnimationEnablement: (Boolean) -> Unit,
+    showShadowMovement: Boolean,
+    onShadowMovementAnimationEnablement: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -333,44 +357,32 @@ private fun DrawGameBoard(
     val textMeasurer = rememberTextMeasurer()
 
     if (gameViewModel.ballCount() == 1) {
-        if (uiState.state == GameState.IdleFoundSOlution) {
+        if (gameUIState.state == GameState.IdleFoundSolution) {
             onEnableVictoryMsg(true)
         }
     }
 
     /**
-     * Launch the animation only once when it enters the composition. It will animate infinitely
-     * until it is removed from the composition
+     * Animation control that handle ball movement
      */
-    val animate1 = remember { Animatable(initialValue = 0f) }
-    val animate2 = remember { Animatable(initialValue = 0f) }
-    val animate3 = remember { Animatable(initialValue = 0f) }
+    val animateBallMovementChain = mutableListOf<Animatable<Float, AnimationVector1D>>()
 
-    var processSwipe by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        animate1.animateTo(
-            targetValue = 1f, animationSpec =
-            repeatable(
-                iterations = 1,
-                animation = tween(1000, easing = FastOutSlowInEasing),
-            )
-        )
-        animate2.animateTo(
-            targetValue = 1f, animationSpec =
-            repeatable(
-                iterations = 1,
-                animation = tween(1000, easing = FastOutSlowInEasing),
-            )
-        )
-        animate3.animateTo(
-            targetValue = 1f, animationSpec =
-            repeatable(
-                iterations = 1,
-                animation = tween(1000, easing = FastOutSlowInEasing),
-            )
+    if ((showBallMovementAnimation) && (gameUIState.state == GameState.MoveBall)) {
+        GameAnimateBallMovementsSetup(
+            gameUIState,
+            onBallMovementAnimationEnablement,
+            animateBallMovementChain,
+            gameViewModel
         )
     }
+
+    /**
+     * Animation control that handle shadow ball movement. Used to show invalid move to user
+     */
+    val animateShadowMovement = remember { Animatable(initialValue = 0f) }
+    if ((showShadowMovement) && (gameUIState.state == GameState.ShowShadowMovement))
+        GameAnimateShadowBallMovementsSetup(animateShadowMovement,
+            onShadowMovementAnimationEnablement, gameViewModel)
 
     Box(
         modifier = Modifier
@@ -407,16 +419,11 @@ private fun DrawGameBoard(
                         onDragStart = { offset: Offset ->
                             dragRow = (offset.y / gridSize).toInt()
                             dragCol = (offset.x / gridSize).toInt()
-                            Log.i(Global.DEBUG_PREFIX, "Offset is row: $dragRow, col: $dragCol")
                         },
                         onDrag = { change, dragAmount ->
-
-                            /*
-                             * Need to consume this event, so that its parent knows not to react to
-                             * it anymore. What change.consume() does is it prevent pointerInput
-                             * above it to receive events by returning PointerInputChange.positionChange()
-                             * Offset.Zero PointerInputChange.isConsumed true.
-                             */
+                            //  Need to consume this event, so that its parent knows not to react to
+                            //  it anymore. What change.consume() does is it prevent pointerInput
+                            //  above it to receive events
                             change.consume()
                             offsetX += dragAmount.x
                             offsetY += dragAmount.y
@@ -428,13 +435,23 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe left from $dragRow, $dragCol for length $offsetX"
                                     )
+                                    val moveResult =
+                                        gameViewModel.validMove(dragRow, dragCol, Direction.LEFT)
 
-                                    // Check if there is a valid move, If there is, then set-up
-                                    // the move.
-                                    if (gameViewModel.validMove(dragRow, dragCol, Direction.LEFT)) {
-                                        onSwipeBall.invoke(true)
+                                    when (moveResult) {
+                                        GameViewModel.MoveResult.Valid ->
+                                            onBallMovementAnimationEnablement(true)
+
+                                        GameViewModel.MoveResult.InvalidNoBump ->
+                                            onShadowMovementAnimationEnablement(true)
+
+                                        else -> {
+                                            Log.i(
+                                                Global.DEBUG_PREFIX,
+                                                "Invalid ball movement. Ignore"
+                                            )
+                                        }
                                     }
-
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -446,11 +463,21 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe right from $dragRow, $dragCol for length $offsetX"
                                     )
+                                    val moveResult =
+                                        gameViewModel.validMove(dragRow, dragCol, Direction.RIGHT)
+                                    when (moveResult) {
+                                        GameViewModel.MoveResult.Valid ->
+                                            onBallMovementAnimationEnablement(true)
 
-                                    // Check if there is a valid move, If there is, then set-up
-                                    // the move.
-                                    if (gameViewModel.validMove(dragRow, dragCol, Direction.RIGHT)) {
-                                        onSwipeBall.invoke(true)
+                                        GameViewModel.MoveResult.InvalidNoBump ->
+                                            onShadowMovementAnimationEnablement(true)
+
+                                        else -> {
+                                            Log.i(
+                                                Global.DEBUG_PREFIX,
+                                                "Invalid ball movement. Ignore"
+                                            )
+                                        }
                                     }
 
                                     offsetX = 0F
@@ -464,10 +491,22 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe Up from $dragRow, $dragCol for length $offsetY"
                                     )
-                                    // Check if there is a valid move, If there is, then set-up
-                                    // the move.
-                                    if (gameViewModel.validMove(dragRow, dragCol, Direction.UP)) {
-                                        onSwipeBall.invoke(true)
+
+                                    val moveResult =
+                                        gameViewModel.validMove(dragRow, dragCol, Direction.UP)
+                                    when (moveResult) {
+                                        GameViewModel.MoveResult.Valid ->
+                                            onBallMovementAnimationEnablement(true)
+
+                                        GameViewModel.MoveResult.InvalidNoBump ->
+                                            onShadowMovementAnimationEnablement(true)
+
+                                        else -> {
+                                            Log.i(
+                                                Global.DEBUG_PREFIX,
+                                                "Invalid ball movement. Ignore"
+                                            )
+                                        }
                                     }
 
                                     offsetX = 0F
@@ -481,12 +520,23 @@ private fun DrawGameBoard(
                                         Global.DEBUG_PREFIX,
                                         "Swipe down from $dragRow, $dragCol for length $offsetY"
                                     )
+                                    val moveResult =
+                                        gameViewModel.validMove(dragRow, dragCol, Direction.DOWN)
+                                    when (moveResult) {
+                                        GameViewModel.MoveResult.Valid ->
+                                            onBallMovementAnimationEnablement(true)
 
-                                    // Check if there is a valid move, If there is, then set-up
-                                    // the move.
-                                    if (gameViewModel.validMove(dragRow, dragCol, Direction.DOWN)) {
-                                        onSwipeBall.invoke(true)
+                                        GameViewModel.MoveResult.InvalidNoBump ->
+                                            onShadowMovementAnimationEnablement(true)
+
+                                        else -> {
+                                            Log.i(
+                                                Global.DEBUG_PREFIX,
+                                                "Invalid ball movement. Ignore"
+                                            )
+                                        }
                                     }
+
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -514,9 +564,72 @@ private fun DrawGameBoard(
                 ballSize, ballSize, false
             ).asImageBitmap()
 
-            drawGameBalls(gridDrawScope, gameViewModel, gridSize, displayBallImage)
+            displayBallImage.prepareToDraw()   // cache it
+
+            if ((showBallMovementAnimation) && (gameUIState.state == GameState.MoveBall)) {
+                val ballsToErase = gameUIState.movingChain
+                drawGameBalls(gridDrawScope, gameViewModel, gridSize, displayBallImage, ballsToErase)
+                gameAnimateBallMovementsPerform(
+                    this, gridSize, displayBallImage,
+                    animateBallMovementChain, gameUIState
+                )
+            } else {
+                drawGameBalls(gridDrawScope, gameViewModel, gridSize, displayBallImage)
+
+                if ((showShadowMovement) && (gameUIState.state == GameState.ShowShadowMovement)) {
+                    if (gameUIState.movingChain.isNotEmpty()) {
+                        animateShadowMovePerform(
+                            drawScope = gridDrawScope,
+                            gridSize = gridSize,
+                            animate = animateShadowMovement,
+                            displayBallImage = displayBallImage,
+                            distance = gameUIState.movingChain[0].distance,
+                            direction = gameUIState.movingDirection,
+                            pos = gameUIState.movingChain[0].pos
+                        )
+                    }
+                }
+            }
         }
     }
+}
+
+/**
+ * Put in the appropriate xOffset and yOffset values.
+ * If the distance is zero, then just set the offset to 1 distance so that it will
+ * do a small bump movement
+ *
+ * @return Pair <xOffset, yOffset>
+ * - row length
+ * - column length
+ */
+private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pair<Float, Float> {
+    var xOffset = 0f
+    var yOffset = 0f
+
+    // If the distance is zero, then just set the offset to 1 distance so that it will
+    // do a small bump movement
+    if (distance == 0) {
+        when (direction) {
+            Direction.UP -> yOffset = -1f
+            Direction.DOWN -> yOffset = 1f
+            Direction.LEFT -> xOffset = -1f
+            Direction.RIGHT -> xOffset = 1f
+            else -> assert(true) { "Unexpected direction value on animate ball movement" }
+        }
+
+        return (Pair(xOffset, yOffset))
+    }
+
+    when (direction) {
+        Direction.UP -> yOffset = -1 * distance * gridSize
+        Direction.DOWN -> yOffset = distance * gridSize
+        Direction.LEFT -> xOffset = -1 * distance * gridSize
+        Direction.RIGHT -> xOffset = distance * gridSize
+        else -> assert(true) { "Got unexpected direction during animation" }
+    }
+
+    return (Pair(xOffset, yOffset))
 }
 
 private fun drawGridForGame(
@@ -571,23 +684,21 @@ private fun drawGameBalls(
     drawScope: DrawScope,
     gameViewModel: GameViewModel,
     gridSize: Float,
-    displayBallImage: ImageBitmap
+    displayBallImage: ImageBitmap,
+    eraseAnimatedBallPositions: List<MovingRec> = listOf()
 ) {
     // Draw all the balls
-    with(drawScope) {
-        // Draw all the balls
-        //
-        // NOTE: ballPositionList is a SnapshotList type. It is observation system that will trigger a recompose
-        // to redraw the grid.
-        gameViewModel.ballPositionList().forEach { curPosition ->
-            drawImage(
-                image = displayBallImage,
-                topLeft = Offset(
-                    (curPosition.col * gridSize),
-                    (curPosition.row * gridSize)
-                )
-            )
+    //
+    // NOTE: ballPositionList is a SnapshotList type. It is observation system that will trigger a recompose
+    // to redraw the grid.
+    gameViewModel.ballPositionList().forEach { pos ->
+        var skipDraw = false
+        eraseAnimatedBallPositions.forEach { eraseRec ->
+            if ((eraseRec.pos.row == pos.row) && (eraseRec.pos.col == pos.col))
+                skipDraw = true
         }
+
+        if (!skipDraw) drawBallOnGrid(drawScope, gridSize, pos, displayBallImage)
     }
 }
 
@@ -610,3 +721,221 @@ fun gameScreenBackPressed(context: Context, navController: NavHostController) {
 
     navController.popBackStack()
 }
+
+/******************************* Animation routines **********************************************/
+
+/**
+ * Statically defined animated Keyframe specification to wiggle the ball
+ *
+ * @see AnimateBallMovementsSetup
+ */
+private val wiggleBallAnimatedSpec = keyframes {
+    durationMillis = 80
+    0f.at(10) using LinearEasing   // from 0 ms to 10 ms
+    5f.at(20) using LinearEasing    // from 10 ms to 20 ms
+}
+
+/**
+ * Define the animation KeyframeSpec for the straight ball movement.
+ * Ensure the most of time is spend linear speed with slow start
+ * and a bounce effect at the end.
+ *
+ * The following functions all work together to create end-to-end animation of ball movement and particle explosion:
+ *  - [AnimateBallMovementsSetup]
+ *  - [ballMovementKeyframeSpec]
+ *  - [wiggleBallAnimatedSpec]
+ *  - [particleExplosionAnimatedSpec]
+ *  - [animateBallMovementsPerform]
+ *
+ * @param totalTimeLength Total time to run the straight ball movement
+ * @param whenBallMakeContactRatio Time ratio of total time when the ball makes contact to the neighboring ball. It is used
+ * in conjunction with [particleExplosionAnimatedSpec] routine
+ *
+ * @return Animation state specification
+ */
+private fun ballMovementKeyframeSpec(
+    totalTimeLength: Int,
+    whenBallMakeContactRatio: Float
+): KeyframesSpec<Float> {
+    val spec: KeyframesSpec<Float> = keyframes {
+        durationMillis = totalTimeLength
+        0f.at((0.05 * totalTimeLength).toInt()) using LinearOutSlowInEasing
+        1.02f.at((whenBallMakeContactRatio * totalTimeLength).toInt()) using FastOutLinearInEasing   // Overrun the ball slightly to hit the neighboring ball
+        1.0f.at(totalTimeLength) using EaseOut   // Roll back to the destination
+    }
+    return (spec)
+}
+
+@Composable
+private fun GameAnimateBallMovementsSetup(
+    gameUIState: GameUIState,
+    onAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit,
+    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
+    gameViewModel: GameViewModel
+) {
+    val movingChain = gameUIState.movingChain
+    movingChain.forEach { _ ->
+        val animateBallMovement = remember { Animatable(initialValue = 0f) }
+        animateBallMovementChain.add(animateBallMovement)
+    }
+
+    // Time ratio of total time when the ball makes contact to the neighboring ball
+    val whenBallMakeContactRatio = 0.97f
+
+    LaunchedEffect(Unit) {
+        // Use coroutine to ensure both launch animation get completed in the same co-routine scope
+        coroutineScope {
+            launch { // One or more ball movements in serial fashion
+                movingChain.forEachIndexed { index, currentMovingRec ->
+                    if (currentMovingRec.distance > 0) {
+                        val totalTimeLength = (currentMovingRec.distance * 100) + 100
+                        animateBallMovementChain[index].animateTo(
+                            targetValue = 1f,
+                            animationSpec = ballMovementKeyframeSpec(
+                                totalTimeLength,
+                                whenBallMakeContactRatio
+                            )
+                        )
+                    } else {
+                        // Distance is zero. Need to set-up the "wiggle" effect
+                        animateBallMovementChain[index].animateTo(
+                            targetValue = 0f, animationSpec = wiggleBallAnimatedSpec
+                        )
+                    }
+                }   // movingChain forEach
+                animateBallMovementChain.clear()
+
+                onAnimationChange(false)
+
+                gameViewModel.moveBall(gameUIState)
+            } // Launch
+        }   // coroutine
+    }
+}
+
+/**
+ * Perform the actual animation of ball movements (including its chain) and
+ * the particle explosion effect.
+ *
+ * @param drawScope
+ * @param gridSize Size of grid. This used to do various computation on animation effect
+ * @param displayBallImage The actual ball image to show
+ * @param animateBallMovementChain Object that control animation state of all the ball movement in this chain
+ * @param gameUIState UI state of the game View Model
+ */
+fun gameAnimateBallMovementsPerform(drawScope: DrawScope,
+                                    gridSize: Float,
+                                    displayBallImage: ImageBitmap,
+                                    animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
+                                    gameUIState: GameUIState
+) {
+    val movingDirection = gameUIState.movingDirection
+    val movingChain = gameUIState.movingChain
+
+    if (movingChain.isEmpty())  return
+    if (movingDirection == Direction.NO_WINNING_DIRECTION) return
+    if (animateBallMovementChain.isEmpty()) return
+
+    with (drawScope) {
+        var movingSourcePos: Pos
+        var offset: Pair<Float, Float>
+        var xOffset: Float
+        var yOffset: Float
+
+        // Ball movements including multiple ball movements (if there is multiple balls in the chain)
+        for ((index, currentMovement) in movingChain.withIndex()) {
+            movingSourcePos = currentMovement.pos
+
+            offset = setOffsets(movingDirection, movingChain[index].distance, gridSize)
+            xOffset = offset.first
+            yOffset = offset.second
+
+            // Perform animation by adjusting both the xOffset and yOffset amount respectively
+            // to move the ball
+            translate(
+                (xOffset) * ((animateBallMovementChain[index]).value),
+                (yOffset) * ((animateBallMovementChain[index]).value)
+            ) {
+                drawBallOnGrid(drawScope, gridSize, movingSourcePos, displayBallImage)
+            } // translate
+        }  // for
+    }
+}
+
+/**
+ * This is a set-up to control shadow ball movement
+ */
+@Composable
+fun GameAnimateShadowBallMovementsSetup(
+    animateShadowMovement: Animatable<Float, AnimationVector1D>,
+    onShadowMovementAnimationEnablement: (Boolean) -> Unit,
+    gameViewModel: GameViewModel
+)
+{
+    LaunchedEffect(Unit) {
+        // Use coroutine to ensure both animation and sound happen in parallel
+        coroutineScope {
+            launch {
+                animateShadowMovement.animateTo(
+                    targetValue = 1f,
+                    animationSpec = repeatable(
+                        iterations = 1,
+                        animation = tween(1000, easing = FastOutSlowInEasing)
+                    )
+                )
+                animateShadowMovement.stop()
+                animateShadowMovement.snapTo(0f)
+                onShadowMovementAnimationEnablement(false)
+                gameViewModel.idleState()
+            }  // launch
+            launch {
+                gAudio_doink.start()
+            }
+        } // coroutine scope
+    }  // LaunchedEffect
+}
+
+/**
+ * Animate the shadowed ball movement.
+ *
+ * @param drawScope Scope to do the drawing on
+ * @param gridSize width or height of the grid in dp unit
+ * @param animate Object that control animation state of shadow ball movement. It loops endlessly
+ * @param displayBallImage The image of the ball
+ * @param distance number of blocks in this ball movement
+ * @param direction Direction of the ball movement
+ * @param pos Position of the ball to move from
+ */
+private fun animateShadowMovePerform(
+    drawScope: DrawScope,
+    gridSize: Float,
+    animate: Animatable<Float, AnimationVector1D>,
+    displayBallImage: ImageBitmap,
+    distance: Int,
+    direction: Direction,
+    pos: Pos
+) {
+    with(drawScope) {
+        var xOffset = 0
+        var yOffset = 0
+
+        when (direction) {
+            Direction.UP -> { yOffset = -1 * gridSize.toInt() * distance }
+            Direction.DOWN -> { yOffset = 1 * gridSize.toInt() * distance }
+            Direction.LEFT -> { xOffset = -1 * gridSize.toInt() * distance }
+            Direction.RIGHT -> { xOffset = 1 * gridSize.toInt() * distance }
+            else -> {
+                assert(true) { "Got unexpected Direction value: ${direction}" }
+            }
+        }
+
+        translate(
+            (xOffset) * animate.value,
+            (yOffset) * animate.value
+        ) {
+            drawBallOnGrid(drawScope, gridSize, pos, displayBallImage, alpha = 0.4F)
+        }
+    }
+}
+
+

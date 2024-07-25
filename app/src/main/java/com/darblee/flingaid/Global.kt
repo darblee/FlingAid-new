@@ -2,7 +2,6 @@ package com.darblee.flingaid
 
 import android.media.MediaPlayer
 import androidx.compose.ui.unit.dp
-import kotlinx.serialization.Serializable
 
 /**
  * Winning Ball direction.
@@ -19,7 +18,9 @@ enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
 
 
 lateinit var gAudio_gameMusic: MediaPlayer
-lateinit var gAudio_youWon: MediaPlayer
+lateinit var gAudio_gameWon: MediaPlayer
+lateinit var gAudio_doink: MediaPlayer
+
 var gSoundOn = false
 
 internal object Global {

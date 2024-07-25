@@ -100,6 +100,7 @@ import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
 import com.darblee.flingaid.utilities.Pos
+import com.darblee.flingaid.utilities.drawBallOnGrid
 import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.randomInRange
 import com.darblee.flingaid.utilities.toPx
@@ -152,7 +153,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     }
 
     val solverViewModel: SolverViewModel = viewModel()
-    val uiState by solverViewModel.uiState.collectAsStateWithLifecycle()
+    val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
 
     val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
 
@@ -169,11 +170,11 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
     findWinnableMoveButtonEnabled =
-        ((solverViewModel.ballCount() > 1) && (!hasFoundWinnableMove(uiState)))
+        ((solverViewModel.ballCount() > 1) && (!hasFoundWinnableMove(solverUIState)))
 
     var showWinnableMoveToUser by remember { mutableStateOf(false) }
     showWinnableMoveToUser =
-        (uiState.winningDirection != Direction.NO_WINNING_DIRECTION)
+        (solverUIState.winningDirection != Direction.NO_WINNING_DIRECTION)
 
     /**
      * Keep track of when to do the ball movement animation
@@ -182,7 +183,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val onBallMovementAnimationChange =
         { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
 
-    if (uiState.solverGameState == SolverUiState.SolverGameMode.IdleNoSolution) {
+    if (solverUIState.solverGameState == SolverUiState.SolverGameMode.IdleNoSolution) {
             gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
             solverViewModel.solverSetIDLEstate()
     }
@@ -192,12 +193,12 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Instruction_DynamicLogo(uiState)
+        Instruction_DynamicLogo(solverUIState)
         ControlButtonsForSolver(
             solverViewModel = solverViewModel,
             findWinnableMoveButtonEnabled = findWinnableMoveButtonEnabled,
             showWinnableMoveToUser = showWinnableMoveToUser,
-            uiState = uiState,
+            uiState = solverUIState,
             onBallMovementAnimationChange = onBallMovementAnimationChange,
             announceVictory
         )
@@ -205,7 +206,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         DrawSolverBoard(
             modifier = Modifier.fillMaxSize(),
             solverViewModel = solverViewModel,
-            uiState = uiState,
+            uiState = solverUIState,
             showBallMovementAnimation = showBallMovementAnimation,
             onBallMovementAnimationChange = onBallMovementAnimationChange,
             announceVictory,
@@ -453,10 +454,11 @@ private fun DrawSolverBoard(
         }
     }
 
-    // Launch the animation only once when it enters the composition. It will animate infinitely
-    // until it is removed from the composition
-    val animateWinningMove = remember { Animatable(initialValue = 0f) }
-    AnimatePreviewWinningMoveSetup(animateWinningMove)
+    /**
+     * Animation control that handle showing a preview (shadow) of winning move
+     */
+    val animatePreviewWinningMove = remember { Animatable(initialValue = 0f) }
+    AnimatePreviewWinningMoveSetup(animatePreviewWinningMove)
 
     val animateBallMovementChain = mutableListOf<Animatable<Float, AnimationVector1D>>()
 
@@ -485,8 +487,8 @@ private fun DrawSolverBoard(
             solverViewModel, uiState, animateBallMovementChain,
             animateParticleExplosion, onBallMovementAnimationChange
         )
-    } else {  // else we longer need ball movement animation. So clear animation set-up
-
+    } else {
+        // Else we longer need ball movement animation. So clear animation set-up
         // Make sure we do not show any more particle explosion when ball animation is done
         particles.clear()
         LaunchedEffect(Unit) {
@@ -596,11 +598,13 @@ private fun DrawSolverBoard(
             displayBallImage.prepareToDraw()   // cache it
 
             if (showBallMovementAnimation) {
+                // The animation routine already show the ball in its starting position. We need
+                // to erase it from normal draw ball
                 val ballsToErase = uiState.winningMovingChain
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage, ballsToErase)
             } else {
 
-                // No need to animate ball movement, but now need to chech if we need to show
+                // No need to animate ball movement, but now need to check if we need to show
                 // preview of next winning ball movement
 
                 drawSolverBalls(this, solverViewModel, gridSize, displayBallImage)
@@ -610,13 +614,16 @@ private fun DrawSolverBoard(
                     // If there is a known winnable move, then provide user a review of the next
                     // winnable move by showing the animated ball movement in a shadow (transparent)
                     if (hasFoundWinnableMove(uiState)) {
-
-                        val moveCount = solverViewModel.getWinningMoveCount(uiState)
-                        animatePreviewWinningMovePerform(
-                            this, gridSize, uiState, animateWinningMove,
-                            moveCount, displayBallImage
-                        )
-                    }
+                        if (uiState.winningMovingChain.isNotEmpty()) {
+                            val moveCount = solverViewModel.getWinningMoveCount(
+                                pos = uiState.winningMovingChain[0].pos,
+                                direction = uiState.winningDirection)
+                            animatePreviewWinningMovePerform(
+                                this, gridSize, uiState, animatePreviewWinningMove,
+                                moveCount, displayBallImage
+                            )
+                        }
+                   }
                 }
             }
 
@@ -753,37 +760,7 @@ private fun drawSolverBalls(
                 skipDraw = true
         }
 
-        if (!skipDraw) drawBall(drawScope, gridSize, pos, displayBallImage)
-    }
-}
-
-/**
- * Draw the ball in a specific position (e,g, row, col) in the board room
- *
- * @param drawScope
- * @param gridSize Size the dimension of the grid
- * @param pos Specific position (row, column)
- * @param displayBallImage Actual image bitmap of the ball
- * @param alpha amount of transparency
- */
-private fun drawBall(
-    drawScope: DrawScope,
-    gridSize: Float,
-    pos: Pos,
-    displayBallImage: ImageBitmap,
-    alpha: Float = 1.0F
-) {
-    val offsetAdjustment = (gridSize / 2) - (displayBallImage.width / 2)
-
-    with(drawScope) {
-        drawImage(
-            image = displayBallImage,
-            topLeft = Offset(
-                (pos.col * gridSize) + offsetAdjustment,
-                (pos.row * gridSize) + offsetAdjustment
-            ),
-            alpha = alpha
-        )
+        if (!skipDraw) drawBallOnGrid(drawScope, gridSize, pos, displayBallImage)
     }
 }
 
@@ -914,7 +891,7 @@ private fun drawVictoryMessage(
  * @param onAnimationChange Change the state on whether to perform the animation or not
  */
 @Composable
-fun AnimateBallMovementsSetup(
+private fun AnimateBallMovementsSetup(
     solverViewModel: SolverViewModel,
     uiState: SolverUiState,
     animateBallMovementChain: MutableList<Animatable<Float, AnimationVector1D>>,
@@ -935,7 +912,7 @@ fun AnimateBallMovementsSetup(
     // Only start the explosion when the ball makes an impact to the other ball
 
     LaunchedEffect(Unit) {
-        // Use coroutine to ensure both launch animations get completed in the same scope
+        // Use coroutine to ensure both launch animations get completed in the same  co-routine scope
         coroutineScope {
             launch {  // one or more ball movements in serial fashion
                 movingChain.forEachIndexed { index, currentMovingRec ->
@@ -958,7 +935,8 @@ fun AnimateBallMovementsSetup(
                 animateBallMovementChain.clear()
 
                 onAnimationChange(false)
-                solverViewModel.makeWinningMove(uiState)
+                if (uiState.winningMovingChain.isNotEmpty())
+                    solverViewModel.makeWinningMove(uiState.winningMovingChain[0].pos, uiState.winningDirection)
                 if (solverViewModel.ballCount() > 1) {
                     Log.i(Global.DEBUG_PREFIX, ">>> Looking for next winnable move")
                     solverViewModel.findWinningMove(solverViewModel)
@@ -1057,6 +1035,7 @@ private fun particleExplosionAnimatedSpec(
  * @param animateBallMovementChain Object that control animation state of all the ball movement in this chain
  * @param animateParticleExplosion Object that control animation state of particle explosion effect
  * @param particles List of each particle
+ * @param uiState UI state of the Solver View Model
  */
 fun animateBallMovementsPerform(
     drawScope: DrawScope,
@@ -1070,17 +1049,9 @@ fun animateBallMovementsPerform(
     val movingDirection = uiState.winningDirection
     val movingChain = uiState.winningMovingChain
 
-    if (movingChain.isEmpty()) {
-        return
-    }
-
-    if (movingDirection == Direction.NO_WINNING_DIRECTION) {
-        return
-    }
-
-    if (animateBallMovementChain.isEmpty()) {
-        return
-    }
+    if (movingChain.isEmpty())  return
+    if (movingDirection == Direction.NO_WINNING_DIRECTION) return
+    if (animateBallMovementChain.isEmpty()) return
 
     with(drawScope) {
         var movingSourcePos: Pos
@@ -1102,7 +1073,7 @@ fun animateBallMovementsPerform(
                 (xOffset) * ((animateBallMovementChain[index]).value),
                 (yOffset) * ((animateBallMovementChain[index]).value)
             ) {
-                drawBall(drawScope, gridSize, movingSourcePos, displayBallImage)
+                drawBallOnGrid(drawScope, gridSize, movingSourcePos, displayBallImage)
             } // translate
         }  // for
 
@@ -1145,7 +1116,6 @@ fun AnimateVictoryMessageSetup(
                 easing = LinearOutSlowInEasing
             )
         )
-        delay(1000)
         onAnimationChange(false)
         solverViewModel.solverSetIDLEstate()
         animateVictoryMessage.snapTo(0f)
@@ -1224,22 +1194,10 @@ private fun animatePreviewWinningMovePerform(
         var yOffset = 0
 
         when (uiState.winningDirection) {
-            Direction.UP -> {
-                yOffset = -1 * gridSize.toInt() * gWinningMoveCount
-            }
-
-            Direction.DOWN -> {
-                yOffset = 1 * gridSize.toInt() * gWinningMoveCount
-            }
-
-            Direction.LEFT -> {
-                xOffset = -1 * gridSize.toInt() * gWinningMoveCount
-            }
-
-            Direction.RIGHT -> {
-                xOffset = 1 * gridSize.toInt() * gWinningMoveCount
-            }
-
+            Direction.UP -> { yOffset = -1 * gridSize.toInt() * gWinningMoveCount }
+            Direction.DOWN -> { yOffset = 1 * gridSize.toInt() * gWinningMoveCount }
+            Direction.LEFT -> { xOffset = -1 * gridSize.toInt() * gWinningMoveCount }
+            Direction.RIGHT -> { xOffset = 1 * gridSize.toInt() * gWinningMoveCount }
             else -> {
                 assert(true) { "Got unexpected Direction value: ${uiState.winningDirection}" }
             }
@@ -1249,7 +1207,7 @@ private fun animatePreviewWinningMovePerform(
             (xOffset) * animate.value,
             (yOffset) * animate.value
         ) {
-            drawBall(
+            drawBallOnGrid(
                 drawScope,
                 gridSize,
                 uiState.winningMovingChain[0].pos,

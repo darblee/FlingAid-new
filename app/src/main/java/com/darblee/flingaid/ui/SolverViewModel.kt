@@ -515,11 +515,15 @@ object SolverViewModel : ViewModel() {
     /**
      * Calculate number of boxes to move the ball as it go toward a win
      *
-     * @param uiState Current game UI state
+     * @param pos Position to move from
+     * @param direction Direction of the ball movement
      *
      * @return number of boxes to move the ball
      */
-    fun getWinningMoveCount(uiState: SolverUiState): Int {
+    fun getWinningMoveCount(
+        pos: Pos,
+        direction: Direction): Int
+    {
         val game = SolverEngine()
         game.populateGrid((_solverBallPos.ballList))
 
@@ -528,29 +532,25 @@ object SolverViewModel : ViewModel() {
         var targetRow: Int
         var targetCol: Int
 
-        if (uiState.winningMovingChain.isEmpty()) {
-            assert(true) { "Got unexpected empty list moving chain." }
-        }
+        val winningRow = pos.row
+        val winningCol = pos.col
 
-        val winningRow = uiState.winningMovingChain[0].pos.row
-        val winningCol = uiState.winningMovingChain[0].pos.col
-
-        if (uiState.winningDirection == Direction.UP) {
+        if (direction == Direction.UP) {
             targetRow = game.findTargetRowOnMoveUp(winningRow, winningCol)
             winningMoveCount = winningRow - targetRow
         }
 
-        if (uiState.winningDirection == Direction.DOWN) {
+        if (direction == Direction.DOWN) {
             targetRow = game.findTargetRowOnMoveDown(winningRow, winningCol)
             winningMoveCount = targetRow - winningRow
         }
 
-        if (uiState.winningDirection == Direction.RIGHT) {
+        if (direction== Direction.RIGHT) {
             targetCol = game.findTargetColOnMoveRight(winningRow, winningCol)
             winningMoveCount = targetCol - winningCol
         }
 
-        if (uiState.winningDirection == Direction.LEFT) {
+        if (direction == Direction.LEFT) {
             targetCol = game.findTargetColOnMoveLeft(winningRow, winningCol)
             winningMoveCount = winningCol - targetCol
         }
@@ -563,49 +563,48 @@ object SolverViewModel : ViewModel() {
      *
      * @param uiState Current game UI state
      */
-    fun makeWinningMove(uiState: SolverUiState) {
+    fun makeWinningMove(pos: Pos, direction: Direction)
+    {
         val game = SolverEngine()
         game.populateGrid((_solverBallPos.ballList))
 
         var targetRow: Int
         var targetCol: Int
 
-        if (uiState.winningMovingChain.isEmpty()) {
-            assert(true) { "Got unexpected empty list moving chain." }
-        }
-
-        val winningRow = uiState.winningMovingChain[0].pos.row
-        val winningCol = uiState.winningMovingChain[0].pos.col
-
-        if (uiState.winningDirection == Direction.UP) {
-            targetRow = game.findTargetRowOnMoveUp(winningRow, winningCol)
-            game.moveUp(winningRow, targetRow, winningCol)
+        if (direction == Direction.UP) {
+            targetRow = game.findTargetRowOnMoveUp(pos.row, pos.col)
+            game.moveUp(pos.row, targetRow, pos.col)
             _solverBallPos.ballList.clear()
             _solverBallPos.ballList = game.updateBallList()
         }
 
-        if (uiState.winningDirection == Direction.DOWN) {
-            targetRow = game.findTargetRowOnMoveDown(winningRow, winningCol)
-            game.moveDown(winningRow, targetRow, winningCol)
+        if (direction == Direction.DOWN) {
+            targetRow = game.findTargetRowOnMoveDown(pos.row, pos.col)
+            game.moveDown(pos.row, targetRow, pos.col)
             _solverBallPos.ballList.clear()
             _solverBallPos.ballList = game.updateBallList()
         }
 
-        if (uiState.winningDirection == Direction.RIGHT) {
-            targetCol = game.findTargetColOnMoveRight(winningRow, winningCol)
-            game.moveRight(winningCol, targetCol, winningRow)
+        if (direction == Direction.RIGHT) {
+            targetCol = game.findTargetColOnMoveRight(pos.row, pos.col)
+            game.moveRight(pos.col, targetCol, pos.row)
             _solverBallPos.ballList.clear()
             _solverBallPos.ballList = game.updateBallList()
         }
 
-        if (uiState.winningDirection == Direction.LEFT) {
-            targetCol = game.findTargetColOnMoveLeft(winningRow, winningCol)
-            game.moveLeft(winningCol, targetCol, winningRow)
+        if (direction == Direction.LEFT) {
+            targetCol = game.findTargetColOnMoveLeft(pos.row, pos.col)
+            game.moveLeft(pos.col, targetCol, pos.row)
             _solverBallPos.ballList.clear()
             _solverBallPos.ballList = game.updateBallList()
         }
 
-        _uiState.value.winningDirection = Direction.NO_WINNING_DIRECTION
+        _uiState.update { currentState ->
+            currentState.copy(
+                winningDirection = Direction.NO_WINNING_DIRECTION,
+                winningMovingChain = mutableListOf(),
+            )
+        }
 
         _solverBallPos.saveBallListToFile()
     }

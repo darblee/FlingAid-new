@@ -200,7 +200,8 @@ private fun MainViewImplementation(
 @Composable
 private fun SetUpGameAudioOnAppStart() {
     // Initiate the media player instance with the media file from the raw folder
-    gAudio_youWon = MediaPlayer.create(LocalContext.current, R.raw.you_won)
+    gAudio_gameWon = MediaPlayer.create(LocalContext.current, R.raw.victory)
+    gAudio_doink = MediaPlayer.create(LocalContext.current, R.raw.doink)
     gAudio_gameMusic = MediaPlayer.create(LocalContext.current, R.raw.music)
 
     gAudio_gameMusic.isLooping = true

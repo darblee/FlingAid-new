@@ -2,6 +2,9 @@ package com.darblee.flingaid.utilities
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.ui.MovingRec
@@ -277,5 +280,35 @@ class BallPosition {
         }
 
         return (Pair(distance, nextSourcePos))
+    }
+}
+
+/**
+ * Draw the ball in a specific position (e,g, row, col) on the board grid
+ *
+ * @param drawScope
+ * @param gridSize Size the dimension of the grid
+ * @param pos Specific position (row, column)
+ * @param displayBallImage Actual image bitmap of the ball
+ * @param alpha amount of transparency
+ */
+fun drawBallOnGrid(
+    drawScope: DrawScope,
+    gridSize: Float,
+    pos: Pos,
+    displayBallImage: ImageBitmap,
+    alpha: Float = 1.0F
+) {
+    val offsetAdjustment = (gridSize / 2) - (displayBallImage.width / 2)
+
+    with(drawScope) {
+        drawImage(
+            image = displayBallImage,
+            topLeft = Offset(
+                (pos.col * gridSize) + offsetAdjustment,
+                (pos.row * gridSize) + offsetAdjustment
+            ),
+            alpha = alpha
+        )
     }
 }

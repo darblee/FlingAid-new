@@ -144,7 +144,7 @@ object GameViewModel : ViewModel() {
      * `private set` this is internally modifiable and read-only access from the outside.
      * This ensure information flow in one direction from the view model to the UI
      */
-    internal var uiState: StateFlow<GameUIState> = _uiGameState.asStateFlow()
+    internal var gameUIState: StateFlow<GameUIState> = _uiGameState.asStateFlow()
         private set
 
     /**
@@ -168,7 +168,7 @@ object GameViewModel : ViewModel() {
     }
 
     /**
-     * Update [uiState]  thinking status to Idle state.
+     * Update [gameUIState]  thinking status to Idle state.
      *
      */
     fun gameSetIDLEstate(
@@ -198,7 +198,23 @@ object GameViewModel : ViewModel() {
         _gameBallPos.saveBallListToFile()
     }
 
-    var gMovingChain : List<MovingRec> = mutableListOf()
+    fun idleState()
+    {
+        _uiGameState.update { curState ->
+            curState.copy(
+                state = GameState.Idle,
+                movingDirection = Direction.NO_WINNING_DIRECTION,
+                movingChain = mutableListOf()
+            )
+        }
+    }
+
+    enum class MoveResult {
+        Valid,    // This is a valid move
+        InvalidNoBump,   // Not a valid move as move require you to bump the ball
+        InvalidNoBall,   // Not a valid move as there is no ball in the provided position
+        InvalidNoRoom,   // Not a valid move as there is no room to move the ball
+    }
 
     /**
      * Confirm if this is a valid move to process. If not, then return false.
@@ -213,25 +229,90 @@ object GameViewModel : ViewModel() {
      * - false. This is not a valid move. It either has no space to move or there is no ball in the
      * provided position.
      */
-    fun validMove(initialRow: Int, initialCol: Int, direction : Direction): Boolean
+    fun validMove(initialRow: Int, initialCol: Int, direction : Direction): MoveResult
     {
-        if (!(_gameBallPos.ballList.contains(Pos(initialRow, initialCol)))) return false
-
-        gMovingChain = mutableListOf()
+        if (!(_gameBallPos.ballList.contains(Pos(initialRow, initialCol))))
+            return MoveResult.InvalidNoBall
 
         Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $initialRow, $initialCol")
-        gMovingChain = _gameBallPos.buildMovingChain(initialRow, initialCol, direction)
-        return gMovingChain.isNotEmpty()
-    }
+        val movingChain = _gameBallPos.buildMovingChain(initialRow, initialCol, direction)
 
-    fun moveBallPos(row: Int, col: Int) {
-        _uiGameState.update { currentState ->
-            currentState.copy(
+        if (movingChain.isEmpty())
+            return MoveResult.InvalidNoRoom
+
+        // We can move the ball. Now check if we have bump another ball
+        if (movingChain.size == 1) {
+            _uiGameState.update { curState ->
+                curState.copy(
+                    state = GameState.ShowShadowMovement,
+                    movingDirection = direction,
+                    movingChain = movingChain
+                )
+            }
+            return MoveResult.InvalidNoBump
+        }
+
+        _uiGameState.update { curState ->
+            curState.copy(
                 state = GameState.MoveBall,
-                moveFromRow = row,
-                moveFromCol = col,
+                movingDirection = direction,
+                movingChain = movingChain
             )
         }
+        return MoveResult.Valid
+    }
+
+    /**
+     * Move the ball based on the current direction and current position
+     * stored in [_uiGameState]
+     */
+    fun moveBall(uiState: GameUIState)
+    {
+        if (uiState.movingChain.isEmpty()) {
+            Log.i(Global.DEBUG_PREFIX, "Got unexpected empty list moving chain")
+            return
+        }
+
+        val game = SolverEngine()
+        game.populateGrid(_gameBallPos.ballList)
+
+        var targetRow: Int
+        var targetCol: Int
+
+        val srcRow = uiState.movingChain[0].pos.row
+        val srcCol = uiState.movingChain[0].pos.col
+
+        if (uiState.movingDirection == Direction.UP) {
+            targetRow = game.findTargetRowOnMoveUp(srcRow, srcCol)
+            game.moveUp(srcRow, targetRow, srcCol)
+            _gameBallPos.ballList.clear()
+            _gameBallPos.ballList = game.updateBallList()
+        }
+
+        if (uiState.movingDirection == Direction.DOWN) {
+            targetRow = game.findTargetRowOnMoveDown(srcRow, srcCol)
+            game.moveDown(srcRow, targetRow, srcCol)
+            _gameBallPos.ballList.clear()
+            _gameBallPos.ballList = game.updateBallList()
+        }
+
+        if (uiState.movingDirection == Direction.RIGHT) {
+            targetCol = game.findTargetColOnMoveRight(srcRow, srcCol)
+            game.moveRight(srcCol, targetCol, srcRow)
+            _gameBallPos.ballList.clear()
+            _gameBallPos.ballList = game.updateBallList()
+        }
+
+        if (uiState.movingDirection == Direction.LEFT) {
+                        targetCol = game.findTargetColOnMoveLeft(srcRow, srcCol)
+            game.moveLeft(srcCol, targetCol, srcRow)
+            _gameBallPos.ballList.clear()
+            _gameBallPos.ballList = game.updateBallList()
+        }
+
+        _uiGameState.value.movingDirection = Direction.NO_WINNING_DIRECTION
+        _gameBallPos.saveBallListToFile()
+
     }
 
     /**
