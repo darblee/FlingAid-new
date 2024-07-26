@@ -3,6 +3,8 @@ package com.darblee.flingaid.ui
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.darblee.flingaid.Direction
@@ -43,7 +45,7 @@ import java.util.concurrent.CyclicBarrier
  * - [solverSetIDLEstate]
  * - [findWinningMove]
  * - [getWinningMoveCount]
- * - [makeWinningMove]
+ * - [moveBallToWin]
  */
 object SolverViewModel : ViewModel() {
 
@@ -206,11 +208,9 @@ object SolverViewModel : ViewModel() {
     private var task2WinningCol = -1
 
     /**
-     * Find the winning move.
-     *
-     * @param solverViewModel The ViewModel instance
+     * Find the winning move.*
      */
-    fun findWinningMove(solverViewModel: SolverViewModel) {
+    fun findWinningMove() {
         gThinkingProgress = 0
 
         _uiState.update { currentStatus ->
@@ -226,13 +226,13 @@ object SolverViewModel : ViewModel() {
                 (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
 
             _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
-            val gTotalBallCount = solverViewModel.ballCount()
+            val gTotalBallCount = ballCount()
 
             task1_WinningDirection = Direction.INCOMPLETE
             task2_WinningDirection = Direction.INCOMPLETE
 
             gThinkingProgress = 0
-            _totalBallInCurrentMove = solverViewModel.ballCount()
+            _totalBallInCurrentMove = ballCount()
 
             lateinit var cyclicBarrier: CyclicBarrier
 
@@ -559,11 +559,14 @@ object SolverViewModel : ViewModel() {
     }
 
     /**
-     * Move the ball toward a win
+     * Move the ball toward a win.
+     * - Save the ball position to file.
+     * - After ball movement, change the state to no direction.
      *
-     * @param uiState Current game UI state
+     * @param pos Position of the ball to move from
+     * @param direction Direction of ball movement
      */
-    fun makeWinningMove(pos: Pos, direction: Direction)
+    fun moveBallToWin(pos: Pos, direction: Direction)
     {
         val game = SolverEngine()
         game.populateGrid((_solverBallPos.ballList))
@@ -599,14 +602,31 @@ object SolverViewModel : ViewModel() {
             _solverBallPos.ballList = game.updateBallList()
         }
 
+        _solverBallPos.saveBallListToFile()
+
         _uiState.update { currentState ->
             currentState.copy(
                 winningDirection = Direction.NO_WINNING_DIRECTION,
                 winningMovingChain = mutableListOf(),
             )
         }
+    }
 
-        _solverBallPos.saveBallListToFile()
+    /**
+     * Draw all the balls in the provided canvas grid
+     *
+     * @param drawScope The drawing canvas of the grid
+     * @param gridSize The grid size
+     * @param displayBallImage Actual image of ball o display
+     * @param ballsToErase Used during ball animation. We need to temporarily
+     * erase the animation ball as the animation routine will display it
+     */
+    fun drawSolverBallsOnGrid(drawScope: DrawScope,
+                            gridSize: Float,
+                            displayBallImage: ImageBitmap,
+                            ballsToErase: List<MovingRec> = listOf())
+    {
+        _solverBallPos.drawAllBalls(drawScope, gridSize, displayBallImage, ballsToErase)
     }
 }
 

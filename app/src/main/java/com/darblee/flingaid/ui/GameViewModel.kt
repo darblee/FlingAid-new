@@ -2,6 +2,8 @@ package com.darblee.flingaid.ui
 
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.lifecycle.ViewModel
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
@@ -33,8 +35,7 @@ import java.io.File
  * - [ballCount]
  * - [ballPositionList]
  * - [printBalls] Print all the ball positions. Used for debugging purposes.
- * - [buildMovingChain] Moving chain to set-up ball movement animation
- *
+ * *
  * **Game Play Functions**
  * - [generateNewGame]  Generate a new game based on provided level
  */
@@ -160,7 +161,7 @@ object GameViewModel : ViewModel() {
      * - Clear the board
      * - Remove any saved game file
      */
-    fun reset() {
+    private fun reset() {
         _gameBallPos.ballList.clear()
         _gameBallPos.removeGameFile()
 
@@ -171,7 +172,7 @@ object GameViewModel : ViewModel() {
      * Update [gameUIState]  thinking status to Idle state.
      *
      */
-    fun gameSetIDLEstate(
+    private fun gameSetIDLEstate(
     ) {
         _uiGameState.update { currentState ->
             currentState.copy(
@@ -194,7 +195,6 @@ object GameViewModel : ViewModel() {
         _gameBallPos.ballList.add(Pos(2, 2))
         _gameBallPos.ballList.add(Pos(5, 2))
         _gameBallPos.ballList.add(Pos(3, 4))
-        _gameBallPos.ballList.add(Pos(5, 6))
         _gameBallPos.saveBallListToFile()
     }
 
@@ -263,56 +263,74 @@ object GameViewModel : ViewModel() {
     }
 
     /**
-     * Move the ball based on the current direction and current position
-     * stored in [_uiGameState]
+     * Move the ball.
+     * - Save the ball position to file.
+     * - After ball movement, change the state to no direction.
+     *
+     * @param pos Position of the ball to move from
+     * @param direction Direction of ball movement
      */
-    fun moveBall(uiState: GameUIState)
+    fun moveBall(pos: Pos, direction: Direction)
     {
-        if (uiState.movingChain.isEmpty()) {
-            Log.i(Global.DEBUG_PREFIX, "Got unexpected empty list moving chain")
-            return
-        }
-
         val game = SolverEngine()
         game.populateGrid(_gameBallPos.ballList)
 
         var targetRow: Int
         var targetCol: Int
 
-        val srcRow = uiState.movingChain[0].pos.row
-        val srcCol = uiState.movingChain[0].pos.col
-
-        if (uiState.movingDirection == Direction.UP) {
-            targetRow = game.findTargetRowOnMoveUp(srcRow, srcCol)
-            game.moveUp(srcRow, targetRow, srcCol)
+        if (direction == Direction.UP) {
+            targetRow = game.findTargetRowOnMoveUp(pos.row, pos.col)
+            game.moveUp(pos.row, targetRow, pos.col)
             _gameBallPos.ballList.clear()
             _gameBallPos.ballList = game.updateBallList()
         }
 
-        if (uiState.movingDirection == Direction.DOWN) {
-            targetRow = game.findTargetRowOnMoveDown(srcRow, srcCol)
-            game.moveDown(srcRow, targetRow, srcCol)
+        if (direction == Direction.DOWN) {
+            targetRow = game.findTargetRowOnMoveDown(pos.row, pos.col)
+            game.moveDown(pos.row, targetRow, pos.col)
             _gameBallPos.ballList.clear()
             _gameBallPos.ballList = game.updateBallList()
         }
 
-        if (uiState.movingDirection == Direction.RIGHT) {
-            targetCol = game.findTargetColOnMoveRight(srcRow, srcCol)
-            game.moveRight(srcCol, targetCol, srcRow)
+        if (direction == Direction.RIGHT) {
+            targetCol = game.findTargetColOnMoveRight(pos.row, pos.col)
+            game.moveRight(pos.col, targetCol, pos.row)
             _gameBallPos.ballList.clear()
             _gameBallPos.ballList = game.updateBallList()
         }
 
-        if (uiState.movingDirection == Direction.LEFT) {
-                        targetCol = game.findTargetColOnMoveLeft(srcRow, srcCol)
-            game.moveLeft(srcCol, targetCol, srcRow)
+        if (direction == Direction.LEFT) {
+                        targetCol = game.findTargetColOnMoveLeft(pos.row, pos.col)
+            game.moveLeft(pos.col, targetCol, pos.row)
             _gameBallPos.ballList.clear()
             _gameBallPos.ballList = game.updateBallList()
         }
 
-        _uiGameState.value.movingDirection = Direction.NO_WINNING_DIRECTION
         _gameBallPos.saveBallListToFile()
 
+        _uiGameState.update { curState ->
+            curState.copy(
+                movingDirection = Direction.NO_WINNING_DIRECTION,
+                movingChain = mutableListOf()
+            )
+        }
+    }
+
+    /**
+     * Draw all the balls in the provided canvas grid
+     *
+     * @param drawScope The drawing canvas of the grid
+     * @param gridSize The grid size
+     * @param displayBallImage Actual image of ball o display
+     * @param ballsToErase Used during ball animation. We need to temporarily
+     * erase the animation ball as the animation routine will display it
+     */
+    fun drawGameBallsOnGrid(drawScope: DrawScope,
+                            gridSize: Float,
+                            displayBallImage: ImageBitmap,
+                            ballsToErase: List<MovingRec> = listOf())
+    {
+        _gameBallPos.drawAllBalls(drawScope, gridSize, displayBallImage, ballsToErase)
     }
 
     /**
@@ -320,7 +338,7 @@ object GameViewModel : ViewModel() {
      *
      * Used primarily for debugging purposes
      */
-    fun printBalls()
+    private fun printBalls()
     {
         _gameBallPos.printPositions()
     }
