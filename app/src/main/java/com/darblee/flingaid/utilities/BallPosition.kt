@@ -9,17 +9,31 @@ import androidx.compose.animation.core.KeyframesSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
+import com.darblee.flingaid.gAudio_victory
 import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -293,7 +307,7 @@ class BallPosition {
      * Draw all the balls in the provided canvas grid
      *
      * @param drawScope The drawing canvas of the grid
-     * @param gridSize The gridsize
+     * @param gridSize The size of the grid
      * @param displayBallImage Actual image of ball o display
      * @param eraseAnimatedBallPositions Used during ball animation. We need to temporarily
      * erase the animation ball as the animation routine will display it
@@ -402,10 +416,12 @@ fun animateShadowBallMovementsPerform(
 
 /*************** Ball Movement ************************************/
 
+/* The set-up routine is done on each screen - GameScreen & SolverScreen */
+
 /**
  * Create all particles, which is used for the explosion animated effect
  *
- * @param movingChain Moving chain. __NOTE:__ This function assume the [movingchain] have at
+ * @param movingChain Moving chain. __NOTE:__ This function assume the [movingChain] have at
  * least 2 movements.
  * @param direction Ball movement direction
  *
@@ -490,8 +506,6 @@ fun particleExplosionAnimatedSpec(
 
 /**
  * Statically defined animated Keyframe specification to wiggle the ball
- *
- * @see AnimateBallMovementsSetup
  */
 val wiggleBallAnimatedSpec = keyframes {
     durationMillis = 80
@@ -599,4 +613,85 @@ fun animateBallMovementsPerform(
             )
         }
     }   // drawScope
+}
+
+/*************** Victory Announcement ************************************/
+
+/**
+ * Perform the actual victory message animation
+ *
+ * @param drawScope Canvas to draw the animation on
+ * @param animateCtl Animate object that control animation state of the victory message
+ * @param textMeasurer Responsible for measuring a text in its entirety so that it can be drawn
+ * on the canvas (drawScope).
+ * @param victoryMsgColor Color of the message. Color will differ depending on the current theme
+ */
+fun animateVictoryMsgPerform(
+    drawScope: DrawScope,
+    animateCtl: Animatable<Float, AnimationVector1D>,
+    textMeasurer: TextMeasurer,
+    victoryMsgColor: Color
+) {
+    val animationValue = animateCtl.value
+    with(drawScope) {
+        val canvasWidth =  size.width
+        val canvasHeight = size.height
+
+        val text = "You won!"
+        val animatedTextSize = (50 * animationValue) + 10
+        val textStyle = TextStyle(
+            color = victoryMsgColor,
+            fontWeight = FontWeight.Bold,
+            fontSize = animatedTextSize.sp
+        )
+        val textLayoutResult: TextLayoutResult =
+            textMeasurer.measure(text = AnnotatedString(text), style = textStyle)
+        val textSize = textLayoutResult.size
+        drawText(
+            textMeasurer = textMeasurer, text = text,
+            topLeft = Offset(
+                x = (canvasWidth - textSize.width) * 0.5f,  // in center
+                y = (canvasHeight * 0.25f)
+            ),
+            style = textStyle
+        )
+    }
+}
+
+/**
+ * Setup animated victory message. Define animation spec.
+ *
+ * @param setIdleFunction Lambda function to set UI to idle after announcing victory message
+ * @param animateCtl Animate object that control animation state of the victory message
+ * @param onAnimationChange Change the state on whether to perform the animation or not
+ */
+@Composable
+fun AnimateVictoryMessageSetup(
+    setIdleFunction: () -> Unit,
+    animateCtl: Animatable<Float, AnimationVector1D>,
+    onAnimationChange: (enableVictoryMessage: Boolean) -> Unit
+) {
+    LaunchedEffect(Unit) {
+        // Use coroutine to ensure both animation and sound happen in parallel
+        coroutineScope {
+            launch {
+                animateCtl.snapTo(0f)
+                animateCtl.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(
+                        durationMillis = 1500,
+                        easing = LinearOutSlowInEasing
+                    )
+                )
+                delay(500)  // Pause for 0.5 second to see victory message before it disappear
+                onAnimationChange(false)
+                animateCtl.snapTo(0f)
+                setIdleFunction.invoke()
+            }  // launch
+
+            launch {
+                gAudio_victory.start()
+            }
+        }  // coroutineScope
+    } // LaunchedEffect
 }

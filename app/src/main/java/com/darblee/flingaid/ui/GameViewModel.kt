@@ -198,7 +198,7 @@ object GameViewModel : ViewModel() {
         _gameBallPos.saveBallListToFile()
     }
 
-    fun idleState()
+    fun gameSetIDLE()
     {
         _uiGameState.update { curState ->
             curState.copy(

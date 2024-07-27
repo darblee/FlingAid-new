@@ -9,7 +9,6 @@ import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
@@ -64,14 +63,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextMeasurer
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.withStyle
@@ -93,16 +86,17 @@ import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
+import com.darblee.flingaid.utilities.AnimateVictoryMessageSetup
 import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
 import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
+import com.darblee.flingaid.utilities.animateVictoryMsgPerform
 import com.darblee.flingaid.utilities.ballMovementKeyframeSpec
 import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.generateExplosionParticles
 import com.darblee.flingaid.utilities.particleExplosionAnimatedSpec
 import com.darblee.flingaid.utilities.wiggleBallAnimatedSpec
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
@@ -155,7 +149,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
 
     val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
-    val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
     // Load the game file only once. This is done primarily for performance reason.
     // Loading game file will trigger non-stop recomposition.
@@ -182,7 +175,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     if (solverUIState.solverGameState == SolverUiState.SolverGameMode.IdleNoSolution) {
             gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
-            solverViewModel.solverSetIDLEstate()
+            solverViewModel.solverSetIDLE()
     }
 
     Column(
@@ -205,10 +198,9 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             solverViewModel = solverViewModel,
             solverUIState = solverUIState,
             showBallMovementAnimation = showBallMovementAnimation,
-            onBallMovementAnimationChange = onBallMovementAnimationChange,
+            onBallMovementAnimationEnablement = onBallMovementAnimationChange,
             announceVictory,
-            onEnableVictoryMsg,
-            victoryMsgColor
+            onEnableVictoryMsg
         )
     }
 }
@@ -412,17 +404,19 @@ private fun ControlButtonsForSolver(
 
 /**
  *  Draw the Solver Game Board:
- *       Draw the Grid
- *       Place all the balls
- *       Handle all the input (drag, click on grid to place the ball)
- *       Handle all the ball animations (show next move, move the actual ball)
+ *  - Draw the Grid
+ *  - Place all the balls
+ *  - Handle all the input (drag, click on grid to place the ball)
+ *  - Handle all the ball animations and dynamic animated messages
  *
  *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
- *  @param solverViewModel Solver game view model
+ *  @param solverViewModel Solver Game view model
  *  @param solverUIState Current UI state of the solver game
- *
- *  @see drawGrid*
+ *  @param showBallMovementAnimation Indicate whether it need to do ball movement animation
+ *  @param onBallMovementAnimationEnablement Enable/disable ball movement animation
+ *  @param announceVictory Indicate whether it need to show animated victory message or not
+ *  @param onEnableVictoryMsg Indicate whether it need to show animated victory message or not
  */
 @Composable
 private fun DrawSolverBoard(
@@ -430,12 +424,14 @@ private fun DrawSolverBoard(
     solverViewModel: SolverViewModel = viewModel(),
     solverUIState: SolverUiState,
     showBallMovementAnimation: Boolean,
-    onBallMovementAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit,
+    onBallMovementAnimationEnablement: (enableBallMovementAnimation: Boolean) -> Unit,
     announceVictory: Boolean,
-    onEnableVictoryMsg: (Boolean) -> Unit,
-    victoryMsgColor: Color
+    onEnableVictoryMsg: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
+
+    val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
+
 
     /**
      * Create textMeasurer instance, which is responsible for measuring a text in its entirety so
@@ -461,10 +457,9 @@ private fun DrawSolverBoard(
     var particles = mutableListOf<Particle>()
 
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
-
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            solverViewModel = solverViewModel,
+            { solverViewModel.solverSetIDLE() },
             animateCtl = animateVictoryMessage,
             onAnimationChange = onEnableVictoryMsg
         )
@@ -484,7 +479,7 @@ private fun DrawSolverBoard(
             direction = solverUIState.winningDirection,
             animateBallMovementChainCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
-            onAnimationChange = onBallMovementAnimationChange
+            onAnimationChange = onBallMovementAnimationEnablement
         )
     } else {
         // Else we longer need ball movement animation. So clear animation set-up
@@ -737,44 +732,7 @@ private fun PlaySearchAnimation(modifier: Modifier) {
     )
 }
 
-/**
- * Draw the "You won" message on the canvas.
- *
- * @param drawScope  Scope of the canvas
- * @param canvasWidth Width of the canvas
- * @param canvasHeight Height of the canvas
- * @param textMeasurer Text measure
- * @param animationValue Between 0f and 1f. The set up font size of the message. This is used in
- * animation context to show the effect of growing text
- * @param victoryMsgColor Font color. Depending on the current theme, this color will change
- */
-private fun drawVictoryMessage(
-    drawScope: DrawScope,
-    canvasWidth: Float, canvasHeight: Float,
-    textMeasurer: TextMeasurer, animationValue: Float,
-    victoryMsgColor: Color
-) {
-    with(drawScope) {
-        val text = "You won!"
-        val animatedTextSize = (50 * animationValue) + 10
-        val textStyle = TextStyle(
-            color = victoryMsgColor,
-            fontWeight = FontWeight.Bold,
-            fontSize = animatedTextSize.sp
-        )
-        val textLayoutResult: TextLayoutResult =
-            textMeasurer.measure(text = AnnotatedString(text), style = textStyle)
-        val textSize = textLayoutResult.size
-        drawText(
-            textMeasurer = textMeasurer, text = text,
-            topLeft = Offset(
-                x = (canvasWidth - textSize.width) * 0.5f,  // in center
-                y = (canvasHeight * 0.25f)
-            ),
-            style = textStyle
-        )
-    }
-}
+
 
 /************************** Animation Routines **************************/
 
@@ -860,64 +818,6 @@ private fun SolverAnimateBallMovementsSetup(
 }
 
 //
-//  Animating Victory message
-//
-
-/**
- * Setup animated victory message. Define animation spec.
- *
- * @param solverViewModel Solver Game View model
- * @param animateCtl Animate object that control animation state of the victory message
- * @param onAnimationChange Change the state on whether to perform the animation or not
- */
-@Composable
-fun AnimateVictoryMessageSetup(
-    solverViewModel: SolverViewModel,
-    animateCtl: Animatable<Float, AnimationVector1D>,
-    onAnimationChange: (enableVictoryMessage: Boolean) -> Unit
-) {
-    LaunchedEffect(Unit) {
-        animateCtl.snapTo(0f)
-        animateCtl.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(
-                durationMillis = 1000,
-                easing = LinearOutSlowInEasing
-            )
-        )
-        delay(500)  // Pause for 0.5 second to see victory message before it disappear
-        onAnimationChange(false)
-        solverViewModel.solverSetIDLEstate()
-        animateCtl.snapTo(0f)
-    }
-}
-
-/**
- * Perform the actual victory message animation
- *
- * @param drawScope Canvas to draw the animation on
- * @param animateCtl Animate object that control animation state of the victory message
- * @param textMeasurer Responsible for measuring a text in its entirety so that it can be drawn
- * on the canvas (drawScope).
- * @param victoryMsgColor Color of the message. Color will differ depending on the current theme
- */
-fun animateVictoryMsgPerform(
-    drawScope: DrawScope,
-    animateCtl: Animatable<Float, AnimationVector1D>,
-    textMeasurer: TextMeasurer,
-    victoryMsgColor: Color
-) {
-    with(drawScope) {
-        drawVictoryMessage(
-            this,
-            size.width, size.height,
-            textMeasurer, animateCtl.value,
-            victoryMsgColor
-        )
-    }
-}
-
-//
 //  Animating Winning Move Preview
 //
 
@@ -944,12 +844,4 @@ private fun SolverAnimateShadowBallMovementSetup(animateCtl: Animatable<Float, A
 @Composable
 @Preview(showBackground = true)
 private fun SolverScreenPreview() {
-    val textMeasurer = rememberTextMeasurer()
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawVictoryMessage(
-            drawScope = this,
-            canvasWidth = size.width, canvasHeight = size.height,
-            textMeasurer, 1.0f, Color.Cyan
-        )
-    }
 }

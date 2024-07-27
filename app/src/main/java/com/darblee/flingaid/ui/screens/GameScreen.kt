@@ -78,9 +78,11 @@ import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
+import com.darblee.flingaid.utilities.AnimateVictoryMessageSetup
 import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
 import com.darblee.flingaid.utilities.ballMovementKeyframeSpec
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
+import com.darblee.flingaid.utilities.animateVictoryMsgPerform
 import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.generateExplosionParticles
 import com.darblee.flingaid.utilities.particleExplosionAnimatedSpec
@@ -138,7 +140,6 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     val boardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
 
     val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
-    val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
     // Load the game file only once. This is done primarily for performance reason.
     // Loading game file will trigger non-stop recomposition.
@@ -183,7 +184,8 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             onBallMovementAnimationEnablement = onBallMovementAnimationEnablement,
             onEnableVictoryMsg = onEnableVictoryMsg,
             showShadowMovement = showShadowMovement,
-            onShadowMovementAnimationEnablement = onShadowMovementAnimationEnablement
+            onShadowMovementAnimationEnablement = onShadowMovementAnimationEnablement,
+            announceVictory = announceVictory
         )
     }
 }
@@ -249,7 +251,7 @@ private fun InstructionLogo() {
  * are "find the solution" button and "reset" button
  *
  * @param gameViewModel  Game View model
- * @param uiState Current UI state of the solver game
+ * @param uiState Current UI state of the game
  * @param onBallMovementAnimationChange Determine whether the ball movement animation is done or not
  * @param announceVictory Indicate whether we need to announce victory message or not
  */
@@ -331,9 +333,22 @@ private fun GameControlButtonsForGame(
 
 
 /**
- *  Draw the  Game Board:
- *       - Grid
- *       - all the balls
+ *  Draw the Game Board:
+ *  - Draw the Grid
+ *  - Place all the balls
+ *  - Handle all the input (drag, click on grid to place the ball)
+ *  - Handle all the ball animations and dynamic animated messages
+ *
+ *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
+ *  elements
+ *  @param gameViewModel Game view model
+ *  @param gameUIState Current UI state of the game
+ *  @param showBallMovementAnimation Indicate whether it need to do ball movement animation
+ *  @param onBallMovementAnimationEnablement Enable/disable ball movement animation
+ *  @param showShadowMovement Indicate whether it need to do ball shadow movement
+ *  @param onShadowMovementAnimationEnablement  Enable/disable ball shadow movement
+ *  @param announceVictory Indicate whether it need to show animated victory message or not
+ *  @param onEnableVictoryMsg Indicate whether it need to show animated victory message or not
  */
 @Composable
 private fun DrawGameBoard(
@@ -341,24 +356,19 @@ private fun DrawGameBoard(
     gameViewModel: GameViewModel = viewModel(),
     gameUIState: GameUIState,
     showBallMovementAnimation: Boolean,
-    onEnableVictoryMsg: (Boolean) -> Unit,
     onBallMovementAnimationEnablement: (Boolean) -> Unit,
     showShadowMovement: Boolean,
-    onShadowMovementAnimationEnablement: (Boolean) -> Unit
+    onShadowMovementAnimationEnablement: (Boolean) -> Unit,
+    announceVictory: Boolean,
+    onEnableVictoryMsg: (Boolean) -> Unit
 ) {
-    val context = LocalContext.current
+    val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
     /**
      * Create textMeasurer instance, which is responsible for measuring a text in its entirety so
      * that it can be drawn on the canvas (drawScope). This is used to draw animated victory message
      */
     val textMeasurer = rememberTextMeasurer()
-
-    if (gameViewModel.ballCount() == 1) {
-        if (gameUIState.state == GameState.IdleFoundSolution) {
-            onEnableVictoryMsg(true)
-        }
-    }
 
     /**
      * Animation control that handle ball movement
@@ -367,6 +377,15 @@ private fun DrawGameBoard(
 
     val animateParticleExplosion = remember { Animatable(initialValue = 0f) }
     var particles = mutableListOf<Particle>()
+
+    val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
+    if (announceVictory) {
+       AnimateVictoryMessageSetup(
+           { gameViewModel.gameSetIDLE()},
+            animateCtl = animateVictoryMessage,
+            onAnimationChange = onEnableVictoryMsg
+        )
+    }
 
     if ((showBallMovementAnimation) && (gameUIState.state == GameState.MoveBall)) {
 
@@ -381,7 +400,10 @@ private fun DrawGameBoard(
             direction = gameUIState.movingDirection,
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
-            onAnimationChange = onBallMovementAnimationEnablement,)
+            onAnimationChange = onBallMovementAnimationEnablement,
+            onEnableVictoryMsg = onEnableVictoryMsg
+            )
+
     } else {
         // Else we longer need ball movement animation. So clear animation set-up
         // Make sure we do not show any more particle explosion when ball animation is done
@@ -614,6 +636,14 @@ private fun DrawGameBoard(
                     }
                 }
             }
+
+            if (announceVictory) {
+                animateVictoryMsgPerform(
+                    drawScope, animateVictoryMessage,
+                    textMeasurer, victoryMsgColor
+                )
+            }
+
         }
     }
 }
@@ -691,10 +721,10 @@ fun gameScreenBackPressed(context: Context, navController: NavHostController) {
  * Setup ball movement animation and the particle explosion effect
  * - After movement, it will if there is the last ball. If so, announce victory
  *
- * @param solverViewModel Solver Game View model
+ * @param gameViewModel  Game View model
  * @param movingChain List of ball movements in the chain
  * @param direction Direction of ball movement
- * @param animateBallMovementChainCtlList Animate Object that control animation state of all the ball movement in this chain
+ * @param animateBallMovementCtlList Animate Object that control animation state of all the ball movement in this chain
  * @param animateParticleExplosionCtl Animate Object that control animation state of particle explosion effect
  * @param onAnimationChange Change the state on whether to perform the animation or not
  */
@@ -705,8 +735,9 @@ private fun GameAnimateBallMovementsSetup(
     direction: Direction,
     animateBallMovementCtlList: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
-    onAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit
-    ) {
+    onAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit,
+    onEnableVictoryMsg: (Boolean) -> Unit
+) {
     movingChain.forEach { _ ->
         val animateBallMovement = remember { Animatable(initialValue = 0f) }
         animateBallMovementCtlList.add(animateBallMovement)
@@ -745,7 +776,7 @@ private fun GameAnimateBallMovementsSetup(
 
                     if (gameViewModel.ballCount() == 1) {
                         Log.i(Global.DEBUG_PREFIX, "User won the game")
-                        // TODO : We have a winner. Send out victory message.
+                        onEnableVictoryMsg(true)
                     }
                 }
             } // Launch
@@ -764,6 +795,13 @@ private fun GameAnimateBallMovementsSetup(
     }
 }
 
+/**
+ *  Set up animation for shadow ball movement
+ *
+ *  @param animateCtl Animate object that control the shadow ball movement for the game
+ *  @param onShadowMovementAnimationEnablement Enable/disable the shadow ball movement animation
+ *  @param gameViewModel Game view model
+ */
 @Composable
 fun GameAnimateShadowBallMovementSetup(
     animateCtl: Animatable<Float, AnimationVector1D>,
@@ -784,8 +822,9 @@ fun GameAnimateShadowBallMovementSetup(
                 animateCtl.stop()
                 animateCtl.snapTo(0f)
                 onShadowMovementAnimationEnablement(false)
-                gameViewModel.idleState()
+                gameViewModel.gameSetIDLE()
             }  // launch
+
             launch {
                 gAudio_doink.start()
             }

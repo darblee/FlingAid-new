@@ -4,8 +4,6 @@ import com.darblee.flingaid.Direction
 
 enum class GameState {
     Idle,
-    IdleFoundSolution,
-    Won,
     Playing,
     MoveBall,
     ShowShadowMovement, // This is used to inform user he/she he made an invalid move by
