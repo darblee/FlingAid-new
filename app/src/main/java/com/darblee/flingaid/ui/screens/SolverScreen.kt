@@ -1,6 +1,5 @@
 package com.darblee.flingaid.ui.screens
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.HapticFeedbackConstants
@@ -127,6 +126,9 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
      */
     var needToLoadSolverGameFile by rememberSaveable { mutableStateOf(true) }
 
+    val solverViewModel: SolverViewModel = viewModel()
+    val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
+
     /**
      * Intercept backPress key while on Game Solver screen.
      * When doing back press on the current screen, confirm with the user whether it should exit
@@ -139,12 +141,13 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     if (backPressed) {
         backPressed = false
         if (announceVictory) return
-        solverScreenBackPressed(LocalContext.current, navController)
+        if (solverUIState.solverGameState == SolverUiState.SolverGameMode.Thinking) return
+
+        navController.popBackStack()
         return
     }
 
-    val solverViewModel: SolverViewModel = viewModel()
-    val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
+
 
     val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
 
@@ -202,22 +205,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             announceVictory,
             onEnableVictoryMsg
         )
-    }
-}
-
-/**
- * Perform the key back press action. CHeck if it has permission to do so.
- * BackPress is allow if:
- * - THere is no active thinking
- *
- * @param context  Current context to do a toast on
- * @param navController Navigator controller, which is used to navigate to the previous screen.
- */
-fun solverScreenBackPressed(context: Context, navController: NavHostController) {
-    if (SolverViewModel.uiState.value.solverGameState == SolverUiState.SolverGameMode.Thinking) {
-        gameToast(context, "Unable to go back to home while it is thinking")
-    } else {
-        navController.popBackStack()
     }
 }
 

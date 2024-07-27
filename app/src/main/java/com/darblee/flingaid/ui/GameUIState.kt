@@ -8,6 +8,7 @@ enum class GameState {
     MoveBall,
     ShowShadowMovement, // This is used to inform user he/she he made an invalid move by
                         // moving a ball that did not bump any ball
+    lookingForHint      // Game is trying to find a solution
 }
 
 /**

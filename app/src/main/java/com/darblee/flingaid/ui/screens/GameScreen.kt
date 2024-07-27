@@ -1,6 +1,5 @@
 package com.darblee.flingaid.ui.screens
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.compose.animation.core.Animatable
@@ -83,7 +82,6 @@ import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
 import com.darblee.flingaid.utilities.ballMovementKeyframeSpec
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
 import com.darblee.flingaid.utilities.animateVictoryMsgPerform
-import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.generateExplosionParticles
 import com.darblee.flingaid.utilities.particleExplosionAnimatedSpec
 import com.darblee.flingaid.utilities.wiggleBallAnimatedSpec
@@ -117,12 +115,15 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
      */
     var needToLoadGameFile by remember { mutableStateOf(true) }
 
+    val gameViewModel: GameViewModel = viewModel()
+    val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
+
     /**
      * Intercept backPress key while on Game screen.
      *
      * When doing back press on the current screen, confirm with the user whether it should exit
      * this screen or not if it is middle of thinking. Do not exit this screen when:
-     * - It is middle of thinking
+     * - It is middle of thinking for hint
      * - It is in middle of announcing victory message
      */
     var backPressed by remember { mutableStateOf(false) }
@@ -130,12 +131,10 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     if (backPressed) {
         backPressed = false
         if (announceVictory) return
-        gameScreenBackPressed(LocalContext.current, navController)
+        if (gameUIState.state == GameState.lookingForHint) return
+        navController.popBackStack()
         return
     }
-
-    val gameViewModel: GameViewModel = viewModel()
-    val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
 
     val boardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
 
@@ -693,26 +692,6 @@ private fun drawGridForGame(
             style = Stroke(width = 4.dp.toPx())
         )
     }
-}
-
-/**
- * Perform the key back press action. CHeck if it has permission to do so.
- * BackPress is allow if:
- * - THere is no active thinking
- *
- * @param context  Current context to do a toast on
- * @param navController Navigator controller, which is used to navigate to the previous screen.
- */
-fun gameScreenBackPressed(context: Context, navController: NavHostController) {
-    /* TODO
-     * Add logic to handle backPress.
-     * - Do not backPress while it is thinking.
-     * - other??
-     */
-    Log.i(Global.DEBUG_PREFIX, "Game: backPress detected")
-    gameToast(context, "Unable to go back home screen while thinking")
-
-    navController.popBackStack()
 }
 
 /******************************* Animation routines **********************************************/

@@ -77,7 +77,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.darblee.flingaid.ui.screens.solverScreenBackPressed
 import com.darblee.flingaid.ui.theme.SetColorTheme
 import com.darblee.flingaid.ui.theme.ColorThemeOption
 import kotlinx.coroutines.CoroutineScope
@@ -277,7 +276,7 @@ private fun FlingAidTopAppBar(
                 }
 
                 Screen.Solver -> {
-                    IconButton(onClick = { solverScreenBackPressed(context, navController) })
+                    IconButton(onClick = { navController.popBackStack() })
                     {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
