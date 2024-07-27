@@ -1,13 +1,18 @@
 package com.darblee.flingaid.ui
 
 import com.darblee.flingaid.Direction
+import com.darblee.flingaid.ui.GameUIState.GameMode.LookingForHint
+import com.darblee.flingaid.ui.GameUIState.GameMode.MoveBall
+import com.darblee.flingaid.ui.GameUIState.GameMode.ShowShadowMovement
+import com.darblee.flingaid.ui.GameUIState.GameMode.WaitingOnUser
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.serialization.Serializable
 
 /**
- * Moving record.
- * - pos: where to move from
- * - distance: how far to move
+ * Moving record
+ *
+ *  @property pos: where to move from
+ *  @property distance: how far to move
  */
 @Serializable
 data class MovingRec(
@@ -23,7 +28,7 @@ data class MovingRec(
  *
  * [Solver State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
  *
- * @param solverGameState Solver game state. It is whether it is in active thinking mode or one of
+ * @param mode Solver game mode. It is whether it is in active thinking mode or one of
  * possible idle state
  * @param winningDirection The direction of the ball to move that will lead to a win. This is also
  * used to do ball animation as animation always move toward winning.
@@ -34,15 +39,24 @@ data class MovingRec(
  * The chain is used primarily to animate all the ball movements
  */
 data class SolverUiState(
-    var solverGameState : SolverGameMode = SolverGameMode.Idle,
+    var mode : SolverMode = SolverMode.Idle,
     var thinkingProgressLevel: Float = 0.0f,
     var winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
     val winningMovingChain: List<MovingRec> = listOf()
 ) {
-    sealed class SolverGameMode {
-        data object Thinking : SolverGameMode()
-        data object Idle : SolverGameMode()
-        data object IdleFoundSolution: SolverGameMode()
-        data object IdleNoSolution: SolverGameMode()
+    /**
+     * Various modes for UI solver game
+     *
+     * @property Thinking Computer to look for solution
+     * @property Idle Waiting for user action.
+     * @property IdleFoundSolution Found a solution. Now waiting for user action
+     * @property IdleNoSolution Could not find a solution. Need to inform user there is no solution
+     * before going back to [Idle]
+     */
+    sealed class SolverMode {
+        data object Thinking : SolverMode()
+        data object Idle : SolverMode()
+        data object IdleFoundSolution: SolverMode()
+        data object IdleNoSolution: SolverMode()
     }
 }

@@ -176,7 +176,7 @@ object GameViewModel : ViewModel() {
     ) {
         _uiGameState.update { currentState ->
             currentState.copy(
-                state = GameState.Idle,
+                mode = GameUIState.GameMode.WaitingOnUser,
                 moveFromRow = 0,
                 moveFromCol = 0
             )
@@ -202,7 +202,7 @@ object GameViewModel : ViewModel() {
     {
         _uiGameState.update { curState ->
             curState.copy(
-                state = GameState.Idle,
+                mode = GameUIState.GameMode.WaitingOnUser,
                 movingDirection = Direction.NO_WINNING_DIRECTION,
                 movingChain = mutableListOf()
             )
@@ -244,7 +244,7 @@ object GameViewModel : ViewModel() {
         if (movingChain.size == 1) {
             _uiGameState.update { curState ->
                 curState.copy(
-                    state = GameState.ShowShadowMovement,
+                    mode = GameUIState.GameMode.ShowShadowMovement,
                     movingDirection = direction,
                     movingChain = movingChain
                 )
@@ -254,7 +254,7 @@ object GameViewModel : ViewModel() {
 
         _uiGameState.update { curState ->
             curState.copy(
-                state = GameState.MoveBall,
+                mode = GameUIState.GameMode.MoveBall,
                 movingDirection = direction,
                 movingChain = movingChain
             )

@@ -215,7 +215,7 @@ object SolverViewModel : ViewModel() {
 
         _uiSolverState.update { currentStatus ->
             currentStatus.copy(
-                solverGameState = SolverUiState.SolverGameMode.Thinking,
+                mode = SolverUiState.SolverMode.Thinking,
                 thinkingProgressLevel = 0.0f
             )
         }
@@ -304,7 +304,7 @@ object SolverViewModel : ViewModel() {
             solverSetIDLE(
                 winningDirection = winningDir,
                 winningMovingChain = movingChain,
-                mode = SolverUiState.SolverGameMode.IdleFoundSolution)
+                mode = SolverUiState.SolverMode.IdleFoundSolution)
 
         } else {
 
@@ -327,7 +327,7 @@ object SolverViewModel : ViewModel() {
                 solverSetIDLE(
                     winningDirection = winningDir,
                     winningMovingChain = movingChain,
-                    mode = SolverUiState.SolverGameMode.IdleFoundSolution
+                    mode = SolverUiState.SolverMode.IdleFoundSolution
                 )
 
             } else {
@@ -339,7 +339,7 @@ object SolverViewModel : ViewModel() {
                     currentState.copy(
                         winningDirection = Direction.NO_WINNING_DIRECTION,
                         winningMovingChain = mutableStateListOf(),
-                        solverGameState = SolverUiState.SolverGameMode.IdleNoSolution
+                        mode = SolverUiState.SolverMode.IdleNoSolution
                     )
                 }
             }
@@ -359,13 +359,13 @@ object SolverViewModel : ViewModel() {
     fun solverSetIDLE(
         winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
         winningMovingChain: List<MovingRec> = mutableListOf(),
-        mode: SolverUiState.SolverGameMode = SolverUiState.SolverGameMode.Idle
+        mode: SolverUiState.SolverMode = SolverUiState.SolverMode.Idle
     ) {
         _uiSolverState.update { curState ->
             curState.copy(
                 winningDirection = winningDirection,
                 winningMovingChain = winningMovingChain,
-                solverGameState = mode
+                mode = mode
             )
         }
         gThinkingProgress = 0
@@ -488,7 +488,7 @@ object SolverViewModel : ViewModel() {
         _totalProcessCount =
             (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
 
-        while (_uiSolverState.value.solverGameState == SolverUiState.SolverGameMode.Thinking) {
+        while (_uiSolverState.value.mode == SolverUiState.SolverMode.Thinking) {
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
             val newValue: Float =
                 (gThinkingProgress.toFloat() / (_totalProcessCount) * 100.0).toFloat()
@@ -498,16 +498,16 @@ object SolverViewModel : ViewModel() {
                 _uiSolverState.update { currentState ->
                     currentState.copy(
                         thinkingProgressLevel = currentValue,
-                        solverGameState = SolverUiState.SolverGameMode.Thinking
+                        mode = SolverUiState.SolverMode.Thinking
                     )
                 }
             }
 
             // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
             // loop breakout when it has finished thinking
-            if (_uiSolverState.value.solverGameState == SolverUiState.SolverGameMode.Thinking) Thread.sleep(500)
-            if (_uiSolverState.value.solverGameState == SolverUiState.SolverGameMode.Thinking) Thread.sleep(500)
-            if (_uiSolverState.value.solverGameState == SolverUiState.SolverGameMode.Thinking) Thread.sleep(500)
+            if (_uiSolverState.value.mode == SolverUiState.SolverMode.Thinking) Thread.sleep(500)
+            if (_uiSolverState.value.mode == SolverUiState.SolverMode.Thinking) Thread.sleep(500)
+            if (_uiSolverState.value.mode == SolverUiState.SolverMode.Thinking) Thread.sleep(500)
         }
         Log.i(Global.DEBUG_PREFIX, "Finished thinking")
     }

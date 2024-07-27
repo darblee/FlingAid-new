@@ -72,7 +72,6 @@ import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_doink
-import com.darblee.flingaid.ui.GameState
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.MovingRec
@@ -131,7 +130,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     if (backPressed) {
         backPressed = false
         if (announceVictory) return
-        if (gameUIState.state == GameState.lookingForHint) return
+        if (gameUIState.mode == GameUIState.GameMode.LookingForHint) return
         navController.popBackStack()
         return
     }
@@ -171,8 +170,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         GameControlButtonsForGame(
             gameViewModel,
             gameUIState,
-            onBallMovementAnimationEnablement,
-            announceVictory
+            onBallMovementAnimationEnablement
         )
 
         DrawGameBoard(
@@ -252,14 +250,12 @@ private fun InstructionLogo() {
  * @param gameViewModel  Game View model
  * @param uiState Current UI state of the game
  * @param onBallMovementAnimationChange Determine whether the ball movement animation is done or not
- * @param announceVictory Indicate whether we need to announce victory message or not
  */
 @Composable
 private fun GameControlButtonsForGame(
     gameViewModel: GameViewModel = viewModel(),
     uiState: GameUIState,
-    onBallMovementAnimationChange: (Boolean) -> Unit,
-    announceVictory: Boolean
+    onBallMovementAnimationChange: (Boolean) -> Unit
 ) {
     val iconWidth = Icons.Filled.Refresh.defaultWidth
 
@@ -386,7 +382,7 @@ private fun DrawGameBoard(
         )
     }
 
-    if ((showBallMovementAnimation) && (gameUIState.state == GameState.MoveBall)) {
+    if ((showBallMovementAnimation) && (gameUIState.mode == GameUIState.GameMode.MoveBall)) {
 
         // Set-up the particles, which is used for the explosion animated effect
         particles = remember {
@@ -418,7 +414,7 @@ private fun DrawGameBoard(
      */
     val animateShadowMovement = remember { Animatable(initialValue = 0f) }
 
-    if ((showShadowMovement) && (gameUIState.state == GameState.ShowShadowMovement))
+    if ((showShadowMovement) && (gameUIState.mode == GameUIState.GameMode.ShowShadowMovement))
         GameAnimateShadowBallMovementSetup(animateShadowMovement,
             onShadowMovementAnimationEnablement, gameViewModel)
 
@@ -604,7 +600,7 @@ private fun DrawGameBoard(
 
             displayBallImage.prepareToDraw()   // cache it
 
-            if ((showBallMovementAnimation) && (gameUIState.state == GameState.MoveBall)) {
+            if ((showBallMovementAnimation) && (gameUIState.mode == GameUIState.GameMode.MoveBall)) {
                 val ballsToErase = gameUIState.movingChain
 
                 gameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage, ballsToErase)
@@ -621,7 +617,7 @@ private fun DrawGameBoard(
             } else {
                 gameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage)
 
-                if ((showShadowMovement) && (gameUIState.state == GameState.ShowShadowMovement)) {
+                if ((showShadowMovement) && (gameUIState.mode == GameUIState.GameMode.ShowShadowMovement)) {
                     if (gameUIState.movingChain.isNotEmpty()) {
                         animateShadowBallMovementsPerform(
                             drawScope = drawScope,

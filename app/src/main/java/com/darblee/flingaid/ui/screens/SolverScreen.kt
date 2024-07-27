@@ -141,7 +141,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     if (backPressed) {
         backPressed = false
         if (announceVictory) return
-        if (solverUIState.solverGameState == SolverUiState.SolverGameMode.Thinking) return
+        if (solverUIState.mode == SolverUiState.SolverMode.Thinking) return
 
         navController.popBackStack()
         return
@@ -176,7 +176,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val onBallMovementAnimationChange =
         { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
 
-    if (solverUIState.solverGameState == SolverUiState.SolverGameMode.IdleNoSolution) {
+    if (solverUIState.mode == SolverUiState.SolverMode.IdleNoSolution) {
             gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
             solverViewModel.solverSetIDLE()
     }
@@ -227,7 +227,7 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState) {
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         Box {
-            if (uiState.solverGameState != SolverUiState.SolverGameMode.Thinking) {
+            if (uiState.mode != SolverUiState.SolverMode.Thinking) {
                 val imageModifier = Modifier
                     .size(logoSize)
                     .align(Alignment.Center)
@@ -343,7 +343,7 @@ private fun ControlButtonsForSolver(
                 .weight(3F)
                 .padding(5.dp),
             enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) &&
-                    (uiState.solverGameState != SolverUiState.SolverGameMode.Thinking))
+                    (uiState.mode != SolverUiState.SolverMode.Thinking))
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(
@@ -359,7 +359,7 @@ private fun ControlButtonsForSolver(
         Button(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                if (uiState.solverGameState == SolverUiState.SolverGameMode.Thinking) {
+                if (uiState.mode == SolverUiState.SolverMode.Thinking) {
                     gameToast(context, "Unable to reset as it is currently busy finding a solution")
                 } else {
                     // Reset the board game and set it back to idle state
@@ -377,7 +377,7 @@ private fun ControlButtonsForSolver(
                 .padding(5.dp),
             // Disable button while it is in active thinking mode or in the middle of announce
             // victory message
-            enabled = ((uiState.solverGameState != SolverUiState.SolverGameMode.Thinking) || announceVictory)
+            enabled = ((uiState.mode != SolverUiState.SolverMode.Thinking) || announceVictory)
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(
@@ -427,7 +427,7 @@ private fun DrawSolverBoard(
     val textMeasurer = rememberTextMeasurer()
 
     if (solverViewModel.ballCount() == 1) {
-        if (solverUIState.solverGameState == SolverUiState.SolverGameMode.IdleFoundSolution) {
+        if (solverUIState.mode == SolverUiState.SolverMode.IdleFoundSolution) {
             onEnableVictoryMsg(true)
         }
     }
@@ -512,7 +512,7 @@ private fun DrawSolverBoard(
 
                             view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
-                            if (solverUIState.solverGameState == SolverUiState.SolverGameMode.Thinking) {
+                            if (solverUIState.mode == SolverUiState.SolverMode.Thinking) {
                                 Toast
                                     .makeText(
                                         context,
