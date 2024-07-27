@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.lifecycle.ViewModel
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
-import com.darblee.flingaid.utilities.BallPosition
+import com.darblee.flingaid.utilities.FlickerBoard
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -80,7 +80,7 @@ object GameViewModel : ViewModel() {
 
     /********************************* BALL MANAGEMENT ****************************/
 
-    private var _gameBallPos = BallPosition()
+    private var _gameBallPos = FlickerBoard()
 
     /**
      * Get the list of balls and its position.

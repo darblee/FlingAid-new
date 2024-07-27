@@ -68,7 +68,7 @@ data class Pos(
  * [printPositions] Print all the ball positions. It is intended for debugging purposes.
  *
  */
-class BallPosition {
+class FlickerBoard {
     /**
      * List of all the balls and its position on the game board
      *

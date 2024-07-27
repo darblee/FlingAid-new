@@ -9,7 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
-import com.darblee.flingaid.utilities.BallPosition
+import com.darblee.flingaid.utilities.FlickerBoard
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -86,7 +86,7 @@ object SolverViewModel : ViewModel() {
 
     /********************************* BALL MANAGEMENT ****************************/
 
-    private var _solverBallPos = BallPosition()
+    private var _solverBallPos = FlickerBoard()
 
     /**
      * Get the list of balls and its position.
