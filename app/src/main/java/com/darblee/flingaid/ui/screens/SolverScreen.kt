@@ -111,24 +111,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     val solverViewModel: SolverViewModel = viewModel()
 
-    /**
-     * Need to ensure we only load the file once when we start the the solver game screen.
-     * If we load the file everytime we go down this path during recompose, it will trigger more
-     * recompose. This will cause unnecessary performance overload.
-     *
-     * __Developer's Note:__  Use [rememberSaveable] instead of [remember] because we want to
-     * preserve this even after config change (e.g. screen rotation)
-     */
-    var needToLoadSolverFile by rememberSaveable { mutableStateOf(true) }
-
-    // Load the game file only once. This is done primarily for performance reason.
-    // Loading game file will trigger non-stop recomposition.
-    // Also need to minimize the need to do expensive time consuming file i/o operation.
-    val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
-    if (needToLoadSolverFile) {
-        solverViewModel.loadGameFile(solverBoardFile)
-        needToLoadSolverFile = false
-    }
+    LoadSolverFileOnlyOnce(solverViewModel)
 
     var announceVictory = false
     val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
@@ -166,8 +149,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         navController.popBackStack()
         return
     }
-
-
 
     var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
     findWinnableMoveButtonEnabled =
@@ -208,6 +189,35 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             announceVictory,
             onEnableVictoryMsg
         )
+    }
+}
+
+/**
+ * Populate the solver board by loading content from the solver game file
+ *
+ * @param solverViewModel Solver View Model
+ */
+@Composable
+private fun LoadSolverFileOnlyOnce(solverViewModel: SolverViewModel)
+{
+    /**
+     * Need to ensure we only load the file once when we start the the solver game screen.
+     * If we load the file everytime we go down this path during recompose, it will trigger more
+     * recompose. This will cause unnecessary performance overload.
+     *
+     * __Developer's Note:__  Use [rememberSaveable] instead of [remember] because we want to
+     * preserve this even after config change (e.g. screen rotation)
+     */
+    var needToLoadSolverFile by rememberSaveable { mutableStateOf(true) }
+
+    // Load the game file only once. This is done primarily for performance reason.
+    // Loading game file will trigger non-stop recomposition.
+    // Also need to minimize the need to do expensive time consuming file i/o operation.
+    val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
+    if (needToLoadSolverFile) {
+        solverViewModel.loadGameFile(solverBoardFile)
+        Log.i(Global.DEBUG_PREFIX, "Loading from solver file")
+        needToLoadSolverFile = false
     }
 }
 
