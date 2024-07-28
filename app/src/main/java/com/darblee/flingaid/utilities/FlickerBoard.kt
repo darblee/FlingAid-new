@@ -13,6 +13,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -549,6 +550,97 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
     }
 
     return (Pair(xOffset, yOffset))
+}
+
+/**
+ * Setup ball movement animation and the particle explosion effect
+ * - After movement, it will if there is the last ball. If so, announce victory
+ *
+ * @param movingChain List of ball movements in the chain
+ * @param direction Direction of ball movement
+ * @param animateBallMovementCtlList Animate Object that control animation state of all the ball
+ * movement in this chain
+ * @param animateParticleExplosionCtl Animate Object that control animation state of particle
+ * explosion effect
+ * @param onEnableBallMovementAnimation Change the state on whether to perform the animation or not
+ * @param onEnableVictoryMsg Lambda function - Enable/disable victory animation. Used only for GameScreen
+ * @param moveBallTask Lambda function - Move the ball
+ * @param ballCountTask Lambda function - Count the number of balls
+ * @param findWinningMoveTask Lambda function - Find the next winnable. Used only for SolverScreen
+ * @param finalTask Lambda function - Perform these steps after completed the ball movement animation
+ */
+@Composable
+fun AnimateBallMovementsSetup(
+    movingChain: List<MovingRec>,
+    direction: Direction,
+    animateBallMovementCtlList: MutableList<Animatable<Float, AnimationVector1D>>,
+    animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
+    onEnableBallMovementAnimation: (enableBallMovementAnimation: Boolean) -> Unit,
+    onEnableVictoryMsg: (Boolean) -> Unit = { },
+    moveBallTask: (pos: Pos, direction: Direction) -> Unit,
+    ballCountTask: () -> Int,
+    findWinningMoveTask: () -> Unit = { },
+    finalTask: (
+        ballCountFunc : () -> Int,                 // Ball Count lambda function
+        onEnableVictoryMsgFunc: (Boolean) -> Unit, // onEnableVictoryMessage lambda function
+        findWinningMoveFunc: () -> Unit            // findWinningMove lambda function
+                ) -> Unit
+) {
+    movingChain.forEach { _ ->
+        val animateBallMovement = remember { Animatable(initialValue = 0f) }
+        animateBallMovementCtlList.add(animateBallMovement)
+    }
+
+    // Time ratio of total time when the ball makes contact to the neighboring ball
+    val whenBallMakeContactRatio = 0.97f
+
+    LaunchedEffect(Unit) {
+        // Use coroutine to ensure both launch animation get completed in the same co-routine scope
+        coroutineScope {
+            launch { // One or more ball movements in serial fashion
+                movingChain.forEachIndexed { index, currentMovingRec ->
+                    if (currentMovingRec.distance > 0) {
+                        val totalTimeLength = (currentMovingRec.distance * 100) + 100
+                        animateBallMovementCtlList[index].animateTo(
+                            targetValue = 1f,
+                            animationSpec = ballMovementKeyframeSpec(
+                                totalTimeLength,
+                                whenBallMakeContactRatio
+                            )
+                        )
+                    } else {
+                        // Distance is zero. Need to set-up the "wiggle" effect
+                        animateBallMovementCtlList[index].animateTo(
+                            targetValue = 0f, animationSpec = wiggleBallAnimatedSpec
+                        )
+                    } // if-else currentMovingRec.distance
+                }   // movingChain forEach
+                animateBallMovementCtlList.clear()
+
+                onEnableBallMovementAnimation(false)
+
+                if (movingChain.isNotEmpty()) {
+
+                    // Move the ball. We use lambda function to perform the corresponding move
+                    // based the view model, either gameViewModel or solverViewModel
+                    moveBallTask.invoke(movingChain[0].pos, direction)
+                    finalTask(ballCountTask,  onEnableVictoryMsg, findWinningMoveTask)
+                }
+
+            } // Launch
+
+            launch {  // Animate explosion on the first ball only
+                val totalTimeLength = (movingChain[0].distance * 100) + 100
+                animateParticleExplosionCtl.animateTo(
+                    targetValue = 0.5f,
+                    animationSpec = particleExplosionAnimatedSpec(
+                        totalTimeLength,
+                        whenBallMakeContactRatio
+                    )
+                )
+            } // launch
+        }   // coroutine
+    }
 }
 
 /**

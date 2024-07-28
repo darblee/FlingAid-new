@@ -74,16 +74,14 @@ import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_doink
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
-import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
+import com.darblee.flingaid.utilities.AnimateBallMovementsSetup
 import com.darblee.flingaid.utilities.AnimateVictoryMessageSetup
+import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
-import com.darblee.flingaid.utilities.ballMovementKeyframeSpec
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
 import com.darblee.flingaid.utilities.animateVictoryMsgPerform
 import com.darblee.flingaid.utilities.generateExplosionParticles
-import com.darblee.flingaid.utilities.particleExplosionAnimatedSpec
-import com.darblee.flingaid.utilities.wiggleBallAnimatedSpec
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
@@ -326,7 +324,6 @@ private fun GameControlButtonsForGame(
     }
 }
 
-
 /**
  *  Draw the Game Board:
  *  - Draw the Grid
@@ -389,15 +386,37 @@ private fun DrawGameBoard(
             generateExplosionParticles(gameUIState.movingChain, gameUIState.movingDirection)
         }.toMutableList()
 
-        GameAnimateBallMovementsSetup(
-            gameViewModel = gameViewModel,
+        /**
+         * The following lambda functions are used in [AnimateBallMovementsSetup] routine
+         */
+        val gameMoveBallTask = { pos: Pos, direction: Direction -> gameViewModel.moveBall(pos, direction)}
+        val gameBallCountTask = { gameViewModel.ballCount() }
+
+        /**
+         * Lambda function to perform after finish movement animation. Used in [AnimateBallMovementsSetup] routine.
+         * If we are done to 1 ball left, then user have won. We turn on victory message
+         */
+        val gameAnimateBallMovementFinalTask = {
+            ballCountTask : () -> Int,
+            onEnableVictoryMessage: (Boolean) -> Unit,
+            _: () -> Unit            // findWinningTask : Not used for game screen
+            ->
+            if (ballCountTask.invoke() == 1) {
+                Log.i(Global.DEBUG_PREFIX, "User won the game")
+                onEnableVictoryMessage(true)
+            }
+        }
+
+        AnimateBallMovementsSetup(
             movingChain = gameUIState.movingChain,
             direction = gameUIState.movingDirection,
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
-            onAnimationChange = onBallMovementAnimationEnablement,
-            onEnableVictoryMsg = onEnableVictoryMsg
-            )
+            onEnableBallMovementAnimation = onBallMovementAnimationEnablement,
+            onEnableVictoryMsg = onEnableVictoryMsg,
+            moveBallTask = gameMoveBallTask,
+            ballCountTask = gameBallCountTask,
+            finalTask = gameAnimateBallMovementFinalTask)
 
     } else {
         // Else we longer need ball movement animation. So clear animation set-up
@@ -691,84 +710,6 @@ private fun drawGridForGame(
 }
 
 /******************************* Animation routines **********************************************/
-
-/**
- * Setup ball movement animation and the particle explosion effect
- * - After movement, it will if there is the last ball. If so, announce victory
- *
- * @param gameViewModel  Game View model
- * @param movingChain List of ball movements in the chain
- * @param direction Direction of ball movement
- * @param animateBallMovementCtlList Animate Object that control animation state of all the ball movement in this chain
- * @param animateParticleExplosionCtl Animate Object that control animation state of particle explosion effect
- * @param onAnimationChange Change the state on whether to perform the animation or not
- */
-@Composable
-private fun GameAnimateBallMovementsSetup(
-    gameViewModel: GameViewModel,
-    movingChain: List<MovingRec>,
-    direction: Direction,
-    animateBallMovementCtlList: MutableList<Animatable<Float, AnimationVector1D>>,
-    animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
-    onAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit,
-    onEnableVictoryMsg: (Boolean) -> Unit
-) {
-    movingChain.forEach { _ ->
-        val animateBallMovement = remember { Animatable(initialValue = 0f) }
-        animateBallMovementCtlList.add(animateBallMovement)
-    }
-
-    // Time ratio of total time when the ball makes contact to the neighboring ball
-    val whenBallMakeContactRatio = 0.97f
-
-    LaunchedEffect(Unit) {
-        // Use coroutine to ensure both launch animation get completed in the same co-routine scope
-        coroutineScope {
-            launch { // One or more ball movements in serial fashion
-                movingChain.forEachIndexed { index, currentMovingRec ->
-                    if (currentMovingRec.distance > 0) {
-                        val totalTimeLength = (currentMovingRec.distance * 100) + 100
-                        animateBallMovementCtlList[index].animateTo(
-                            targetValue = 1f,
-                            animationSpec = ballMovementKeyframeSpec(
-                                totalTimeLength,
-                                whenBallMakeContactRatio
-                            )
-                        )
-                    } else {
-                        // Distance is zero. Need to set-up the "wiggle" effect
-                        animateBallMovementCtlList[index].animateTo(
-                            targetValue = 0f, animationSpec = wiggleBallAnimatedSpec
-                        )
-                    } // if-else currentMovingRec.distance
-                }   // movingChain forEach
-                animateBallMovementCtlList.clear()
-
-                onAnimationChange(false)
-
-                if (movingChain.isNotEmpty()) {
-                    gameViewModel.moveBall(movingChain[0].pos, direction)
-
-                    if (gameViewModel.ballCount() == 1) {
-                        Log.i(Global.DEBUG_PREFIX, "User won the game")
-                        onEnableVictoryMsg(true)
-                    }
-                }
-            } // Launch
-
-            launch {  // Animate explosion on the first ball only
-                val totalTimeLength = (movingChain[0].distance * 100) + 100
-                animateParticleExplosionCtl.animateTo(
-                    targetValue = 0.5f,
-                    animationSpec = particleExplosionAnimatedSpec(
-                        totalTimeLength,
-                        whenBallMakeContactRatio
-                    )
-                )
-            } // launch
-        }   // coroutine
-    }
-}
 
 /**
  *  Set up animation for shadow ball movement

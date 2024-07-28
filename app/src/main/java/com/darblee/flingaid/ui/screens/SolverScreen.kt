@@ -81,22 +81,17 @@ import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
-import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
+import com.darblee.flingaid.utilities.AnimateBallMovementsSetup
 import com.darblee.flingaid.utilities.AnimateVictoryMessageSetup
 import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
 import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
 import com.darblee.flingaid.utilities.animateVictoryMsgPerform
-import com.darblee.flingaid.utilities.ballMovementKeyframeSpec
 import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.generateExplosionParticles
-import com.darblee.flingaid.utilities.particleExplosionAnimatedSpec
-import com.darblee.flingaid.utilities.wiggleBallAnimatedSpec
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
 import kotlin.math.abs
@@ -460,14 +455,39 @@ private fun DrawSolverBoard(
             generateExplosionParticles(solverUIState.winningMovingChain, solverUIState.winningDirection)
         }.toMutableList()
 
-        SolverAnimateBallMovementsSetup(
-            solverViewModel = solverViewModel,
+        /**
+         * The following lambda functions are used in [AnimateBallMovementsSetup] routine
+         */
+        val solverMoveBallTask = { pos: Pos, direction: Direction -> solverViewModel.moveBallToWin(pos, direction)}
+        val solverBallCountTask = { solverViewModel.ballCount() }
+        val solverFindWinningMoveTask = { solverViewModel.findWinningMove() }
+
+        /**
+         * Lambda function to perform after finish movement animation. Used in [AnimateBallMovementsSetup] routine.
+         * We automatically look for the next winning move
+         */
+        val solverAnimateBallMovementFinalTask = {
+            ballCountTask : () -> Int,
+            _: (Boolean) -> Unit,  // onEnableVictoryMessage : Not used for solver screen
+            findWinningMoveTask : () -> Unit
+            ->
+            if (ballCountTask.invoke() > 1) {
+                Log.i(Global.DEBUG_PREFIX, ">>> Looking for next winnable move")
+                findWinningMoveTask.invoke()
+            }
+        }
+
+        AnimateBallMovementsSetup(
             movingChain = solverUIState.winningMovingChain,
             direction = solverUIState.winningDirection,
-            animateBallMovementChainCtlList = animateBallMovementChain,
+            animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
-            onAnimationChange = onBallMovementAnimationEnablement
-        )
+            onEnableBallMovementAnimation = onBallMovementAnimationEnablement,
+            moveBallTask = solverMoveBallTask,
+            ballCountTask = solverBallCountTask,
+            findWinningMoveTask = solverFindWinningMoveTask,
+            finalTask = solverAnimateBallMovementFinalTask)
+
     } else {
         // Else we longer need ball movement animation. So clear animation set-up
         // Make sure we do not show any more particle explosion when ball animation is done
@@ -722,87 +742,6 @@ private fun PlaySearchAnimation(modifier: Modifier) {
 
 
 /************************** Animation Routines **************************/
-
-/**
- * Setup ball movement animation and the particle explosion effect
- * - After movement, it will do the actual move
- * - THen start to look for the next move unless this is the last ball
- *
- * @param solverViewModel Solver Game View model
- * @param movingChain List of ball movements in the chain
- * @param direction Direction of ball movement
- * @param animateBallMovementChainCtlList Animate Object that control animation state of all the ball movement in this chain
- * @param animateParticleExplosionCtl Animate Object that control animation state of particle explosion effect
- * @param onAnimationChange Change the state on whether to perform the animation or not
- */
-@Composable
-private fun SolverAnimateBallMovementsSetup(
-    solverViewModel: SolverViewModel,
-    movingChain: List<MovingRec>,
-    direction: Direction,
-    animateBallMovementChainCtlList: MutableList<Animatable<Float, AnimationVector1D>>,
-    animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
-    onAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit
-) {
-    movingChain.forEach { _ ->
-        val animateBallMovement = remember { Animatable(initialValue = 0f) }
-        animateBallMovementChainCtlList.add(animateBallMovement)
-    }
-
-    // Time ratio of total time when the ball makes contact to the neighboring ball
-    val whenBallMakeContactRatio = 0.97f
-
-    // Launch two animations in parallel
-    // Only start the explosion when the ball makes an impact to the other ball
-
-    LaunchedEffect(Unit) {
-        // Use coroutine to ensure both launch animations get completed in the same  co-routine scope
-        coroutineScope {
-            launch {  // one or more ball movements in serial fashion
-                movingChain.forEachIndexed { index, currentMovingRec ->
-                    if (currentMovingRec.distance > 0) {
-                        val totalTimeLength = (currentMovingRec.distance * 100) + 100
-                        animateBallMovementChainCtlList[index].animateTo(
-                            targetValue = 1f,
-                            animationSpec = ballMovementKeyframeSpec(
-                                totalTimeLength,
-                                whenBallMakeContactRatio
-                            )
-                        )
-                    } else {
-                        // Distance is zero. Need to set-up the "wiggle" effect
-                        animateBallMovementChainCtlList[index].animateTo(
-                            targetValue = 0f, animationSpec = wiggleBallAnimatedSpec
-                        )
-                    } // if-else currentMovingRec.distance
-                } // movingChain forEach
-                animateBallMovementChainCtlList.clear()
-
-                onAnimationChange(false)
-
-                if (movingChain.isNotEmpty()) {
-                    solverViewModel.moveBallToWin(movingChain[0].pos, direction)
-
-                    if (solverViewModel.ballCount() > 1) {
-                        Log.i(Global.DEBUG_PREFIX, ">>> Looking for next winnable move")
-                        solverViewModel.findWinningMove()
-                    }
-                }
-            } // Launch
-
-            launch {  // Animate explosion on the first ball only
-                val totalTimeLength = (movingChain[0].distance * 100) + 100
-                animateParticleExplosionCtl.animateTo(
-                    targetValue = 0.5f,
-                    animationSpec = particleExplosionAnimatedSpec(
-                        totalTimeLength,
-                        whenBallMakeContactRatio
-                    )
-                )
-            } // launch
-        } // coroutine
-    }
-}
 
 //
 //  Animating Winning Move Preview
