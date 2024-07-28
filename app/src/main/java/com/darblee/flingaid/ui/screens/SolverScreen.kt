@@ -131,23 +131,10 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             }
     }
 
-    /**
-     * Intercept backPress key while on Game Solver screen.
-     * When doing back press on the current screen, confirm with the user whether it should exit
-     * this screen or not if it is middle of thinking. Do not exit this screen when:
-     * - It is middle of thinking
-     * - It is in middle of announcing victory message
-     */
-    var backPressed by remember { mutableStateOf(false) }
-    BackPressHandler(onBackPressed = { backPressed = true })
-    if (backPressed) {
-        backPressed = false
-        if (announceVictory) return
-        if (solverUIState.mode == SolverUiState.SolverMode.Thinking) return
-
-        navController.popBackStack()
-        return
-    }
+    // Need special handling of back key press events. Do not navigate when:
+    // - It is in muddle of thinking
+    // - It is middle of announce victory message
+    HandleBackPressKeyForSolverScreen(solverUIState.mode, navController, announceVictory)
 
     var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
     findWinnableMoveButtonEnabled =
@@ -215,6 +202,37 @@ private fun LoadSolverFileOnlyOnce(solverViewModel: SolverViewModel)
         solverViewModel.loadGameFile(solverBoardFile)
         Log.i(Global.DEBUG_PREFIX, "Loading from solver file")
         needToLoadSolverFile = false
+    }
+}
+
+
+/**
+ *  Handle Back Press Key. Intercept backPress key while on Game Solver screen.
+ *
+ *  When doing back press on the current screen, confirm with the user whether it should exit
+ *  this screen or not if it is middle of thinking. Do not exit this screen when:
+ *  - It is middle of thinking
+ *  - It is in middle of announcing victory message
+ *
+ *  @param mode Current Solver mode
+ *  @param navController Use to navigate to the previous screen
+ *  @param announceVictory Determine whether we are in middle of announcing victory message
+ */
+@Composable
+private fun HandleBackPressKeyForSolverScreen(
+    mode: SolverUiState.SolverMode,
+    navController: NavHostController,
+    announceVictory: Boolean
+) {
+    var backPressed by remember { mutableStateOf(false) }
+    BackPressHandler(onBackPressed = { backPressed = true })
+    if (backPressed) {
+        backPressed = false
+        if (announceVictory) return
+        if (mode == SolverUiState.SolverMode.Thinking) return
+
+        navController.popBackStack()
+        return
     }
 }
 

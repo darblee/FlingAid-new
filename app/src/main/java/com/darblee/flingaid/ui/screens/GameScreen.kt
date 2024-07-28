@@ -117,23 +117,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         GameUIState.GameMode.LookingForHint -> { /* TODO: Process looking for hint */ }
     }
 
-    /**
-     * Intercept backPress key while on Game screen.
-     *
-     * When doing back press on the current screen, confirm with the user whether it should exit
-     * this screen or not if it is middle of thinking. Do not exit this screen when:
-     * - It is middle of thinking for hint
-     * - It is in middle of announcing victory message
-     */
-    var backPressed by remember { mutableStateOf(false) }
-    BackPressHandler(onBackPressed = { backPressed = true })
-    if (backPressed) {
-        backPressed = false
-        if (announceVictory) return
-        if (gameUIState.mode == GameUIState.GameMode.LookingForHint) return
-        navController.popBackStack()
-        return
-    }
+    HandleBackPressKeyForGameScreen(gameUIState.mode, navController, announceVictory)
 
     /**
      * Keep track of when to do the ball movement animation
@@ -200,6 +184,37 @@ private fun LoadGameFileOnlyOnce(gameViewModel: GameViewModel)
         gameViewModel.loadGameFile(gameBoardFile)
         Log.i(Global.DEBUG_PREFIX, "Loading from game file")
         needToLoadGameFile = false
+    }
+}
+
+
+/**
+ *  Handle Back Press Key. Intercept backPress key while on Game  screen.
+ *
+ *  When doing back press on the current screen, confirm with the user whether it should exit
+ *  this screen or not if it is middle of thinking. Do not exit this screen when:
+ *  - It is middle of thinking for hint
+ *  - It is in middle of announcing victory message
+ *
+ *  @param mode Current Solver mode
+ *  @param navController Use to navigate to the previous screen
+ *  @param announceVictory Determine whether we are in middle of announcing victory message
+ */
+@Composable
+private fun HandleBackPressKeyForGameScreen(
+    mode:  GameUIState.GameMode,
+    navController: NavHostController,
+    announceVictory: Boolean
+) {
+    var backPressed by remember { mutableStateOf(false) }
+    BackPressHandler(onBackPressed = { backPressed = true })
+    if (backPressed) {
+        backPressed = false
+        if (announceVictory) return
+        if (mode == GameUIState.GameMode.LookingForHint) return
+
+        navController.popBackStack()
+        return
     }
 }
 
