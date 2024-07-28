@@ -109,8 +109,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     Log.i(Global.DEBUG_PREFIX, "Solver Screen - recompose")
 
-    var announceVictory by remember { mutableStateOf(false) }
-    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
+    val solverViewModel: SolverViewModel = viewModel()
 
     /**
      * Need to ensure we only load the file once when we start the the solver game screen.
@@ -120,9 +119,20 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
      * __Developer's Note:__  Use [rememberSaveable] instead of [remember] because we want to
      * preserve this even after config change (e.g. screen rotation)
      */
-    var needToLoadSolverGameFile by rememberSaveable { mutableStateOf(true) }
+    var needToLoadSolverFile by rememberSaveable { mutableStateOf(true) }
 
-    val solverViewModel: SolverViewModel = viewModel()
+    // Load the game file only once. This is done primarily for performance reason.
+    // Loading game file will trigger non-stop recomposition.
+    // Also need to minimize the need to do expensive time consuming file i/o operation.
+    val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
+    if (needToLoadSolverFile) {
+        solverViewModel.loadGameFile(solverBoardFile)
+        needToLoadSolverFile = false
+    }
+
+    var announceVictory = false
+    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
+
     val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
 
     when (solverUIState.mode) {
@@ -157,15 +167,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         return
     }
 
-    val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
 
-    // Load the game file only once. This is done primarily for performance reason.
-    // Loading game file will trigger non-stop recomposition.
-    // Also need to minimize the need to do expensive time consuming file i/o operation.
-    if (needToLoadSolverGameFile) {
-        solverViewModel.loadGameFile(solverBoardFile)
-        needToLoadSolverGameFile = false
-    }
 
     var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
     findWinnableMoveButtonEnabled =

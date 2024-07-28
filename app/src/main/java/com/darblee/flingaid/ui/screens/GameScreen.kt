@@ -100,8 +100,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
 
     Log.i(Global.DEBUG_PREFIX, "Game Screen - recompose")
 
-    var announceVictory by remember { mutableStateOf(false) }
-    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
+    val gameViewModel: GameViewModel = viewModel()
 
     /**
      * Need to ensure we only load the file once when we start the the solver game screen.
@@ -113,7 +112,18 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
      */
     var needToLoadGameFile by remember { mutableStateOf(true) }
 
-    val gameViewModel: GameViewModel = viewModel()
+    // Load the game file only once. This is done primarily for performance reason.
+    // Loading game file will trigger non-stop recomposition.
+    // Also need to minimize the need to do expensive time consuming file i/o operation.
+    val gameBoardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
+    if (needToLoadGameFile) {
+        gameViewModel.loadGameFile(gameBoardFile)
+        needToLoadGameFile = false
+    }
+
+    var announceVictory by remember { mutableStateOf(false) }
+    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
+
     val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
 
     when (gameUIState.mode) {
@@ -143,16 +153,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         return
     }
 
-    val boardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
 
-
-    // Load the game file only once. This is done primarily for performance reason.
-    // Loading game file will trigger non-stop recomposition.
-    // Also need to minimize the need to do expensive time consuming file i/o operation.
-    if (needToLoadGameFile) {
-        gameViewModel.loadGameFile(boardFile)
-        needToLoadGameFile = false
-    }
 
     /**
      * Keep track of when to do the ball movement animation
