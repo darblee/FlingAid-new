@@ -497,10 +497,6 @@ private fun DrawGameBoard(
                         onDragEnd = {
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Log.i(
-                                        Global.DEBUG_PREFIX,
-                                        "Swipe left from $dragRow, $dragCol for length $offsetX"
-                                    )
                                     val moveResult =
                                         gameViewModel.validMove(dragRow, dragCol, Direction.LEFT)
 
@@ -525,10 +521,6 @@ private fun DrawGameBoard(
                                 }
 
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    Log.i(
-                                        Global.DEBUG_PREFIX,
-                                        "Swipe right from $dragRow, $dragCol for length $offsetX"
-                                    )
                                     val moveResult =
                                         gameViewModel.validMove(dragRow, dragCol, Direction.RIGHT)
                                     when (moveResult) {
@@ -553,11 +545,6 @@ private fun DrawGameBoard(
                                 }
 
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Log.i(
-                                        Global.DEBUG_PREFIX,
-                                        "Swipe Up from $dragRow, $dragCol for length $offsetY"
-                                    )
-
                                     val moveResult =
                                         gameViewModel.validMove(dragRow, dragCol, Direction.UP)
                                     when (moveResult) {
@@ -582,10 +569,6 @@ private fun DrawGameBoard(
                                 }
 
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    Log.i(
-                                        Global.DEBUG_PREFIX,
-                                        "Swipe down from $dragRow, $dragCol for length $offsetY"
-                                    )
                                     val moveResult =
                                         gameViewModel.validMove(dragRow, dragCol, Direction.DOWN)
                                     when (moveResult) {

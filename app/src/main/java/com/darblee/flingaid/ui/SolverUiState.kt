@@ -1,10 +1,6 @@
 package com.darblee.flingaid.ui
 
 import com.darblee.flingaid.Direction
-import com.darblee.flingaid.ui.GameUIState.GameMode.LookingForHint
-import com.darblee.flingaid.ui.GameUIState.GameMode.MoveBall
-import com.darblee.flingaid.ui.GameUIState.GameMode.ShowShadowMovement
-import com.darblee.flingaid.ui.GameUIState.GameMode.WaitingOnUser
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.serialization.Serializable
 
