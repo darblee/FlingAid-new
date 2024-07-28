@@ -20,6 +20,7 @@ enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
 lateinit var gAudio_gameMusic: MediaPlayer
 lateinit var gAudio_doink: MediaPlayer
 lateinit var gAudio_victory: MediaPlayer
+lateinit var gAudio_swish: MediaPlayer
 
 var gSoundOn = false
 

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
+import com.darblee.flingaid.gAudio_swish
 import com.darblee.flingaid.gAudio_victory
 import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
@@ -477,7 +478,7 @@ fun ballMovementKeyframeSpec(
     val spec: KeyframesSpec<Float> = keyframes {
         durationMillis = totalTimeLength
         0f.at((0.05 * totalTimeLength).toInt()) using LinearOutSlowInEasing
-        1.02f.at((whenBallMakeContactRatio * totalTimeLength).toInt()) using FastOutLinearInEasing   // Overrun the ball slightly to hit the neighboring ball
+        1.04f.at((whenBallMakeContactRatio * totalTimeLength).toInt()) using FastOutLinearInEasing   // Overrun the ball slightly to hit the neighboring ball
         1.0f.at(totalTimeLength) using EaseOut   // Roll back to the destination
     }
     return (spec)
@@ -592,7 +593,8 @@ fun AnimateBallMovementsSetup(
     }
 
     // Time ratio of total time when the ball makes contact to the neighboring ball
-    val whenBallMakeContactRatio = 0.97f
+    val whenBallMakeContactRatio = 0.9f
+    val overtime = 200
 
     LaunchedEffect(Unit) {
         // Use coroutine to ensure both launch animation get completed in the same co-routine scope
@@ -600,7 +602,7 @@ fun AnimateBallMovementsSetup(
             launch { // One or more ball movements in serial fashion
                 movingChain.forEachIndexed { index, currentMovingRec ->
                     if (currentMovingRec.distance > 0) {
-                        val totalTimeLength = (currentMovingRec.distance * 100) + 100
+                        val totalTimeLength = (currentMovingRec.distance * 100) + overtime
                         animateBallMovementCtlList[index].animateTo(
                             targetValue = 1f,
                             animationSpec = ballMovementKeyframeSpec(
@@ -630,7 +632,7 @@ fun AnimateBallMovementsSetup(
             } // Launch
 
             launch {  // Animate explosion on the first ball only
-                val totalTimeLength = (movingChain[0].distance * 100) + 100
+                val totalTimeLength = (movingChain[0].distance * 100) + overtime
                 animateParticleExplosionCtl.animateTo(
                     targetValue = 0.5f,
                     animationSpec = particleExplosionAnimatedSpec(
@@ -639,6 +641,12 @@ fun AnimateBallMovementsSetup(
                     )
                 )
             } // launch
+
+            launch {
+                val totalTimeLength = (movingChain[0].distance * 100)
+                delay((totalTimeLength * whenBallMakeContactRatio).toLong())
+                gAudio_swish.start()
+            }
         }   // coroutine
     }
 }
