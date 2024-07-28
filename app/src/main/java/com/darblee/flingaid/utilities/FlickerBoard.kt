@@ -756,7 +756,6 @@ fun animateVictoryMsgPerform(
 fun AnimateVictoryMessageSetup(
     setModeWaitingOnUser: () -> Unit,
     animateCtl: Animatable<Float, AnimationVector1D>,
-    onAnimationChange: (enableVictoryMessage: Boolean) -> Unit
 ) {
     LaunchedEffect(Unit) {
         // Use coroutine to ensure both animation and sound happen in parallel
@@ -771,9 +770,10 @@ fun AnimateVictoryMessageSetup(
                     )
                 )
                 setModeWaitingOnUser.invoke()
-                delay(500)  // Pause for 0.5 second to see victory message before it disappear
-                onAnimationChange(false)
+
                 animateCtl.snapTo(0f)
+                animateCtl.stop()
+                delay(500)  // Pause for 0.5 second to see victory message before it disappear
 
             }  // launch
 

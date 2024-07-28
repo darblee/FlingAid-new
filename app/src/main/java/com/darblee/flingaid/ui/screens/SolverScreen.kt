@@ -114,7 +114,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     LoadSolverFileOnlyOnce(solverViewModel)
 
     var announceVictory = false
-    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
 
     val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -186,9 +185,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             solverUIState = solverUIState,
             showBallMovementAnimation = showBallMovementAnimation,
             onBallMovementAnimationEnablement = onBallMovementAnimationChange,
-            announceVictory,
-            onEnableVictoryMsg
-        )
+            announceVictory)
     }
 }
 
@@ -416,7 +413,6 @@ private fun ControlButtonsForSolver(
  *  @param showBallMovementAnimation Indicate whether it need to do ball movement animation
  *  @param onBallMovementAnimationEnablement Enable/disable ball movement animation
  *  @param announceVictory Indicate whether it need to show animated victory message or not
- *  @param onEnableVictoryMsg Indicate whether it need to show animated victory message or not
  */
 @Composable
 private fun DrawSolverBoard(
@@ -426,7 +422,6 @@ private fun DrawSolverBoard(
     showBallMovementAnimation: Boolean,
     onBallMovementAnimationEnablement: (enableBallMovementAnimation: Boolean) -> Unit,
     announceVictory: Boolean,
-    onEnableVictoryMsg: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -454,7 +449,6 @@ private fun DrawSolverBoard(
         AnimateVictoryMessageSetup(
             { solverViewModel.setModeToIdle() },
             animateCtl = animateVictoryMessage,
-            onAnimationChange = onEnableVictoryMsg
         )
     }
 

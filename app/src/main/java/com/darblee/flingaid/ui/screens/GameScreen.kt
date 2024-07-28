@@ -104,8 +104,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
 
     LoadGameFileOnlyOnce(gameViewModel)
 
-    var announceVictory by remember { mutableStateOf(false) }
-    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
+    var announceVictory = false
 
     val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
 
@@ -168,7 +167,6 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             gameUIState = gameUIState,
             showBallMovementAnimation = showBallMovementAnimation,
             onBallMovementAnimationEnablement = onBallMovementAnimationEnablement,
-            onEnableVictoryMsg = onEnableVictoryMsg,
             showShadowMovement = showShadowMovement,
             onShadowMovementAnimationEnablement = onShadowMovementAnimationEnablement,
             announceVictory = announceVictory
@@ -373,7 +371,6 @@ private fun DrawGameBoard(
     showShadowMovement: Boolean,
     onShadowMovementAnimationEnablement: (Boolean) -> Unit,
     announceVictory: Boolean,
-    onEnableVictoryMsg: (Boolean) -> Unit
 ) {
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
@@ -395,8 +392,7 @@ private fun DrawGameBoard(
     if (announceVictory) {
        AnimateVictoryMessageSetup(
            { gameViewModel.gameSetModeWaitingOnUser()},
-            animateCtl = animateVictoryMessage,
-            onAnimationChange = onEnableVictoryMsg
+            animateCtl = animateVictoryMessage
         )
     }
 
