@@ -215,19 +215,21 @@ object GameViewModel : ViewModel() {
     }
 
     /**
-     * Confirm if this is a valid move to process. If not, then return false.
-     * If true, then set-up moving chain, which will be used in next step
+     * CHeck if the upcoming move is valid move or not. It will return the appropiate move result type
+     * and set the UI state accordingly.
      *
      * @param initialRow Row position to move the ball from
      * @param initialCol Column position to move the ball from
      * @param direction Direction of the ball movement
      *
      * @return
-     * - true - This is a valid move. Set-up moving chain
-     * - false. This is not a valid move. It either has no space to move or there is no ball in the
-     * provided position.
+     * - [MoveResult.Valid] This is a valid move. Set to mode to [GameUIState.GameMode.MoveBall]
+     * - [MoveResult.InvalidNoRoom] This is not a valid move. There is no room to move the ball
+     * - [MoveResult.InvalidNoBall] This is not a valid move. There is no ball in the provided position
+     * - [MoveResult.InvalidNoBump] This is not a valid move as it moves the ball of the edge. It
+     * set the game mode to [GameUIState.GameMode.ShowShadowMovement]
      */
-    fun validMove(initialRow: Int, initialCol: Int, direction : Direction): MoveResult
+    fun setupNextMove(initialRow: Int, initialCol: Int, direction : Direction): MoveResult
     {
         if (!(_gameBallPos.ballList.contains(Pos(initialRow, initialCol))))
             return MoveResult.InvalidNoBall

@@ -109,11 +109,11 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
 
     when (gameUIState.mode) {
-        GameUIState.GameMode.WonGame -> announceVictory = true
+        GameUIState.GameMode.WonGame -> { announceVictory = true }
         GameUIState.GameMode.WaitingOnUser -> { /* do nothing */ }
         GameUIState.GameMode.NoAvailableMove -> { /* TODO: Need to send message to user there is no available move */ }
         GameUIState.GameMode.MoveBall -> { /* Do nothing */ }
-        GameUIState.GameMode.ShowShadowMovement -> { /* Do nothing */ }
+        GameUIState.GameMode.ShowShadowMovement -> { /* It will process shadow movement. DIsable control buttons */ }
         GameUIState.GameMode.LookingForHint -> { /* TODO: Process looking for hint */ }
     }
 
@@ -125,13 +125,6 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     var showBallMovementAnimation by remember { mutableStateOf(false) }
     val onBallMovementAnimationEnablement =
         { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
-
-    /**
-     * Show shadow movement only. This is used to show invalid move
-     */
-    var showShadowMovement by remember { mutableStateOf(false) }
-    val onShadowMovementAnimationEnablement =
-        { enableShadowMovement: Boolean -> showShadowMovement = enableShadowMovement }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -151,8 +144,6 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             gameUIState = gameUIState,
             showBallMovementAnimation = showBallMovementAnimation,
             onBallMovementAnimationEnablement = onBallMovementAnimationEnablement,
-            showShadowMovement = showShadowMovement,
-            onShadowMovementAnimationEnablement = onShadowMovementAnimationEnablement,
             announceVictory = announceVictory
         )
     }
@@ -371,10 +362,7 @@ private fun GameControlButtonsForGame(
  *  @param gameUIState Current UI state of the game
  *  @param showBallMovementAnimation Indicate whether it need to do ball movement animation
  *  @param onBallMovementAnimationEnablement Enable/disable ball movement animation
- *  @param showShadowMovement Indicate whether it need to do ball shadow movement
- *  @param onShadowMovementAnimationEnablement  Enable/disable ball shadow movement
  *  @param announceVictory Indicate whether it need to show animated victory message or not
- *  @param onEnableVictoryMsg Indicate whether it need to show animated victory message or not
  */
 @Composable
 private fun DrawGameBoard(
@@ -383,8 +371,6 @@ private fun DrawGameBoard(
     gameUIState: GameUIState,
     showBallMovementAnimation: Boolean,
     onBallMovementAnimationEnablement: (Boolean) -> Unit,
-    showShadowMovement: Boolean,
-    onShadowMovementAnimationEnablement: (Boolean) -> Unit,
     announceVictory: Boolean,
 ) {
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -446,9 +432,8 @@ private fun DrawGameBoard(
      */
     val animateShadowMovement = remember { Animatable(initialValue = 0f) }
 
-    if ((showShadowMovement) && (gameUIState.mode == GameUIState.GameMode.ShowShadowMovement))
-        GameAnimateShadowBallMovementSetup(animateShadowMovement,
-            onShadowMovementAnimationEnablement, gameViewModel)
+    if (gameUIState.mode == GameUIState.GameMode.ShowShadowMovement)
+        GameAnimateShadowBallMovementSetup(animateShadowMovement, gameViewModel)
 
     Box(
         modifier = Modifier
@@ -498,14 +483,13 @@ private fun DrawGameBoard(
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
                                     val moveResult =
-                                        gameViewModel.validMove(dragRow, dragCol, Direction.LEFT)
+                                        gameViewModel.setupNextMove(dragRow, dragCol, Direction.LEFT)
 
                                     when (moveResult) {
                                         GameViewModel.MoveResult.Valid ->
                                             onBallMovementAnimationEnablement(true)
 
-                                        GameViewModel.MoveResult.InvalidNoBump ->
-                                            onShadowMovementAnimationEnablement(true)
+                                        GameViewModel.MoveResult.InvalidNoBump -> { /* Do nothing */ }
 
                                         else -> {
                                             Log.i(
@@ -522,13 +506,12 @@ private fun DrawGameBoard(
 
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
                                     val moveResult =
-                                        gameViewModel.validMove(dragRow, dragCol, Direction.RIGHT)
+                                        gameViewModel.setupNextMove(dragRow, dragCol, Direction.RIGHT)
                                     when (moveResult) {
                                         GameViewModel.MoveResult.Valid ->
                                             onBallMovementAnimationEnablement(true)
 
-                                        GameViewModel.MoveResult.InvalidNoBump ->
-                                            onShadowMovementAnimationEnablement(true)
+                                        GameViewModel.MoveResult.InvalidNoBump -> { /* Do nothin */ }
 
                                         else -> {
                                             Log.i(
@@ -546,14 +529,12 @@ private fun DrawGameBoard(
 
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
                                     val moveResult =
-                                        gameViewModel.validMove(dragRow, dragCol, Direction.UP)
+                                        gameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
                                     when (moveResult) {
                                         GameViewModel.MoveResult.Valid ->
                                             onBallMovementAnimationEnablement(true)
 
-                                        GameViewModel.MoveResult.InvalidNoBump ->
-                                            onShadowMovementAnimationEnablement(true)
-
+                                        GameViewModel.MoveResult.InvalidNoBump -> { /* Do nothing */ }
                                         else -> {
                                             Log.i(
                                                 Global.DEBUG_PREFIX,
@@ -570,13 +551,12 @@ private fun DrawGameBoard(
 
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
                                     val moveResult =
-                                        gameViewModel.validMove(dragRow, dragCol, Direction.DOWN)
+                                        gameViewModel.setupNextMove(dragRow, dragCol, Direction.DOWN)
                                     when (moveResult) {
                                         GameViewModel.MoveResult.Valid ->
                                             onBallMovementAnimationEnablement(true)
 
-                                        GameViewModel.MoveResult.InvalidNoBump ->
-                                            onShadowMovementAnimationEnablement(true)
+                                        GameViewModel.MoveResult.InvalidNoBump -> { /* Do nothing */ }
 
                                         else -> {
                                             Log.i(
@@ -632,7 +612,7 @@ private fun DrawGameBoard(
             } else {
                 gameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage)
 
-                if ((showShadowMovement) && (gameUIState.mode == GameUIState.GameMode.ShowShadowMovement)) {
+                if (gameUIState.mode == GameUIState.GameMode.ShowShadowMovement) {
                     if (gameUIState.movingChain.isNotEmpty()) {
                         animateShadowBallMovementsPerform(
                             drawScope = drawScope,
@@ -711,13 +691,11 @@ private fun drawGridForGame(
  *  Set up animation for shadow ball movement
  *
  *  @param animateCtl Animate object that control the shadow ball movement for the game
- *  @param onShadowMovementAnimationEnablement Enable/disable the shadow ball movement animation
  *  @param gameViewModel Game view model
  */
 @Composable
 fun GameAnimateShadowBallMovementSetup(
     animateCtl: Animatable<Float, AnimationVector1D>,
-    onShadowMovementAnimationEnablement: (Boolean) -> Unit,
     gameViewModel: GameViewModel
 )  {
     LaunchedEffect(Unit) {
@@ -733,7 +711,6 @@ fun GameAnimateShadowBallMovementSetup(
                 )
                 animateCtl.stop()
                 animateCtl.snapTo(0f)
-                onShadowMovementAnimationEnablement(false)
                 gameViewModel.gameSetModeWaitingOnUser()
             }  // launch
 
