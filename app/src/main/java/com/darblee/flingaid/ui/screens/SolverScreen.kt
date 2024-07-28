@@ -110,6 +110,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     Log.i(Global.DEBUG_PREFIX, "Solver Screen - recompose")
 
     var announceVictory by remember { mutableStateOf(false) }
+    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
 
     /**
      * Need to ensure we only load the file once when we start the the solver game screen.
@@ -123,6 +124,20 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     val solverViewModel: SolverViewModel = viewModel()
     val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
+
+    when (solverUIState.mode) {
+        SolverUiState.SolverMode.Thinking -> { /* */ }
+        SolverUiState.SolverMode.Idle -> { /* */ }
+        SolverUiState.SolverMode.IdleFoundSolution ->
+            {
+                if (solverViewModel.ballCount() == 1) announceVictory = true
+            }
+        SolverUiState.SolverMode.IdleNoSolution ->
+            {
+                gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
+                solverViewModel.setModeToIdle()
+            }
+    }
 
     /**
      * Intercept backPress key while on Game Solver screen.
@@ -142,11 +157,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         return
     }
 
-
-
     val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
-
-    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
 
     // Load the game file only once. This is done primarily for performance reason.
     // Loading game file will trigger non-stop recomposition.
@@ -170,11 +181,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var showBallMovementAnimation by remember { mutableStateOf(false) }
     val onBallMovementAnimationChange =
         { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
-
-    if (solverUIState.mode == SolverUiState.SolverMode.IdleNoSolution) {
-            gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
-            solverViewModel.solverSetIDLE()
-    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -414,18 +420,11 @@ private fun DrawSolverBoard(
 
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
-
     /**
      * Create textMeasurer instance, which is responsible for measuring a text in its entirety so
      * that it can be drawn on the canvas (drawScope). This is used to draw animated victory message
      */
     val textMeasurer = rememberTextMeasurer()
-
-    if (solverViewModel.ballCount() == 1) {
-        if (solverUIState.mode == SolverUiState.SolverMode.IdleFoundSolution) {
-            onEnableVictoryMsg(true)
-        }
-    }
 
     /**
      * Animation control that handle showing a preview (shadow) of winning move
@@ -441,7 +440,7 @@ private fun DrawSolverBoard(
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            { solverViewModel.solverSetIDLE() },
+            { solverViewModel.setModeToIdle() },
             animateCtl = animateVictoryMessage,
             onAnimationChange = onEnableVictoryMsg
         )
@@ -459,23 +458,6 @@ private fun DrawSolverBoard(
          * The following lambda functions are used in [AnimateBallMovementsSetup] routine
          */
         val solverMoveBallTask = { pos: Pos, direction: Direction -> solverViewModel.moveBallToWin(pos, direction)}
-        val solverBallCountTask = { solverViewModel.ballCount() }
-        val solverFindWinningMoveTask = { solverViewModel.findWinningMove() }
-
-        /**
-         * Lambda function to perform after finish movement animation. Used in [AnimateBallMovementsSetup] routine.
-         * We automatically look for the next winning move
-         */
-        val solverAnimateBallMovementFinalTask = {
-            ballCountTask : () -> Int,
-            _: (Boolean) -> Unit,  // onEnableVictoryMessage : Not used for solver screen
-            findWinningMoveTask : () -> Unit
-            ->
-            if (ballCountTask.invoke() > 1) {
-                Log.i(Global.DEBUG_PREFIX, ">>> Looking for next winnable move")
-                findWinningMoveTask.invoke()
-            }
-        }
 
         AnimateBallMovementsSetup(
             movingChain = solverUIState.winningMovingChain,
@@ -483,10 +465,7 @@ private fun DrawSolverBoard(
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
             onEnableBallMovementAnimation = onBallMovementAnimationEnablement,
-            moveBallTask = solverMoveBallTask,
-            ballCountTask = solverBallCountTask,
-            findWinningMoveTask = solverFindWinningMoveTask,
-            finalTask = solverAnimateBallMovementFinalTask)
+            moveBallTask = solverMoveBallTask)
 
     } else {
         // Else we longer need ball movement animation. So clear animation set-up

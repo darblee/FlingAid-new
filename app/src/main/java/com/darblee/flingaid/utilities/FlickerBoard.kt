@@ -564,11 +564,7 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
  * @param animateParticleExplosionCtl Animate Object that control animation state of particle
  * explosion effect
  * @param onEnableBallMovementAnimation Change the state on whether to perform the animation or not
- * @param onEnableVictoryMsg Lambda function - Enable/disable victory animation. Used only for GameScreen
  * @param moveBallTask Lambda function - Move the ball
- * @param ballCountTask Lambda function - Count the number of balls
- * @param findWinningMoveTask Lambda function - Find the next winnable. Used only for SolverScreen
- * @param finalTask Lambda function - Perform these steps after completed the ball movement animation
  */
 @Composable
 fun AnimateBallMovementsSetup(
@@ -577,15 +573,7 @@ fun AnimateBallMovementsSetup(
     animateBallMovementCtlList: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
     onEnableBallMovementAnimation: (enableBallMovementAnimation: Boolean) -> Unit,
-    onEnableVictoryMsg: (Boolean) -> Unit = { },
     moveBallTask: (pos: Pos, direction: Direction) -> Unit,
-    ballCountTask: () -> Int,
-    findWinningMoveTask: () -> Unit = { },
-    finalTask: (
-        ballCountFunc : () -> Int,                 // Ball Count lambda function
-        onEnableVictoryMsgFunc: (Boolean) -> Unit, // onEnableVictoryMessage lambda function
-        findWinningMoveFunc: () -> Unit            // findWinningMove lambda function
-                ) -> Unit
 ) {
     movingChain.forEach { _ ->
         val animateBallMovement = remember { Animatable(initialValue = 0f) }
@@ -626,7 +614,6 @@ fun AnimateBallMovementsSetup(
                     // Move the ball. We use lambda function to perform the corresponding move
                     // based the view model, either gameViewModel or solverViewModel
                     moveBallTask.invoke(movingChain[0].pos, direction)
-                    finalTask(ballCountTask,  onEnableVictoryMsg, findWinningMoveTask)
                 }
 
             } // Launch
@@ -761,13 +748,13 @@ fun animateVictoryMsgPerform(
 /**
  * Setup animated victory message. Define animation spec.
  *
- * @param setIdleFunction Lambda function to set UI to idle after announcing victory message
+ * @param setModeWaitingOnUser Lambda function to set UI to "WaitingOnUser" mode after announcing victory message
  * @param animateCtl Animate object that control animation state of the victory message
  * @param onAnimationChange Change the state on whether to perform the animation or not
  */
 @Composable
 fun AnimateVictoryMessageSetup(
-    setIdleFunction: () -> Unit,
+    setModeWaitingOnUser: () -> Unit,
     animateCtl: Animatable<Float, AnimationVector1D>,
     onAnimationChange: (enableVictoryMessage: Boolean) -> Unit
 ) {
@@ -783,10 +770,11 @@ fun AnimateVictoryMessageSetup(
                         easing = LinearOutSlowInEasing
                     )
                 )
+                setModeWaitingOnUser.invoke()
                 delay(500)  // Pause for 0.5 second to see victory message before it disappear
                 onAnimationChange(false)
                 animateCtl.snapTo(0f)
-                setIdleFunction.invoke()
+
             }  // launch
 
             launch {

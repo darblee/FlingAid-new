@@ -10,15 +10,11 @@ import com.darblee.flingaid.Direction
  *  [Solver State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
  *
  * @param mode The state of the game
- * @param moveFromRow Row position to move the ball from
- * @param moveFromCol Column position to move the ball from
  * @param movingDirection Direction to move the ball from
  * @param movingChain Movement chain in the current turn
  */
 data class GameUIState(
     var mode: GameMode = GameMode.WaitingOnUser,
-    var moveFromRow: Int = 0,
-    var moveFromCol: Int = 0,
     var movingDirection: Direction = Direction.NO_WINNING_DIRECTION,
     val movingChain: List<MovingRec> = listOf()
 ) {
@@ -29,12 +25,16 @@ data class GameUIState(
      * @property MoveBall Processing ball movement
      * @property ShowShadowMovement Processing the ball shadow movement
      * @property LookingForHint Computer to look for solution and provide it to user
+     * @property WonGame One ball remaining. User has won the game
+     * @property NoAvailableMove There is no available move.
      */
     sealed class GameMode {
         data object WaitingOnUser : GameMode()
         data object MoveBall : GameMode()
         data object ShowShadowMovement : GameMode()
         data object LookingForHint : GameMode()
+        data object WonGame : GameMode()
+        data object NoAvailableMove : GameMode()
     }
 
 }

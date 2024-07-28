@@ -42,7 +42,7 @@ import java.util.concurrent.CyclicBarrier
  *
  * **Game Play Functions**
  * - [reset]
- * - [solverSetIDLE]
+ * - [setModeToIdle]
  * - [findWinningMove]
  * - [getWinningMoveCount]
  * - [moveBallToWin]
@@ -171,7 +171,7 @@ object SolverViewModel : ViewModel() {
         _solverBallPos.ballList.clear()
         _solverBallPos.removeGameFile()
 
-        solverSetIDLE()
+        setModeToIdle()
     }
 
     /**
@@ -188,7 +188,7 @@ object SolverViewModel : ViewModel() {
         }
 
         _solverBallPos.saveBallListToFile()
-        solverSetIDLE()
+        setModeToIdle()
     }
 
     /**
@@ -301,7 +301,7 @@ object SolverViewModel : ViewModel() {
 
             val movingChain = _solverBallPos.buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
-            solverSetIDLE(
+            setModeToIdle(
                 winningDirection = winningDir,
                 winningMovingChain = movingChain,
                 mode = SolverUiState.SolverMode.IdleFoundSolution)
@@ -324,7 +324,7 @@ object SolverViewModel : ViewModel() {
 
                 val movingChain = _solverBallPos.buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
-                solverSetIDLE(
+                setModeToIdle(
                     winningDirection = winningDir,
                     winningMovingChain = movingChain,
                     mode = SolverUiState.SolverMode.IdleFoundSolution
@@ -356,7 +356,7 @@ object SolverViewModel : ViewModel() {
      * details.
      * @param mode Solver game state
      */
-    fun solverSetIDLE(
+    fun setModeToIdle(
         winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
         winningMovingChain: List<MovingRec> = mutableListOf(),
         mode: SolverUiState.SolverMode = SolverUiState.SolverMode.Idle
@@ -604,6 +604,11 @@ object SolverViewModel : ViewModel() {
 
         _solverBallPos.saveBallListToFile()
 
+        if (ballCount() > 1) {
+            findWinningMove()
+        }
+
+        // Now that the move is complete. erase current move record
         _uiSolverState.update { currentState ->
             currentState.copy(
                 winningDirection = Direction.NO_WINNING_DIRECTION,

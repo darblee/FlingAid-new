@@ -176,9 +176,7 @@ object GameViewModel : ViewModel() {
     ) {
         _uiGameState.update { currentState ->
             currentState.copy(
-                mode = GameUIState.GameMode.WaitingOnUser,
-                moveFromRow = 0,
-                moveFromCol = 0
+                mode = GameUIState.GameMode.WaitingOnUser
             )
         }
         gHintThinkingProgress = 0
@@ -198,7 +196,7 @@ object GameViewModel : ViewModel() {
         _gameBallPos.saveBallListToFile()
     }
 
-    fun gameSetIDLE()
+    fun gameSetModeWaitingOnUser()
     {
         _uiGameState.update { curState ->
             curState.copy(
@@ -308,8 +306,15 @@ object GameViewModel : ViewModel() {
 
         _gameBallPos.saveBallListToFile()
 
+        val gameMode = if (ballCount() == 1) {
+            GameUIState.GameMode.WonGame
+        } else {
+            GameUIState.GameMode.WaitingOnUser
+        }
+
         _uiGameState.update { curState ->
             curState.copy(
+                mode = gameMode,
                 movingDirection = Direction.NO_WINNING_DIRECTION,
                 movingChain = mutableListOf()
             )

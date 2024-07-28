@@ -101,6 +101,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     Log.i(Global.DEBUG_PREFIX, "Game Screen - recompose")
 
     var announceVictory by remember { mutableStateOf(false) }
+    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
 
     /**
      * Need to ensure we only load the file once when we start the the solver game screen.
@@ -114,6 +115,15 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
 
     val gameViewModel: GameViewModel = viewModel()
     val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
+
+    when (gameUIState.mode) {
+        GameUIState.GameMode.WonGame -> announceVictory = true
+        GameUIState.GameMode.WaitingOnUser -> { /* do nothing */ }
+        GameUIState.GameMode.NoAvailableMove -> { /* TODO: Need to send message to user there is no available move */ }
+        GameUIState.GameMode.MoveBall -> { /* Do nothing */ }
+        GameUIState.GameMode.ShowShadowMovement -> { /* Do nothing */ }
+        GameUIState.GameMode.LookingForHint -> { /* TODO: Process looking for hint */ }
+    }
 
     /**
      * Intercept backPress key while on Game screen.
@@ -135,7 +145,6 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
 
     val boardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
 
-    val onEnableVictoryMsg = { setting: Boolean -> announceVictory = setting }
 
     // Load the game file only once. This is done primarily for performance reason.
     // Loading game file will trigger non-stop recomposition.
@@ -373,7 +382,7 @@ private fun DrawGameBoard(
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
        AnimateVictoryMessageSetup(
-           { gameViewModel.gameSetIDLE()},
+           { gameViewModel.gameSetModeWaitingOnUser()},
             animateCtl = animateVictoryMessage,
             onAnimationChange = onEnableVictoryMsg
         )
@@ -390,22 +399,6 @@ private fun DrawGameBoard(
          * The following lambda functions are used in [AnimateBallMovementsSetup] routine
          */
         val gameMoveBallTask = { pos: Pos, direction: Direction -> gameViewModel.moveBall(pos, direction)}
-        val gameBallCountTask = { gameViewModel.ballCount() }
-
-        /**
-         * Lambda function to perform after finish movement animation. Used in [AnimateBallMovementsSetup] routine.
-         * If we are done to 1 ball left, then user have won. We turn on victory message
-         */
-        val gameAnimateBallMovementFinalTask = {
-            ballCountTask : () -> Int,
-            onEnableVictoryMessage: (Boolean) -> Unit,
-            _: () -> Unit            // findWinningTask : Not used for game screen
-            ->
-            if (ballCountTask.invoke() == 1) {
-                Log.i(Global.DEBUG_PREFIX, "User won the game")
-                onEnableVictoryMessage(true)
-            }
-        }
 
         AnimateBallMovementsSetup(
             movingChain = gameUIState.movingChain,
@@ -413,10 +406,7 @@ private fun DrawGameBoard(
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
             onEnableBallMovementAnimation = onBallMovementAnimationEnablement,
-            onEnableVictoryMsg = onEnableVictoryMsg,
-            moveBallTask = gameMoveBallTask,
-            ballCountTask = gameBallCountTask,
-            finalTask = gameAnimateBallMovementFinalTask)
+            moveBallTask = gameMoveBallTask)
 
     } else {
         // Else we longer need ball movement animation. So clear animation set-up
@@ -738,7 +728,7 @@ fun GameAnimateShadowBallMovementSetup(
                 animateCtl.stop()
                 animateCtl.snapTo(0f)
                 onShadowMovementAnimationEnablement(false)
-                gameViewModel.gameSetIDLE()
+                gameViewModel.gameSetModeWaitingOnUser()
             }  // launch
 
             launch {
