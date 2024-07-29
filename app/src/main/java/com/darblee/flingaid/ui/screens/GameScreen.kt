@@ -105,26 +105,18 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     LoadGameFileOnlyOnce(gameViewModel)
 
     var announceVictory = false
-
     val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
 
     when (gameUIState.mode) {
         GameUIState.GameMode.WonGame -> { announceVictory = true }
         GameUIState.GameMode.WaitingOnUser -> { /* do nothing */ }
         GameUIState.GameMode.NoAvailableMove -> { /* TODO: Need to send message to user there is no available move */ }
-        GameUIState.GameMode.MoveBall -> { /* Do nothing */ }
+        GameUIState.GameMode.MoveBall -> { /* It will process ball movement animation. DIsable control buttons */  }
         GameUIState.GameMode.ShowShadowMovement -> { /* It will process shadow movement. DIsable control buttons */ }
         GameUIState.GameMode.LookingForHint -> { /* TODO: Process looking for hint */ }
     }
 
     HandleBackPressKeyForGameScreen(gameUIState.mode, navController, announceVictory)
-
-    /**
-     * Keep track of when to do the ball movement animation
-     */
-    var showBallMovementAnimation by remember { mutableStateOf(false) }
-    val onBallMovementAnimationEnablement =
-        { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -134,16 +126,13 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         InstructionLogo()
         GameControlButtonsForGame(
             gameViewModel,
-            gameUIState,
-            onBallMovementAnimationEnablement
+            gameUIState
         )
 
         DrawGameBoard(
             modifier = Modifier.fillMaxSize(),
             gameViewModel = gameViewModel,
             gameUIState = gameUIState,
-            showBallMovementAnimation = showBallMovementAnimation,
-            onBallMovementAnimationEnablement = onBallMovementAnimationEnablement,
             announceVictory = announceVictory
         )
     }
@@ -277,8 +266,7 @@ private fun InstructionLogo() {
 @Composable
 private fun GameControlButtonsForGame(
     gameViewModel: GameViewModel = viewModel(),
-    uiState: GameUIState,
-    onBallMovementAnimationChange: (Boolean) -> Unit
+    uiState: GameUIState
 ) {
     val iconWidth = Icons.Filled.Refresh.defaultWidth
 
@@ -360,8 +348,6 @@ private fun GameControlButtonsForGame(
  *  elements
  *  @param gameViewModel Game view model
  *  @param gameUIState Current UI state of the game
- *  @param showBallMovementAnimation Indicate whether it need to do ball movement animation
- *  @param onBallMovementAnimationEnablement Enable/disable ball movement animation
  *  @param announceVictory Indicate whether it need to show animated victory message or not
  */
 @Composable
@@ -369,8 +355,6 @@ private fun DrawGameBoard(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
     gameUIState: GameUIState,
-    showBallMovementAnimation: Boolean,
-    onBallMovementAnimationEnablement: (Boolean) -> Unit,
     announceVictory: Boolean,
 ) {
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -397,7 +381,7 @@ private fun DrawGameBoard(
         )
     }
 
-    if ((showBallMovementAnimation) && (gameUIState.mode == GameUIState.GameMode.MoveBall)) {
+    if (gameUIState.mode == GameUIState.GameMode.MoveBall) {
 
         // Set-up the particles, which is used for the explosion animated effect
         particles = remember {
@@ -414,7 +398,6 @@ private fun DrawGameBoard(
             direction = gameUIState.movingDirection,
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
-            onEnableBallMovementAnimation = onBallMovementAnimationEnablement,
             moveBallTask = gameMoveBallTask)
 
     } else {
@@ -482,22 +465,7 @@ private fun DrawGameBoard(
                         onDragEnd = {
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    val moveResult =
-                                        gameViewModel.setupNextMove(dragRow, dragCol, Direction.LEFT)
-
-                                    when (moveResult) {
-                                        GameViewModel.MoveResult.Valid ->
-                                            onBallMovementAnimationEnablement(true)
-
-                                        GameViewModel.MoveResult.InvalidNoBump -> { /* Do nothing */ }
-
-                                        else -> {
-                                            Log.i(
-                                                Global.DEBUG_PREFIX,
-                                                "Invalid ball movement. Ignore"
-                                            )
-                                        }
-                                    }
+                                    gameViewModel.setupNextMove(dragRow, dragCol, Direction.LEFT)
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -505,22 +473,7 @@ private fun DrawGameBoard(
                                 }
 
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
-                                    val moveResult =
-                                        gameViewModel.setupNextMove(dragRow, dragCol, Direction.RIGHT)
-                                    when (moveResult) {
-                                        GameViewModel.MoveResult.Valid ->
-                                            onBallMovementAnimationEnablement(true)
-
-                                        GameViewModel.MoveResult.InvalidNoBump -> { /* Do nothin */ }
-
-                                        else -> {
-                                            Log.i(
-                                                Global.DEBUG_PREFIX,
-                                                "Invalid ball movement. Ignore"
-                                            )
-                                        }
-                                    }
-
+                                    gameViewModel.setupNextMove(dragRow, dragCol, Direction.RIGHT)
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -528,21 +481,7 @@ private fun DrawGameBoard(
                                 }
 
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    val moveResult =
-                                        gameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
-                                    when (moveResult) {
-                                        GameViewModel.MoveResult.Valid ->
-                                            onBallMovementAnimationEnablement(true)
-
-                                        GameViewModel.MoveResult.InvalidNoBump -> { /* Do nothing */ }
-                                        else -> {
-                                            Log.i(
-                                                Global.DEBUG_PREFIX,
-                                                "Invalid ball movement. Ignore"
-                                            )
-                                        }
-                                    }
-
+                                    gameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -550,22 +489,7 @@ private fun DrawGameBoard(
                                 }
 
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
-                                    val moveResult =
-                                        gameViewModel.setupNextMove(dragRow, dragCol, Direction.DOWN)
-                                    when (moveResult) {
-                                        GameViewModel.MoveResult.Valid ->
-                                            onBallMovementAnimationEnablement(true)
-
-                                        GameViewModel.MoveResult.InvalidNoBump -> { /* Do nothing */ }
-
-                                        else -> {
-                                            Log.i(
-                                                Global.DEBUG_PREFIX,
-                                                "Invalid ball movement. Ignore"
-                                            )
-                                        }
-                                    }
-
+                                    gameViewModel.setupNextMove(dragRow, dragCol, Direction.DOWN)
                                     offsetX = 0F
                                     offsetY = 0F
                                     dragRow = -1
@@ -595,7 +519,7 @@ private fun DrawGameBoard(
 
             displayBallImage.prepareToDraw()   // cache it
 
-            if ((showBallMovementAnimation) && (gameUIState.mode == GameUIState.GameMode.MoveBall)) {
+            if (gameUIState.mode == GameUIState.GameMode.MoveBall) {
                 val ballsToErase = gameUIState.movingChain
 
                 gameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage, ballsToErase)

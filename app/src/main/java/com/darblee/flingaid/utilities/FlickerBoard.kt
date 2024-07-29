@@ -572,7 +572,7 @@ fun AnimateBallMovementsSetup(
     direction: Direction,
     animateBallMovementCtlList: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
-    onEnableBallMovementAnimation: (enableBallMovementAnimation: Boolean) -> Unit,
+    onEnableBallMovementAnimation: (enableBallMovementAnimation: Boolean) -> Unit = { (false) },
     moveBallTask: (pos: Pos, direction: Direction) -> Unit,
 ) {
     movingChain.forEach { _ ->
