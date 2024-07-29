@@ -1,6 +1,7 @@
 package com.darblee.flingaid.ui
 
 import com.darblee.flingaid.Direction
+import com.darblee.flingaid.ui.GameUIState.GameMode
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.serialization.Serializable
 
@@ -17,6 +18,8 @@ data class MovingRec(
 )
 
 /**
+ * The UI state of the solver screen
+ *
  * These UI state data needs to be preserved in the event there is a configuration change
  * (e.g. screen size change, screen rotation).
  *
@@ -24,22 +27,30 @@ data class MovingRec(
  *
  * [Solver State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
  *
- * @param mode Solver game mode. It is whether it is in active thinking mode or one of
- * possible idle state
- * @param winningDirection The direction of the ball to move that will lead to a win. This is also
- * used to do ball animation as animation always move toward winning.
- * A value of "Direction.NO_WINNING_DIRECTION" means there is no winning direction found in the
- * current board layout.
- * @param winningMovingChain The first element in the chain is the position of ball to move that
- * will lead to a win.In a ball movement, it may involve multiple balls that needs to be moved,
- * The chain is used primarily to animate all the ball movements
+ * @param _mode The public field is [mode] (read-only access). The current game mode. Possible game
+ * mode is defined at [SolverMode]
+ * @param _thinkingProgressLevel  The public field is [thinkingProgressLevel] (read-only access).
+ * Percentage of thinking process
+ * @param _winningDirection The public field is [winningDirection] (read-only access). Direction
+ * on the current to move that will lead toward a win
+ * @param _winningMovingChain The public field is [winningMovingChain] (read-only). Ball movements
+ * is tracked in list of multiple move for each ball in the chain.
  */
 data class SolverUiState(
-    var mode : SolverMode = SolverMode.Idle,
-    var thinkingProgressLevel: Float = 0.0f,
-    var winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
-    val winningMovingChain: List<MovingRec> = listOf()
+    private var _mode : SolverMode = SolverMode.Idle,
+    var _thinkingProgressLevel: Float = 0.0f,
+    var _winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
+    val _winningMovingChain: List<MovingRec> = listOf()
 ) {
+    var mode = _mode
+        private set
+    var thinkingProgressLevel = _thinkingProgressLevel
+        private set
+    var winningDirection = _winningDirection
+        private set
+    var winningMovingChain = _winningMovingChain
+        private set
+
     /**
      * Various modes for UI solver game
      *

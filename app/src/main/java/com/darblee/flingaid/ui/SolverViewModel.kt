@@ -215,8 +215,8 @@ object SolverViewModel : ViewModel() {
 
         _uiSolverState.update { currentStatus ->
             currentStatus.copy(
-                mode = SolverUiState.SolverMode.Thinking,
-                thinkingProgressLevel = 0.0f
+                _mode = SolverUiState.SolverMode.Thinking,
+                _thinkingProgressLevel = 0.0f
             )
         }
         viewModelScope.launch {
@@ -337,9 +337,9 @@ object SolverViewModel : ViewModel() {
 
                 _uiSolverState.update { currentState ->
                     currentState.copy(
-                        winningDirection = Direction.NO_WINNING_DIRECTION,
-                        winningMovingChain = mutableStateListOf(),
-                        mode = SolverUiState.SolverMode.IdleNoSolution
+                        _winningDirection = Direction.NO_WINNING_DIRECTION,
+                        _winningMovingChain = mutableStateListOf(),
+                        _mode = SolverUiState.SolverMode.IdleNoSolution
                     )
                 }
             }
@@ -363,9 +363,9 @@ object SolverViewModel : ViewModel() {
     ) {
         _uiSolverState.update { curState ->
             curState.copy(
-                winningDirection = winningDirection,
-                winningMovingChain = winningMovingChain,
-                mode = mode
+                _winningDirection = winningDirection,
+                _winningMovingChain = winningMovingChain,
+                _mode = mode
             )
         }
         gThinkingProgress = 0
@@ -497,8 +497,8 @@ object SolverViewModel : ViewModel() {
                 currentValue = newValue
                 _uiSolverState.update { currentState ->
                     currentState.copy(
-                        thinkingProgressLevel = currentValue,
-                        mode = SolverUiState.SolverMode.Thinking
+                        _thinkingProgressLevel = currentValue,
+                        _mode = SolverUiState.SolverMode.Thinking
                     )
                 }
             }
@@ -606,8 +606,8 @@ object SolverViewModel : ViewModel() {
 
         _uiSolverState.update { currentState ->
             currentState.copy(
-                winningDirection = Direction.NO_WINNING_DIRECTION,
-                winningMovingChain = mutableListOf(),
+                _winningDirection = Direction.NO_WINNING_DIRECTION,
+                _winningMovingChain = mutableListOf(),
             )
         }
 
@@ -619,7 +619,7 @@ object SolverViewModel : ViewModel() {
             if (ballCount() == 1) {
                 _uiSolverState.update { currentState ->
                     currentState.copy(
-                        mode = SolverUiState.SolverMode.IdleFoundSolution
+                        _mode = SolverUiState.SolverMode.IdleFoundSolution
                     )
                 }
             } else {

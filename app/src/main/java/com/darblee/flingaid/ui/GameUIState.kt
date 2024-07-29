@@ -3,7 +3,7 @@ package com.darblee.flingaid.ui
 import com.darblee.flingaid.Direction
 
 /**
- * The state of game  UI state
+ * The UI state of game screen
  *
  * It will be managed in a observable flow. Android composable will listen for it.
  *
@@ -20,7 +20,6 @@ data class GameUIState(
     private var _movingDirection: Direction = Direction.NO_WINNING_DIRECTION,
     private val _movingChain: List<MovingRec> = listOf()
 ) {
-    // Ensure private setter for all fields
     var mode = _mode
         private set
     var movingDirection = _movingDirection
