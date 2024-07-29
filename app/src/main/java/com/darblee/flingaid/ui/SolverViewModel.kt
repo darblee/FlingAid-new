@@ -606,14 +606,19 @@ object SolverViewModel : ViewModel() {
 
         if (ballCount() > 1) {
             findWinningMove()
-        }
+        } else {
 
-        // Now that the move is complete. erase current move record
-        _uiSolverState.update { currentState ->
-            currentState.copy(
-                winningDirection = Direction.NO_WINNING_DIRECTION,
-                winningMovingChain = mutableListOf(),
-            )
+            if (ballCount() == 1) {
+                // Now that the move is complete. erase current move record
+                _uiSolverState.update { currentState ->
+                    currentState.copy(
+                        winningDirection = Direction.NO_WINNING_DIRECTION,
+                        winningMovingChain = mutableListOf(),
+                    )
+                }
+            } else {
+                assert(true, {"Got unexpected ball count state."})
+            }
         }
     }
 
