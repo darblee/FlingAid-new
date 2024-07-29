@@ -101,7 +101,7 @@ object SolverViewModel : ViewModel() {
      * list. This snapshot is a separate, immutable collection that represents the list's state at a specific
      * moment. For more info, see [Compose Snapshot System](https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn)
      */
-    fun ballPositionList(): SnapshotStateList<Pos> {
+    private fun ballPositionList(): SnapshotStateList<Pos> {
         return (_solverBallPos.ballList)
     }
 
@@ -604,20 +604,26 @@ object SolverViewModel : ViewModel() {
 
         _solverBallPos.saveBallListToFile()
 
+        _uiSolverState.update { currentState ->
+            currentState.copy(
+                winningDirection = Direction.NO_WINNING_DIRECTION,
+                winningMovingChain = mutableListOf(),
+            )
+        }
+
+        // If there is more ball, then automatically look for the next winnable move
         if (ballCount() > 1) {
             findWinningMove()
         } else {
 
             if (ballCount() == 1) {
-                // Now that the move is complete. erase current move record
                 _uiSolverState.update { currentState ->
                     currentState.copy(
-                        winningDirection = Direction.NO_WINNING_DIRECTION,
-                        winningMovingChain = mutableListOf(),
+                        mode = SolverUiState.SolverMode.IdleFoundSolution
                     )
                 }
             } else {
-                assert(true, {"Got unexpected ball count state."})
+                assert(true) { "Got unexpected ball count state." }
             }
         }
     }

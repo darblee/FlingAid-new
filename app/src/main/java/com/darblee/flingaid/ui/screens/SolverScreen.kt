@@ -123,6 +123,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         SolverUiState.SolverMode.IdleFoundSolution ->
             {
                 if (solverViewModel.ballCount() == 1) announceVictory = true
+
             }
         SolverUiState.SolverMode.IdleNoSolution ->
             {
