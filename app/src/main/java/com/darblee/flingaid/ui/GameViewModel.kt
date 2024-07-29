@@ -49,7 +49,7 @@ object GameViewModel : ViewModel() {
      * is a set of Kotlin files that are compiled together e.g. a library or application. It provides real
      * encapsulation for the implementation details. In this case, it is shared wit the SolverEngine class.
      */
-    internal var gHintThinkingProgress = 0
+    private var gHintThinkingProgress = 0
 
     /**
      * Store the winning direction for each corresponding task. Only 1 task will have the winning move
@@ -95,7 +95,7 @@ object GameViewModel : ViewModel() {
      * list. This snapshot is a separate, immutable collection that represents the list's state at a specific
      * moment. For more info, see [Compose Snapshot System](https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn)
      */
-    fun ballPositionList(): SnapshotStateList<Pos> {
+    private fun ballPositionList(): SnapshotStateList<Pos> {
         return (_gameBallPos.ballList)
     }
 
@@ -104,7 +104,7 @@ object GameViewModel : ViewModel() {
      *
      * @return Number of active balls
      */
-    fun ballCount(): Int {
+    private fun ballCount(): Int {
         return (_gameBallPos.getBallCount())
     }
 
@@ -145,7 +145,7 @@ object GameViewModel : ViewModel() {
      * `private set` this is internally modifiable and read-only access from the outside.
      * This ensure information flow in one direction from the view model to the UI
      */
-    internal var gameUIState: StateFlow<GameUIState> = _uiGameState.asStateFlow()
+     internal var gameUIState: StateFlow<GameUIState> = _uiGameState.asStateFlow()
         private set
 
     /**
@@ -176,7 +176,7 @@ object GameViewModel : ViewModel() {
     ) {
         _uiGameState.update { currentState ->
             currentState.copy(
-                mode = GameUIState.GameMode.WaitingOnUser
+                _mode = GameUIState.GameMode.WaitingOnUser
             )
         }
         gHintThinkingProgress = 0
@@ -200,9 +200,9 @@ object GameViewModel : ViewModel() {
     {
         _uiGameState.update { curState ->
             curState.copy(
-                mode = GameUIState.GameMode.WaitingOnUser,
-                movingDirection = Direction.NO_WINNING_DIRECTION,
-                movingChain = mutableListOf()
+                _mode = GameUIState.GameMode.WaitingOnUser,
+                _movingDirection = Direction.NO_WINNING_DIRECTION,
+                _movingChain = mutableListOf()
             )
         }
     }
@@ -244,9 +244,9 @@ object GameViewModel : ViewModel() {
         if (movingChain.size == 1) {
             _uiGameState.update { curState ->
                 curState.copy(
-                    mode = GameUIState.GameMode.ShowShadowMovement,
-                    movingDirection = direction,
-                    movingChain = movingChain
+                    _mode = GameUIState.GameMode.ShowShadowMovement,
+                    _movingDirection = direction,
+                    _movingChain = movingChain
                 )
             }
             return MoveResult.InvalidNoBump
@@ -254,9 +254,9 @@ object GameViewModel : ViewModel() {
 
         _uiGameState.update { curState ->
             curState.copy(
-                mode = GameUIState.GameMode.MoveBall,
-                movingDirection = direction,
-                movingChain = movingChain
+                _mode = GameUIState.GameMode.MoveBall,
+                _movingDirection = direction,
+                _movingChain = movingChain
             )
         }
         return MoveResult.Valid
@@ -316,9 +316,9 @@ object GameViewModel : ViewModel() {
 
         _uiGameState.update { curState ->
             curState.copy(
-                mode = gameMode,
-                movingDirection = Direction.NO_WINNING_DIRECTION,
-                movingChain = mutableListOf()
+                _mode = gameMode,
+                _movingDirection = Direction.NO_WINNING_DIRECTION,
+                _movingChain = mutableListOf()
             )
         }
     }

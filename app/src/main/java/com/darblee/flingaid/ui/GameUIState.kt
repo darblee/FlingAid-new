@@ -9,15 +9,25 @@ import com.darblee.flingaid.Direction
  *
  *  [Solver State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
  *
- * @param mode The state of the game
- * @param movingDirection Direction to move the ball from
- * @param movingChain Movement chain in the current turn
+ * @param _mode The public field is [mode] (read-only access). The current game mode. Possible game
+ * mode is defined at [GameMode]
+ * @param _movingDirection The public field is [movingDirection] (read-only access). Direction to
+ * move the ball from
+ * @param _movingChain The public field is [movingChain] (read-only access). Movement chain in the current turn
  */
 data class GameUIState(
-    var mode: GameMode = GameMode.WaitingOnUser,
-    var movingDirection: Direction = Direction.NO_WINNING_DIRECTION,
-    val movingChain: List<MovingRec> = listOf()
+    private var _mode : GameMode = GameMode.WaitingOnUser,
+    private var _movingDirection: Direction = Direction.NO_WINNING_DIRECTION,
+    private val _movingChain: List<MovingRec> = listOf()
 ) {
+    // Ensure private setter for all fields
+    var mode = _mode
+        private set
+    var movingDirection = _movingDirection
+        private set
+    var movingChain = _movingChain
+        private set
+
     /**
      * Various game modes for UI state
      *

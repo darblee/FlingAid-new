@@ -463,10 +463,13 @@ private fun DrawGameBoard(
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) ->
                                     gameViewModel.setupNextMove(dragRow, dragCol, Direction.LEFT)
+
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) ->
                                     gameViewModel.setupNextMove(dragRow, dragCol, Direction.RIGHT)
+
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) ->
                                     gameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
+
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) ->
                                     gameViewModel.setupNextMove(dragRow, dragCol, Direction.DOWN)
                             }
