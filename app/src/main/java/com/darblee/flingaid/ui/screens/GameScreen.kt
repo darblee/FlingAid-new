@@ -261,7 +261,6 @@ private fun InstructionLogo() {
  *
  * @param gameViewModel  Game View model
  * @param uiState Current UI state of the game
- * @param onBallMovementAnimationChange Determine whether the ball movement animation is done or not
  */
 @Composable
 private fun GameControlButtonsForGame(
@@ -455,47 +454,26 @@ private fun DrawGameBoard(
                             dragCol = (offset.x / gridSize).toInt()
                         },
                         onDrag = { change, dragAmount ->
-                            //  Need to consume this event, so that its parent knows not to react to
-                            //  it anymore. What change.consume() does is it prevent pointerInput
-                            //  above it to receive events
+                            //  Consume this event, so that parent will not react to it anymore.
                             change.consume()
                             offsetX += dragAmount.x
                             offsetY += dragAmount.y
                         },
                         onDragEnd = {
                             when {
-                                (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
+                                (offsetX < 0F && abs(offsetX) > minSwipeOffset) ->
                                     gameViewModel.setupNextMove(dragRow, dragCol, Direction.LEFT)
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
-
-                                (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
+                                (offsetX > 0F && abs(offsetX) > minSwipeOffset) ->
                                     gameViewModel.setupNextMove(dragRow, dragCol, Direction.RIGHT)
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
-
-                                (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
+                                (offsetY < 0F && abs(offsetY) > minSwipeOffset) ->
                                     gameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
-
-                                (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
+                                (offsetY > 0F && abs(offsetY) > minSwipeOffset) ->
                                     gameViewModel.setupNextMove(dragRow, dragCol, Direction.DOWN)
-                                    offsetX = 0F
-                                    offsetY = 0F
-                                    dragRow = -1
-                                    dragCol = -1
-                                }
                             }
+                            offsetX = 0F
+                            offsetY = 0F
+                            dragRow = -1
+                            dragCol = -1
                         }
                     ) // detectDragGestures
                 } // .pointerInput
