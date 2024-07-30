@@ -42,7 +42,6 @@ import java.util.concurrent.CyclicBarrier
  *
  * **Game Play Functions**
  * - [reset]
- * - [setModeToIdle]
  * - [findWinningMove]
  * - [getWinningMoveCount]
  * - [moveBallToWin]
@@ -122,6 +121,8 @@ object SolverViewModel : ViewModel() {
     fun loadGameFile(file: File) {
         _solverBallPos.setGameFile(file)
         _solverBallPos.loadBallListFromFile()
+
+        setModeBaseOnBoard()
     }
 
     /********************************* SOLVER GAME MANAGEMENT ****************************/
@@ -171,7 +172,7 @@ object SolverViewModel : ViewModel() {
         _solverBallPos.ballList.clear()
         _solverBallPos.removeGameFile()
 
-        setModeToIdle()
+        setModeBaseOnBoard()
     }
 
     /**
@@ -188,8 +189,86 @@ object SolverViewModel : ViewModel() {
         }
 
         _solverBallPos.saveBallListToFile()
-        setModeToIdle()
+
+        setModeBaseOnBoard()
     }
+
+    /**
+     * New board so we need to set mode accordingly
+     */
+    private fun setModeBaseOnBoard()
+    {
+        if (ballCount() < 2 ) {
+            setModeToNoMoveAvailable()
+        } else {
+            // There is more than one ball on board. User can perform action.
+            setModeToWaitingOnNextMove()
+        }
+
+    }
+
+    /******************  Set mode routines ********************************/
+    /**
+     * Set UI state to "Announce Victory" mode
+     */
+    private fun  setModeToAnnounceVictory()
+    {
+        _uiSolverState.update { currentState ->
+            currentState.copy(
+                _mode = SolverUiState.SolverMode.AnnounceVictory,
+                _winningMovingChain = mutableListOf(),
+                _winningDirection = Direction.NO_WINNING_DIRECTION,
+                _thinkingProgressLevel = 0f
+            )
+        }
+    }
+
+    /**
+     * Set UI state to "One Ball Left" mode
+     */
+    fun  setModeToNoMoveAvailable()
+    {
+        _uiSolverState.update { currentState ->
+            currentState.copy(
+                _mode = SolverUiState.SolverMode.NoMoveAvailable,
+                _winningMovingChain = mutableListOf(),
+                _winningDirection = Direction.NO_WINNING_DIRECTION,
+                _thinkingProgressLevel = 0f
+            )
+        }
+    }
+
+    /**
+     * Set UI state to "Waiting on User Next Move
+     */
+    private fun setModeToWaitingOnNextMove()
+    {
+        _uiSolverState.update { currentState ->
+            currentState.copy(
+                _mode = SolverUiState.SolverMode.ReadyToFindSolution,
+                _winningMovingChain = mutableListOf(),
+                _winningDirection = Direction.NO_WINNING_DIRECTION,
+                _thinkingProgressLevel = 0f
+            )
+        }
+
+    }
+
+    /**
+     * Set mode to "Show Ball Movement"
+     */
+    fun setModeToShowBallMovement(winningDirection: Direction, winningMovingChain: List<MovingRec>)
+    {
+        _uiSolverState.update { curState ->
+            curState.copy(
+                _mode = SolverUiState.SolverMode.MoveBall,
+                _winningDirection = winningDirection,
+                _winningMovingChain = winningMovingChain,
+            )
+        }
+    }
+
+    /************************* Thinking routwines ****************/
 
     /**
      * Volatile is used to ensure each thread is reading exact same [gMultipleThread] value
@@ -301,10 +380,7 @@ object SolverViewModel : ViewModel() {
 
             val movingChain = _solverBallPos.buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
-            setModeToIdle(
-                winningDirection = winningDir,
-                winningMovingChain = movingChain,
-                mode = SolverUiState.SolverMode.IdleFoundSolution)
+            setModeToReadyToMove(winningDir, movingChain)
 
         } else {
 
@@ -324,11 +400,7 @@ object SolverViewModel : ViewModel() {
 
                 val movingChain = _solverBallPos.buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
 
-                setModeToIdle(
-                    winningDirection = winningDir,
-                    winningMovingChain = movingChain,
-                    mode = SolverUiState.SolverMode.IdleFoundSolution
-                )
+                setModeToReadyToMove(winningDir, movingChain)
 
             } else {
 
@@ -339,7 +411,7 @@ object SolverViewModel : ViewModel() {
                     currentState.copy(
                         _winningDirection = Direction.NO_WINNING_DIRECTION,
                         _winningMovingChain = mutableStateListOf(),
-                        _mode = SolverUiState.SolverMode.IdleNoSolution
+                        _mode = SolverUiState.SolverMode.AnnounceNoPossibleSolution
                     )
                 }
             }
@@ -347,28 +419,16 @@ object SolverViewModel : ViewModel() {
         gThinkingProgress = 0
     }
 
-    /**
-     * Update [uiState]  thinking status to Idle state.
-     *
-     * @param winningDirection If this is idle with winning move, then this is direction of winning move.
-     * Otherwise it defaults to "No winning direction"
-     * @param winningMovingChain If this is idle with winning move, then this describe the movement
-     * details.
-     * @param mode Solver game state
-     */
-    fun setModeToIdle(
-        winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
-        winningMovingChain: List<MovingRec> = mutableListOf(),
-        mode: SolverUiState.SolverMode = SolverUiState.SolverMode.Idle
-    ) {
+    private fun setModeToReadyToMove(winningDirection: Direction, winningMovingChain: List<MovingRec>)
+    {
         _uiSolverState.update { curState ->
             curState.copy(
                 _winningDirection = winningDirection,
                 _winningMovingChain = winningMovingChain,
-                _mode = mode
+                _mode = SolverUiState.SolverMode.ReadyToMove
             )
         }
-        gThinkingProgress = 0
+
     }
 
     /**
@@ -615,13 +675,8 @@ object SolverViewModel : ViewModel() {
         if (ballCount() > 1) {
             findWinningMove()
         } else {
-
             if (ballCount() == 1) {
-                _uiSolverState.update { currentState ->
-                    currentState.copy(
-                        _mode = SolverUiState.SolverMode.IdleFoundSolution
-                    )
-                }
+                setModeToAnnounceVictory()
             } else {
                 assert(true) { "Got unexpected ball count state." }
             }

@@ -398,10 +398,22 @@ fun animateShadowBallMovementsPerform(
         var yOffset = 0
 
         when (direction) {
-            Direction.UP -> { yOffset = -1 * gridSize.toInt() * distance }
-            Direction.DOWN -> { yOffset = 1 * gridSize.toInt() * distance }
-            Direction.LEFT -> { xOffset = -1 * gridSize.toInt() * distance }
-            Direction.RIGHT -> { xOffset = 1 * gridSize.toInt() * distance }
+            Direction.UP -> {
+                yOffset = -1 * gridSize.toInt() * distance
+            }
+
+            Direction.DOWN -> {
+                yOffset = 1 * gridSize.toInt() * distance
+            }
+
+            Direction.LEFT -> {
+                xOffset = -1 * gridSize.toInt() * distance
+            }
+
+            Direction.RIGHT -> {
+                xOffset = 1 * gridSize.toInt() * distance
+            }
+
             else -> {
                 assert(true) { "Got unexpected Direction value: $direction" }
             }
@@ -429,9 +441,10 @@ fun animateShadowBallMovementsPerform(
  *
  * @return List of all the particles
  */
-fun generateExplosionParticles(movingChain: List<MovingRec>,
-                               direction: Direction): List<Particle>
-{
+fun generateExplosionParticles(
+    movingChain: List<MovingRec>,
+    direction: Direction
+): List<Particle> {
     val sizeDp = 200.dp
     val sizePx = sizeDp.toPx()
     val explosionPos = movingChain[1].pos
@@ -563,7 +576,6 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
  * movement in this chain
  * @param animateParticleExplosionCtl Animate Object that control animation state of particle
  * explosion effect
- * @param onEnableBallMovementAnimation Change the state on whether to perform the animation or not
  * @param moveBallTask Lambda function - Move the ball
  */
 @Composable
@@ -572,9 +584,10 @@ fun AnimateBallMovementsSetup(
     direction: Direction,
     animateBallMovementCtlList: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
-    onEnableBallMovementAnimation: (enableBallMovementAnimation: Boolean) -> Unit = { (false) },
     moveBallTask: (pos: Pos, direction: Direction) -> Unit,
 ) {
+    if (movingChain.isEmpty()) return
+
     movingChain.forEach { _ ->
         val animateBallMovement = remember { Animatable(initialValue = 0f) }
         animateBallMovementCtlList.add(animateBallMovement)
@@ -607,14 +620,9 @@ fun AnimateBallMovementsSetup(
                 }   // movingChain forEach
                 animateBallMovementCtlList.clear()
 
-                onEnableBallMovementAnimation(false)
-
-                if (movingChain.isNotEmpty()) {
-
-                    // Move the ball. We use lambda function to perform the corresponding move
-                    // based the view model, either gameViewModel or solverViewModel
-                    moveBallTask.invoke(movingChain[0].pos, direction)
-                }
+                // Move the ball. We use lambda function to perform the corresponding move
+                // based the view model, either gameViewModel or solverViewModel
+                moveBallTask.invoke(movingChain[0].pos, direction)
 
             } // Launch
 
@@ -627,6 +635,8 @@ fun AnimateBallMovementsSetup(
                         whenBallMakeContactRatio
                     )
                 )
+
+
             } // launch
 
             launch {
@@ -661,17 +671,17 @@ fun animateBallMovementsPerform(
     direction: Direction,
     movingChain: List<MovingRec>
 ) {
-    if (movingChain.isEmpty())  return
+    if (movingChain.isEmpty()) return
     if (direction == Direction.NO_WINNING_DIRECTION) return
     if (animateBallMovementChainCtlList.isEmpty()) return
 
-    with (drawScope) {
+    with(drawScope) {
         var movingSourcePos: Pos
         var offset: Pair<Float, Float>
         var xOffset: Float
         var yOffset: Float
 
-        // Ball movements including multiple ball movements (if there is multiple balls in the chain)
+// Ball movements including multiple ball movements (if there is multiple balls in the chain)
         for ((index, currentMovement) in movingChain.withIndex()) {
             movingSourcePos = currentMovement.pos
 
@@ -679,8 +689,8 @@ fun animateBallMovementsPerform(
             xOffset = offset.first
             yOffset = offset.second
 
-            // Perform animation by adjusting both the xOffset and yOffset amount respectively
-            // to move the ball
+// Perform animation by adjusting both the xOffset and yOffset amount respectively
+// to move the ball
             translate(
                 (xOffset) * ((animateBallMovementChainCtlList[index]).value),
                 (yOffset) * ((animateBallMovementChainCtlList[index]).value)
@@ -689,7 +699,7 @@ fun animateBallMovementsPerform(
             } // translate
         }  // for
 
-        // Particle explosion effect
+// Particle explosion effect
         particles.forEach { curParticle ->
             curParticle.updateProgress(animateParticleExplosionCtl.value, gridSize)
             drawCircle(
@@ -721,7 +731,7 @@ fun animateVictoryMsgPerform(
 ) {
     val animationValue = animateCtl.value
     with(drawScope) {
-        val canvasWidth =  size.width
+        val canvasWidth = size.width
         val canvasHeight = size.height
 
         val text = "You won!"
@@ -748,17 +758,16 @@ fun animateVictoryMsgPerform(
 /**
  * Setup animated victory message. Define animation spec.
  *
- * @param setModeWaitingOnUser Lambda function to set UI to "WaitingOnUser" mode after announcing victory message
+ * @param setModeAfterVictoryMsg Lambda function to set UI to "WaitingOnUser" mode after announcing victory message
  * @param animateCtl Animate object that control animation state of the victory message
- * @param onAnimationChange Change the state on whether to perform the animation or not
  */
 @Composable
 fun AnimateVictoryMessageSetup(
-    setModeWaitingOnUser: () -> Unit,
+    setModeAfterVictoryMsg: () -> Unit,
     animateCtl: Animatable<Float, AnimationVector1D>,
 ) {
     LaunchedEffect(Unit) {
-        // Use coroutine to ensure both animation and sound happen in parallel
+// Use coroutine to ensure both animation and sound happen in parallel
         coroutineScope {
             launch {
                 animateCtl.snapTo(0f)
@@ -769,7 +778,7 @@ fun AnimateVictoryMessageSetup(
                         easing = LinearOutSlowInEasing
                     )
                 )
-                setModeWaitingOnUser.invoke()
+                setModeAfterVictoryMsg.invoke()
 
                 animateCtl.snapTo(0f)
                 animateCtl.stop()

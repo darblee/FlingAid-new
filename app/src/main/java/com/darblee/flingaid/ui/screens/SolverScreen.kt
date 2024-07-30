@@ -81,6 +81,7 @@ import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
+import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
@@ -114,57 +115,54 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     LoadSolverFileOnlyOnce(solverViewModel)
 
     var announceVictory = false
+    var readyToFindSolution = false
+    var readyToMove = false
+    var showBallMovementAnimation = false
+    var currentlyThinking = false
+    var thinkingProgressLevel = 0.0f
 
     val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
 
     when (solverUIState.mode) {
-        SolverUiState.SolverMode.Thinking -> { /* */ }
-        SolverUiState.SolverMode.Idle -> { /* */ }
-        SolverUiState.SolverMode.IdleFoundSolution ->
-            {
-                if (solverViewModel.ballCount() == 1) announceVictory = true
+        SolverUiState.SolverMode.Thinking -> {
+            currentlyThinking = true
+            thinkingProgressLevel = solverUIState.thinkingProgressLevel
+        }
 
-            }
-        SolverUiState.SolverMode.IdleNoSolution ->
-            {
-                gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
-                solverViewModel.setModeToIdle()
-            }
+        SolverUiState.SolverMode.ReadyToFindSolution -> { readyToFindSolution = true }
+
+        SolverUiState.SolverMode.ReadyToMove -> { readyToMove = true }
+
+        SolverUiState.SolverMode.AnnounceNoPossibleSolution -> {
+            gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
+            solverViewModel.setModeToNoMoveAvailable()
+        }
+
+        SolverUiState.SolverMode.AnnounceVictory -> { announceVictory = true }
+
+        SolverUiState.SolverMode.NoMoveAvailable -> { /* Do nothing */}
+
+        SolverUiState.SolverMode.MoveBall -> {  showBallMovementAnimation = true  }
     }
 
     // Need special handling of back key press events. Do not navigate when:
-    // - It is in muddle of thinking
+    // - It is in middle of thinking
     // - It is middle of announce victory message
     HandleBackPressKeyForSolverScreen(solverUIState.mode, navController, announceVictory)
-
-    var findWinnableMoveButtonEnabled by remember { mutableStateOf(false) }
-    findWinnableMoveButtonEnabled =
-        ((solverViewModel.ballCount() > 1) && (!hasFoundWinnableMove(solverUIState)))
-
-    var showWinnableMoveToUser by remember { mutableStateOf(false) }
-    showWinnableMoveToUser =
-        (solverUIState.winningDirection != Direction.NO_WINNING_DIRECTION)
-
-    /**
-     * Keep track of when to do the ball movement animation
-     */
-    var showBallMovementAnimation by remember { mutableStateOf(false) }
-    val onBallMovementAnimationChange =
-        { enableBallMovements: Boolean -> showBallMovementAnimation = enableBallMovements }
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Instruction_DynamicLogo(solverUIState)
+        Instruction_DynamicLogo(currentlyThinking, thinkingProgressLevel)
         ControlButtonsForSolver(
             solverViewModel = solverViewModel,
-            findWinnableMoveButtonEnabled = findWinnableMoveButtonEnabled,
-            showWinnableMoveToUser = showWinnableMoveToUser,
-            uiState = solverUIState,
-            onBallMovementAnimationChange = onBallMovementAnimationChange,
-            announceVictory
+            readyToFindSolution = readyToFindSolution,
+            currentlyThinking = currentlyThinking,
+            readyToMove = readyToMove,
+            winningDirection = solverUIState.winningDirection,
+            winningMovingChain = solverUIState.winningMovingChain
         )
 
         DrawSolverBoard(
@@ -172,7 +170,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             solverViewModel = solverViewModel,
             solverUIState = solverUIState,
             showBallMovementAnimation = showBallMovementAnimation,
-            onBallMovementAnimationEnablement = onBallMovementAnimationChange,
             announceVictory)
     }
 }
@@ -180,7 +177,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 /**
  * Populate the solver board by loading content from the solver game file
  *
- * @param solverViewModel Solver View Model
+ * @param solverViewModel Solver View Model that manage business logic for Solver Screen. FOr more
+ * details, see [SolverViewModel]
  */
 @Composable
 private fun LoadSolverFileOnlyOnce(solverViewModel: SolverViewModel)
@@ -243,10 +241,14 @@ private fun HandleBackPressKeyForSolverScreen(
  * Display the game logo. Game logo also change to animation
  * when it is searching for the solution.
  *
- * @param uiState Current UI state of the solver game
+ * @param currentlyThinking Determine whether it is currently in thinking mode or not
+ * @param thinkingProgressLevel Thinking progress level
  */
 @Composable
-private fun Instruction_DynamicLogo(uiState: SolverUiState) {
+private fun Instruction_DynamicLogo(
+    currentlyThinking: Boolean,
+    thinkingProgressLevel: Float
+) {
     val logoSize = 125.dp
 
     Row(
@@ -256,7 +258,7 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState) {
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         Box {
-            if (uiState.mode != SolverUiState.SolverMode.Thinking) {
+            if (!currentlyThinking) {
                 val imageModifier = Modifier
                     .size(logoSize)
                     .align(Alignment.Center)
@@ -276,7 +278,7 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState) {
 
                 //  Track two level processing = level #1: 4 direction x level 2: 4 directions = 16
                 val percentComplete =
-                    String.format(Locale.getDefault(), "%.1f%%", uiState.thinkingProgressLevel)
+                    String.format(Locale.getDefault(), "%.1f%%", thinkingProgressLevel)
                 Text(
                     "$percentComplete Complete",
                     style = MaterialTheme.typography.bodySmall,
@@ -319,23 +321,22 @@ private fun Instruction_DynamicLogo(uiState: SolverUiState) {
  * Show all the control buttons on top of the screen. These buttons
  * are "find the solution" button and "reset" button
  *
- * @param solverViewModel Solver Game View model
- * @param findWinnableMoveButtonEnabled Determine whether the "Find move" button needs to be
- * enabled or disabled
- * @param showWinnableMoveToUser Determine whether to show the preview of the next winnable
- * move or not
- * @param uiState Current UI state of the solver game
- * @param onBallMovementAnimationChange Determine whether the ball movement animation is done or not
- * @param announceVictory Indicate whether we need to announce victory message or not
+ * @param solverViewModel Solver View Model that manage business logic for Solver Screen. FOr more
+ * details, see [SolverViewModel]
+ * @param readyToFindSolution Determine whether it is ready to start looking for a solution or not
+ * @param currentlyThinking Determine whether it is currently in thinking mode or not
+ * @param readyToMove Determine whether it is ready to make winning move or not
+ * @param winningDirection If it is ready to move, then this is the direction of the move
+ * @param winningMovingChain If it is ready to move, then this is the moving details
  */
 @Composable
 private fun ControlButtonsForSolver(
     solverViewModel: SolverViewModel = viewModel(),
-    findWinnableMoveButtonEnabled: Boolean,
-    showWinnableMoveToUser: Boolean,
-    uiState: SolverUiState,
-    onBallMovementAnimationChange: (enableBallMovementAnimation: Boolean) -> Unit,
-    announceVictory: Boolean
+    readyToFindSolution: Boolean,
+    currentlyThinking: Boolean,
+    readyToMove: Boolean,
+    winningDirection: Direction,
+    winningMovingChain: List<MovingRec>
 ) {
     val view = LocalView.current
     val context = LocalContext.current
@@ -350,15 +351,14 @@ private fun ControlButtonsForSolver(
         Button(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                Log.i(Global.DEBUG_PREFIX, ">>> Starting thinking : Button Pressed")
-                if (showWinnableMoveToUser) {
+                if (readyToMove) {
+                    solverViewModel.setModeToShowBallMovement(
+                        winningDirection,
+                        winningMovingChain
+                    )
+                }
 
-                    //  Turn on the need to do the ball movement animation
-                    onBallMovementAnimationChange(true)
-                } else {
-                    // In this case, we did not move the ball as we did not show hint yet.
-                    // We need to find the winning move
-                    Log.i(Global.DEBUG_PREFIX, ">>> Looking for next winnable move")
+                if (readyToFindSolution)  {
                     solverViewModel.findWinningMove()
                 }
             }, // OnClick
@@ -371,24 +371,25 @@ private fun ControlButtonsForSolver(
             modifier = Modifier
                 .weight(3F)
                 .padding(5.dp),
-            enabled = ((findWinnableMoveButtonEnabled || showWinnableMoveToUser) &&
-                    (uiState.mode != SolverUiState.SolverMode.Thinking))
+            enabled = (readyToMove || readyToFindSolution)
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(
                 imageVector = Icons.Filled.Search, contentDescription = "Find Winning Move",
                 modifier = Modifier.size(iconWidth)
             )
-            if (showWinnableMoveToUser)
-                Text("Move and find next")
-            else
+
+            if (readyToMove) {
+                Text("Move and Find next")
+            } else {
                 Text("Find next")
+            }
         }  // "Find winning move" Button
 
         Button(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                if (uiState.mode == SolverUiState.SolverMode.Thinking) {
+                if (currentlyThinking) {
                     gameToast(context, "Unable to reset as it is currently busy finding a solution")
                 } else {
                     // Reset the board game and set it back to idle state
@@ -406,7 +407,7 @@ private fun ControlButtonsForSolver(
                 .padding(5.dp),
             // Disable button while it is in active thinking mode or in the middle of announce
             // victory message
-            enabled = ((uiState.mode != SolverUiState.SolverMode.Thinking) || announceVictory)
+            enabled = (!currentlyThinking)
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(
@@ -425,13 +426,13 @@ private fun ControlButtonsForSolver(
  *  - Handle all the input (drag, click on grid to place the ball)
  *  - Handle all the ball animations and dynamic animated messages
  *
- *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
+ * @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
- *  @param solverViewModel Solver Game view model
- *  @param solverUIState Current UI state of the solver game
- *  @param showBallMovementAnimation Indicate whether it need to do ball movement animation
- *  @param onBallMovementAnimationEnablement Enable/disable ball movement animation
- *  @param announceVictory Indicate whether it need to show animated victory message or not
+ * @param solverViewModel Solver View Model that manage business logic for Solver Screen. FOr more
+ * details, see [SolverViewModel]
+ * @param solverUIState Current UI state of the solver game
+ * @param showBallMovementAnimation Indicate whether it need to do ball movement animation
+ * @param announceVictory Indicate whether it need to show animated victory message or not
  */
 @Composable
 private fun DrawSolverBoard(
@@ -439,7 +440,6 @@ private fun DrawSolverBoard(
     solverViewModel: SolverViewModel = viewModel(),
     solverUIState: SolverUiState,
     showBallMovementAnimation: Boolean,
-    onBallMovementAnimationEnablement: (enableBallMovementAnimation: Boolean) -> Unit,
     announceVictory: Boolean,
 ) {
     val context = LocalContext.current
@@ -466,16 +466,22 @@ private fun DrawSolverBoard(
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            { solverViewModel.setModeToIdle() },
+            { solverViewModel.setModeToNoMoveAvailable() },
             animateCtl = animateVictoryMessage,
         )
+    } else {
+        LaunchedEffect(true) {
+            animateVictoryMessage.stop()
+            animateVictoryMessage.snapTo(0f)
+
+        }
     }
 
     // Ball movement must have at least 2 balls in the movement chain
-    if ((showBallMovementAnimation) && (solverUIState.winningMovingChain.size > 1)) {
+    if (showBallMovementAnimation) {
 
         // Set-up the particles, which is used for the explosion animated effect
-        particles = remember {
+       particles = remember {
             generateExplosionParticles(solverUIState.winningMovingChain, solverUIState.winningDirection)
         }.toMutableList()
 
@@ -489,14 +495,10 @@ private fun DrawSolverBoard(
             direction = solverUIState.winningDirection,
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
-            onEnableBallMovementAnimation = onBallMovementAnimationEnablement,
             moveBallTask = solverMoveBallTask)
-
     } else {
-        // Else we longer need ball movement animation. So clear animation set-up
-        // Make sure we do not show any more particle explosion when ball animation is done
         particles.clear()
-        LaunchedEffect(Unit) {
+        LaunchedEffect(true) {
             animateParticleExplosion.stop()
             animateParticleExplosion.snapTo(0f)
         }

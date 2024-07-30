@@ -377,7 +377,12 @@ private fun DrawGameBoard(
        AnimateVictoryMessageSetup(
            { gameViewModel.gameSetModeWaitingOnUser()},
             animateCtl = animateVictoryMessage
-        )
+       )
+    } else {
+        LaunchedEffect(true) {
+            animateVictoryMessage.stop()
+            animateVictoryMessage.snapTo(0F)
+        }
     }
 
     if (gameUIState.mode == GameUIState.GameMode.MoveBall) {

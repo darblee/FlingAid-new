@@ -1,7 +1,6 @@
 package com.darblee.flingaid.ui
 
 import com.darblee.flingaid.Direction
-import com.darblee.flingaid.ui.GameUIState.GameMode
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.serialization.Serializable
 
@@ -37,7 +36,7 @@ data class MovingRec(
  * is tracked in list of multiple move for each ball in the chain.
  */
 data class SolverUiState(
-    private var _mode : SolverMode = SolverMode.Idle,
+    private var _mode : SolverMode = SolverMode.NoMoveAvailable,
     var _thinkingProgressLevel: Float = 0.0f,
     var _winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
     val _winningMovingChain: List<MovingRec> = listOf()
@@ -55,15 +54,18 @@ data class SolverUiState(
      * Various modes for UI solver game
      *
      * @property Thinking Computer to look for solution
-     * @property Idle Waiting for user action.
-     * @property IdleFoundSolution Found a solution. Now waiting for user action
-     * @property IdleNoSolution Could not find a solution. Need to inform user there is no solution
-     * before going back to [Idle]
+     * @property ReadyToFindSolution Waiting for user action.
+     * @property ReadyToMove Found a solution. Now waiting for user action
+     * @property AnnounceNoPossibleSolution Could not find a solution. Need to inform user there is no solution
+     * before going back to [ReadyToFindSolution]
      */
     sealed class SolverMode {
+        data object NoMoveAvailable : SolverMode()   // Equivalent to game won condition
         data object Thinking : SolverMode()
-        data object Idle : SolverMode()
-        data object IdleFoundSolution: SolverMode()
-        data object IdleNoSolution: SolverMode()
+        data object ReadyToFindSolution : SolverMode()
+        data object ReadyToMove: SolverMode()
+        data object AnnounceNoPossibleSolution: SolverMode()
+        data object AnnounceVictory : SolverMode()
+        data object MoveBall : SolverMode()
     }
 }
