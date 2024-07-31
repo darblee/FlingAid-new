@@ -1,5 +1,6 @@
 package com.darblee.flingaid.ui
 
+import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.serialization.Serializable
@@ -62,13 +63,13 @@ data class SolverUiState(
         data object ReadyToFindSolution : SolverMode()
         data object ReadyToMove: SolverMode() {
             var winningDirectionPreview : Direction = Direction.NO_WINNING_DIRECTION
-            var winingMovingChainPreview : List<MovingRec> = listOf()
+            var winingMovingChainPreview : BallMoveSet = listOf()
         }
         data object AnnounceNoPossibleSolution: SolverMode()
         data object AnnounceVictory : SolverMode()
         data object MoveBall : SolverMode() {
             var winningDirMoveBall : Direction = Direction.NO_WINNING_DIRECTION
-            var winingMovingChainMoveBall : List<MovingRec> = listOf()
+            var winingMovingChainMoveBall : BallMoveSet = listOf()
         }
     }
 }

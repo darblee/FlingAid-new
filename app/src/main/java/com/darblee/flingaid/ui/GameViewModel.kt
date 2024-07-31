@@ -5,6 +5,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.lifecycle.ViewModel
+import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.utilities.FlickerBoard
@@ -202,7 +203,7 @@ object GameViewModel : ViewModel() {
             curState.copy(
                 _mode = GameUIState.GameMode.WaitingOnUser,
                 _movingDirection = Direction.NO_WINNING_DIRECTION,
-                _movingChain = mutableListOf()
+                _movingChain = listOf()
             )
         }
     }
@@ -252,9 +253,12 @@ object GameViewModel : ViewModel() {
             return MoveResult.InvalidNoBump
         }
 
+        val moveBallRec = GameUIState.GameMode.MoveBall
+        moveBallRec.MoveDirection = direction
+        moveBallRec.MovingChain = movingChain
         _uiGameState.update { curState ->
             curState.copy(
-                _mode = GameUIState.GameMode.MoveBall,
+                _mode = moveBallRec,
                 _movingDirection = direction,
                 _movingChain = movingChain
             )
@@ -318,7 +322,7 @@ object GameViewModel : ViewModel() {
             curState.copy(
                 _mode = gameMode,
                 _movingDirection = Direction.NO_WINNING_DIRECTION,
-                _movingChain = mutableListOf()
+                _movingChain = listOf()
             )
         }
     }
@@ -335,7 +339,7 @@ object GameViewModel : ViewModel() {
     fun drawGameBallsOnGrid(drawScope: DrawScope,
                             gridSize: Float,
                             displayBallImage: ImageBitmap,
-                            ballsToErase: List<MovingRec> = listOf())
+                            ballsToErase: BallMoveSet = listOf())
     {
         _gameBallPos.drawAllBalls(drawScope, gridSize, displayBallImage, ballsToErase)
     }

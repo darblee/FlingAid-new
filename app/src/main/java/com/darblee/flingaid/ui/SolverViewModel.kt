@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.utilities.FlickerBoard
@@ -244,14 +245,14 @@ object SolverViewModel : ViewModel() {
      */
     fun setModeToShowBallMovement(
         winningDirection: Direction,
-        winningMovingChain: List<MovingRec>
+        winningMovingChain: BallMoveSet
     ) {
         val moveBallRec = SolverUiState.SolverMode.MoveBall
         moveBallRec.winningDirMoveBall = winningDirection
         moveBallRec.winingMovingChainMoveBall = winningMovingChain
         _uiSolverState.update { curState ->
             curState.copy(
-                _mode = SolverUiState.SolverMode.MoveBall,
+                _mode = moveBallRec
             )
         }
     }
@@ -423,7 +424,7 @@ object SolverViewModel : ViewModel() {
      */
     private fun setModeToReadyToMove(
         winningDirection: Direction,
-        winningMovingChain: List<MovingRec>
+        winningMovingChain: BallMoveSet
     ) {
         val readyToMoveRec = SolverUiState.SolverMode.ReadyToMove
         readyToMoveRec.winingMovingChainPreview = winningMovingChain
@@ -700,7 +701,7 @@ object SolverViewModel : ViewModel() {
         drawScope: DrawScope,
         gridSize: Float,
         displayBallImage: ImageBitmap,
-        ballsToErase: List<MovingRec> = listOf()
+        ballsToErase: BallMoveSet = listOf()
     ) {
         _solverBallPos.drawAllBalls(drawScope, gridSize, displayBallImage, ballsToErase)
     }

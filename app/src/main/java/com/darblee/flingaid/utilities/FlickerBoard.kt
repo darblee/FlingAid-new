@@ -27,6 +27,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.gAudio_swish
@@ -177,7 +178,7 @@ class FlickerBoard {
         initialRow: Int,
         initialCol: Int,
         direction: Direction
-    ): List<MovingRec> {
+    ): BallMoveSet {
         val movingList = mutableListOf<MovingRec>()
 
         var chainRecInfo =
@@ -318,7 +319,7 @@ class FlickerBoard {
         drawScope: DrawScope,
         gridSize: Float,
         displayBallImage: ImageBitmap,
-        eraseAnimatedBallPositions: List<MovingRec> = listOf()
+        eraseAnimatedBallPositions: BallMoveSet = listOf()
     ) {
         // Draw all the balls
         //
@@ -442,7 +443,7 @@ fun animateShadowBallMovementsPerform(
  * @return List of all the particles
  */
 fun generateExplosionParticles(
-    movingChain: List<MovingRec>,
+    movingChain: BallMoveSet,
     direction: Direction
 ): List<Particle> {
     val sizeDp = 200.dp
@@ -580,7 +581,7 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
  */
 @Composable
 fun AnimateBallMovementsSetup(
-    movingChain: List<MovingRec>,
+    movingChain: BallMoveSet,
     direction: Direction,
     animateBallMovementCtlList: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
@@ -669,7 +670,7 @@ fun animateBallMovementsPerform(
     animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
     particles: MutableList<Particle>,
     direction: Direction,
-    movingChain: List<MovingRec>
+    movingChain: BallMoveSet
 ) {
     if (movingChain.isEmpty()) return
     if (direction == Direction.NO_WINNING_DIRECTION) return

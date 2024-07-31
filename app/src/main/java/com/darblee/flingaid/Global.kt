@@ -2,6 +2,13 @@ package com.darblee.flingaid
 
 import android.media.MediaPlayer
 import androidx.compose.ui.unit.dp
+import com.darblee.flingaid.ui.MovingRec
+
+/**
+ * A single ball movement that compose of one or more ball moves
+ * that bump with neighboring balls along the same direction.
+ */
+typealias BallMoveSet = List<MovingRec>
 
 /**
  * Winning Ball direction.

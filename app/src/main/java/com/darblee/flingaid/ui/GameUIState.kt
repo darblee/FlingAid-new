@@ -1,5 +1,6 @@
 package com.darblee.flingaid.ui
 
+import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 
 /**
@@ -22,7 +23,7 @@ import com.darblee.flingaid.Direction
 data class GameUIState(
     private var _mode: GameMode = GameMode.WaitingOnUser,
     private var _movingDirection: Direction = Direction.NO_WINNING_DIRECTION,
-    private val _movingChain: List<MovingRec> = listOf()
+    private val _movingChain: BallMoveSet = listOf()
 ) {
     var mode = _mode
         private set
@@ -43,7 +44,10 @@ data class GameUIState(
      */
     sealed class GameMode {
         data object WaitingOnUser : GameMode()
-        data object MoveBall : GameMode()
+        data object MoveBall : GameMode() {
+            var MoveDirection : Direction = Direction.NO_WINNING_DIRECTION
+            var MovingChain : BallMoveSet = listOf()
+        }
         data object ShowShadowMovement : GameMode()
         data object LookingForHint : GameMode()
         data object WonGame : GameMode()
