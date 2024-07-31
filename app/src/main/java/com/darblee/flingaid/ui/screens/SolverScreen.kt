@@ -114,27 +114,22 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     var announceVictory = false
     var readyToFindSolution = false
-    var readyToMove = false
-
-    var curThinkingLvl : Float? = null    // null means it is NOT in "Thinking" mode
+    var curThinkingLvl : Float? = null                                 // null means it is NOT in "Thinking" mode
+    var moveBallRec : SolverUiState.SolverMode.MoveBall? = null       // null means it is NOT in "Move Ball" mode
+    var readyToMoveRec : SolverUiState.SolverMode.ReadyToMove? = null // null means it is NOT in "Ready to move" mode
 
     val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
-
-    var readyToMoveInfo : SolverUiState.SolverMode.ReadyToMove = solverUIState.mode.let { SolverUiState.SolverMode.ReadyToMove }
-    var moveBallRec : SolverUiState.SolverMode.MoveBall? = null  // null means it is NOT in "Move Ball" mode
 
     when (solverUIState.mode) {
         SolverUiState.SolverMode.Thinking -> {
             val thinkingRec : SolverUiState.SolverMode.Thinking = solverUIState.mode.let { SolverUiState.SolverMode.Thinking }
-
             curThinkingLvl = thinkingRec.progress
         }
 
         SolverUiState.SolverMode.ReadyToFindSolution -> { readyToFindSolution = true }
 
         SolverUiState.SolverMode.ReadyToMove -> {
-            readyToMove = true
-            readyToMoveInfo = SolverUiState.SolverMode.ReadyToMove
+            readyToMoveRec = solverUIState.mode.let { SolverUiState.SolverMode.ReadyToMove }
         }
 
         SolverUiState.SolverMode.AnnounceNoPossibleSolution -> {
@@ -150,6 +145,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             moveBallRec = solverUIState.mode.let { SolverUiState.SolverMode.MoveBall }
         }
     }
+
     Log.i(Global.DEBUG_PREFIX, "Solver Screen Recompose : Mode is ${solverUIState.mode}")
 
     // Need special handling of back key press events. Do not navigate when:
@@ -167,17 +163,16 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             solverViewModel = solverViewModel,
             readyToFindSolution = readyToFindSolution,
             currentlyThinking = (curThinkingLvl != null),
-            readyToMove = readyToMove,
-            readyToMoveInfo = readyToMoveInfo,
+            readyToMoveRec = readyToMoveRec
         )
 
         DrawSolverBoard(
             modifier = Modifier.fillMaxSize(),
             solverViewModel = solverViewModel,
-            solverUIState = solverUIState,
             announceVictory = announceVictory,
             moveBallInfo = moveBallRec,
-            currentlyThinking = (curThinkingLvl != null)
+            currentlyThinking = (curThinkingLvl != null),
+            readyToMoveRec = readyToMoveRec
         )
     }
 }
@@ -333,8 +328,6 @@ private fun Instruction_DynamicLogo(
  * details, see [SolverViewModel]
  * @param readyToFindSolution Determine whether it is ready to start looking for a solution or not
  * @param currentlyThinking Determine whether it is currently in thinking mode or not
- * @param readyToMove Determine whether it is ready to make winning move or not
- * @param readyToMoveInfo if mode is set to this object, then will also contains winning direction
  * and winning moving chain
  */
 @Composable
@@ -342,11 +335,12 @@ private fun ControlButtonsForSolver(
     solverViewModel: SolverViewModel = viewModel(),
     readyToFindSolution: Boolean,
     currentlyThinking: Boolean,
-    readyToMove: Boolean,
-    readyToMoveInfo: SolverUiState.SolverMode.ReadyToMove,
+    readyToMoveRec: SolverUiState.SolverMode.ReadyToMove?,
 ) {
     val view = LocalView.current
     val context = LocalContext.current
+
+    val readyToMove = (readyToMoveRec != null)
 
     Row(
         modifier = Modifier
@@ -361,8 +355,8 @@ private fun ControlButtonsForSolver(
                 if (readyToMove) {
 
                     solverViewModel.setModeToShowBallMovement(
-                        readyToMoveInfo.winningDirectionPreview,
-                        readyToMoveInfo.winingMovingChainPreview
+                        readyToMoveRec!!.winningDirectionPreview,
+                        readyToMoveRec.winingMovingChainPreview
                     )
                 }
 
@@ -446,12 +440,13 @@ private fun ControlButtonsForSolver(
 private fun DrawSolverBoard(
     modifier: Modifier = Modifier,
     solverViewModel: SolverViewModel = viewModel(),
-    solverUIState: SolverUiState,
     announceVictory: Boolean,
     moveBallInfo: SolverUiState.SolverMode.MoveBall?,
     currentlyThinking: Boolean,
+    readyToMoveRec: SolverUiState.SolverMode.ReadyToMove?
 ) {
     val showBallMovementAnimation = (moveBallInfo != null)
+    val showPreviewMovementAnimation = (readyToMoveRec != null)
 
     val context = LocalContext.current
 
@@ -467,7 +462,10 @@ private fun DrawSolverBoard(
      * Animation control that handle showing a preview (shadow) of winning move
      */
     val animatePreviewWinningMove = remember { Animatable(initialValue = 0f) }
-    SolverAnimateShadowBallMovementSetup(animatePreviewWinningMove)
+
+    if (showPreviewMovementAnimation) {
+        SolverAnimateShadowBallMovementSetup(animatePreviewWinningMove)
+    }
 
     val animateBallMovementChain = mutableListOf<Animatable<Float, AnimationVector1D>>()
 
@@ -631,25 +629,26 @@ private fun DrawSolverBoard(
                 // No need to animate ball movement, but now need to check if we need to show
                 // preview of next winning ball movement
                 solverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage)
-                if (solverViewModel.ballCount() > 1) {
-                    // If there is a known winnable move, then provide user a review of the next
-                    // winnable move by showing the animated ball movement in a shadow (transparent)
-                    if (hasFoundWinnableMove(solverUIState)) {
-                        if (solverUIState.winningMovingChainX.isNotEmpty()) {
-                            val moveCount = solverViewModel.getWinningMoveCount(
-                                pos = solverUIState.winningMovingChainX[0].pos,
-                                direction = solverUIState.winningDirX)
-                            animateShadowBallMovementsPerform(
-                                drawScope = drawScope,
-                                gridSize = gridSize,
-                                animateCtl = animatePreviewWinningMove,
-                                displayBallImage = displayBallImage,
-                                distance = moveCount,
-                                direction = solverUIState.winningDirX,
-                                pos = solverUIState.winningMovingChainX[0].pos
-                            )
-                        }
+
+                if (showPreviewMovementAnimation) {
+
+                    if (readyToMoveRec!!.winingMovingChainPreview.isNotEmpty()) {
+
+                        val moveCount = solverViewModel.getWinningMoveCount(
+                            pos =  readyToMoveRec.winingMovingChainPreview[0].pos,
+                            direction = readyToMoveRec.winningDirectionPreview,
+                        )
+                        animateShadowBallMovementsPerform(
+                            drawScope = drawScope,
+                            gridSize = gridSize,
+                            animateCtl = animatePreviewWinningMove,
+                            displayBallImage = displayBallImage,
+                            distance = moveCount,
+                            direction = readyToMoveRec.winningDirectionPreview,
+                            pos = readyToMoveRec.winingMovingChainPreview[0].pos
+                        )
                     }
+
                 }
             }
 
@@ -674,20 +673,6 @@ private fun DrawSolverBoard(
             }
         } // Canvas
     } // Box
-}
-
-/**
- * Determine if we have a winnable move
- */
-fun hasFoundWinnableMove(uiState: SolverUiState): Boolean {
-    return when (uiState.winningDirX) {
-        Direction.UP,
-        Direction.DOWN,
-        Direction.LEFT,
-        Direction.RIGHT -> true
-
-        else -> false
-    }
 }
 
 /**

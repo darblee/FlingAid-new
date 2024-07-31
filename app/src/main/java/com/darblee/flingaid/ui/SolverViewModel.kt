@@ -420,17 +420,24 @@ object SolverViewModel : ViewModel() {
         gThinkingProgress = 0
     }
 
+    /**
+     * Update [SolverUiState] to "ReadyToMove" mode. Provide the associated information such
+     * winning direction and winning moving chain
+     *
+     * @param winningDirection Direction of the move
+     * @param winningMovingChain MovingCHain of the move
+     */
     private fun setModeToReadyToMove(winningDirection: Direction, winningMovingChain: List<MovingRec>)
     {
-        val ReadyToMoveRec : SolverUiState.SolverMode.ReadyToMove = SolverUiState.SolverMode.ReadyToMove
-        ReadyToMoveRec.winingMovingChainPreview = winningMovingChain
-        ReadyToMoveRec.winningDirectionPreview = winningDirection
+        val readyToMoveRec = SolverUiState.SolverMode.ReadyToMove
+        readyToMoveRec.winingMovingChainPreview = winningMovingChain
+        readyToMoveRec.winningDirectionPreview = winningDirection
 
         _uiSolverState.update { curState ->
             curState.copy(
                 _winningDirectionX = winningDirection,
                 _winningMovingChainX = winningMovingChain,
-                _mode = ReadyToMoveRec
+                _mode = readyToMoveRec
             )
         }
 
