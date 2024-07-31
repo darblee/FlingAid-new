@@ -22,7 +22,7 @@ data class MovingRec(
  * These UI state data needs to be preserved in the event there is a configuration change
  * (e.g. screen size change, screen rotation).
  *
- *  It uses UDF (Unidirectional Data FLow) and immutable classes to represent the UI state.
+ * It uses UDF (Unidirectional Data FLow) and immutable classes to represent the UI state.
  *
  * It will be managed in a observable flow called "StateFlow" Android composable will listen for it.
  *
@@ -30,35 +30,29 @@ data class MovingRec(
  *
  * @param _mode The public field is [mode] (read-only access). The current game mode. Possible game
  * mode is defined at [SolverMode]
- * @param _winningDirectionX The public field is [winningDirX] (read-only access). Direction
- * on the current to move that will lead toward a win
- * @param _winningMovingChainX The public field is [winningMovingChainX] (read-only). Ball movements
- * is tracked in list of multiple move for each ball in the chain.
- * @param _recomposeFlag Flag used to trigger a recomposition. A change in item's property (e.g. progress)
- * did not trigger a recomposition. (COuld this be a Jetpack compose bug?)  So I need to trigger this
- * manual by changing the value of [_recomposeFlag]
+ * @param _recomposeFlag Flag used to trigger a recomposition. A change in item's property
+ * (e.g. progress field) did not trigger a recomposition. (Could this be a Jetpack compose bug?)
+ * So this field is used to workaround this bug by manually trigger recompose by changing the
+ * value of [_recomposeFlag]
  */
 data class SolverUiState(
     private var _mode : SolverMode = SolverMode.NoMoveAvailable,
-    var _winningDirectionX: Direction = Direction.NO_WINNING_DIRECTION,
-    val _winningMovingChainX: List<MovingRec> = listOf(),
     var _recomposeFlag: Boolean = false
 ) {
     var mode = _mode
-        private set
-    var winningDirX = _winningDirectionX
-        private set
-    var winningMovingChainX = _winningMovingChainX
         private set
 
     /**
      * Various modes for UI solver game
      *
+     * @property NoMoveAvailable No more move is available
      * @property Thinking Computer to look for solution
      * @property ReadyToFindSolution Waiting for user action.
      * @property ReadyToMove Found a solution. Now waiting for user action
      * @property AnnounceNoPossibleSolution Could not find a solution. Need to inform user there is no solution
      * before going back to [ReadyToFindSolution]
+     * @property AnnounceVictory Need to announce the victory message
+     * @property MoveBall Process moving the ball
      */
     sealed class SolverMode {
         data object NoMoveAvailable : SolverMode()   // Equivalent to game won condition

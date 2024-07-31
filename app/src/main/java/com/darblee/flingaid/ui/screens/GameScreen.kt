@@ -98,23 +98,36 @@ import kotlin.math.abs
 @Composable
 fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) {
 
-    Log.i(Global.DEBUG_PREFIX, "Game Screen - recompose")
-
     val gameViewModel: GameViewModel = viewModel()
 
     LoadGameFileOnlyOnce(gameViewModel)
 
     var announceVictory = false
+
     val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
 
     when (gameUIState.mode) {
-        GameUIState.GameMode.WonGame -> { announceVictory = true }
-        GameUIState.GameMode.WaitingOnUser -> { /* do nothing */ }
-        GameUIState.GameMode.NoAvailableMove -> { /* TODO: Need to send message to user there is no available move */ }
-        GameUIState.GameMode.MoveBall -> { /* It will process ball movement animation. DIsable control buttons */  }
-        GameUIState.GameMode.ShowShadowMovement -> { /* It will process shadow movement. DIsable control buttons */ }
-        GameUIState.GameMode.LookingForHint -> { /* TODO: Process looking for hint */ }
+        GameUIState.GameMode.WonGame -> {
+            announceVictory = true
+        }
+
+        GameUIState.GameMode.WaitingOnUser -> { /* do nothing */
+        }
+
+        GameUIState.GameMode.NoAvailableMove -> { /* TODO: Need to send message to user there is no available move */
+        }
+
+        GameUIState.GameMode.MoveBall -> { /* It will process ball movement animation. DIsable control buttons */
+        }
+
+        GameUIState.GameMode.ShowShadowMovement -> { /* It will process shadow movement. DIsable control buttons */
+        }
+
+        GameUIState.GameMode.LookingForHint -> { /* TODO: Process looking for hint */
+        }
     }
+
+    Log.i(Global.DEBUG_PREFIX, "Game Screen Recompose : Mode is ${gameUIState.mode}")
 
     HandleBackPressKeyForGameScreen(gameUIState.mode, navController, announceVictory)
 
@@ -124,10 +137,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         InstructionLogo()
-        GameControlButtonsForGame(
-            gameViewModel,
-            gameUIState
-        )
+        GameControlButtonsForGame(gameViewModel)
 
         DrawGameBoard(
             modifier = Modifier.fillMaxSize(),
@@ -141,11 +151,11 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
 /**
  * Populate the solver board by loading content from the solver game file
  *
- * @param gameViewModel Game View Model
+ * @param gameViewModel View Model that manage business logic for Game Screen. For more
+ * details, see [GameViewModel]
  */
 @Composable
-private fun LoadGameFileOnlyOnce(gameViewModel: GameViewModel)
-{
+private fun LoadGameFileOnlyOnce(gameViewModel: GameViewModel) {
     /**
      * Need to ensure we only load the file once when we start the the solver game screen.
      * If we load the file everytime we go down this path during recompose, it will trigger more
@@ -176,13 +186,13 @@ private fun LoadGameFileOnlyOnce(gameViewModel: GameViewModel)
  *  - It is middle of thinking for hint
  *  - It is in middle of announcing victory message
  *
- *  @param mode Current Solver mode
+ *  @param mode Current Game mode
  *  @param navController Use to navigate to the previous screen
  *  @param announceVictory Determine whether we are in middle of announcing victory message
  */
 @Composable
 private fun HandleBackPressKeyForGameScreen(
-    mode:  GameUIState.GameMode,
+    mode: GameUIState.GameMode,
     navController: NavHostController,
     announceVictory: Boolean
 ) {
@@ -200,7 +210,7 @@ private fun HandleBackPressKeyForGameScreen(
 
 
 /**
- * Provide instruction on how to play Solver Screen.
+ * Provide instruction on how to play Game Screen.
  *
  * Display the game logo. Game logo also change to animation
  * when it is searching for the solution.
@@ -259,13 +269,12 @@ private fun InstructionLogo() {
  * Show all the control buttons on top of the screen. These buttons
  * are "find the solution" button and "reset" button
  *
- * @param gameViewModel  Game View model
- * @param uiState Current UI state of the game
+ * @param gameViewModel View Model that manage business logic for Game Screen. For more
+ * details, see [GameViewModel]
  */
 @Composable
 private fun GameControlButtonsForGame(
-    gameViewModel: GameViewModel = viewModel(),
-    uiState: GameUIState
+    gameViewModel: GameViewModel = viewModel()
 ) {
     val iconWidth = Icons.Filled.Refresh.defaultWidth
 
@@ -343,11 +352,12 @@ private fun GameControlButtonsForGame(
  *  - Handle all the input (drag, click on grid to place the ball)
  *  - Handle all the ball animations and dynamic animated messages
  *
- *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
+ * @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
- *  @param gameViewModel Game view model
- *  @param gameUIState Current UI state of the game
- *  @param announceVictory Indicate whether it need to show animated victory message or not
+ * @param gameViewModel View Model that manage business logic for Game Screen. For more
+ * details, see [GameViewModel]
+ * @param gameUIState Current UI state of the game
+ * @param announceVictory Indicate whether it need to show animated victory message or not
  */
 @Composable
 private fun DrawGameBoard(
@@ -374,10 +384,10 @@ private fun DrawGameBoard(
 
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
-       AnimateVictoryMessageSetup(
-           { gameViewModel.gameSetModeWaitingOnUser()},
+        AnimateVictoryMessageSetup(
+            { gameViewModel.gameSetModeWaitingOnUser() },
             animateCtl = animateVictoryMessage
-       )
+        )
     } else {
         LaunchedEffect(true) {
             animateVictoryMessage.stop()
@@ -395,14 +405,16 @@ private fun DrawGameBoard(
         /**
          * The following lambda functions are used in [AnimateBallMovementsSetup] routine
          */
-        val gameMoveBallTask = { pos: Pos, direction: Direction -> gameViewModel.moveBall(pos, direction)}
+        val gameMoveBallTask =
+            { pos: Pos, direction: Direction -> gameViewModel.moveBall(pos, direction) }
 
         AnimateBallMovementsSetup(
             movingChain = gameUIState.movingChain,
             direction = gameUIState.movingDirection,
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
-            moveBallTask = gameMoveBallTask)
+            moveBallTask = gameMoveBallTask
+        )
 
     } else {
         // Else we longer need ball movement animation. So clear animation set-up
@@ -508,7 +520,12 @@ private fun DrawGameBoard(
             if (gameUIState.mode == GameUIState.GameMode.MoveBall) {
                 val ballsToErase = gameUIState.movingChain
 
-                gameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage, ballsToErase)
+                gameViewModel.drawGameBallsOnGrid(
+                    drawScope,
+                    gridSize,
+                    displayBallImage,
+                    ballsToErase
+                )
                 animateBallMovementsPerform(
                     drawScope = drawScope,
                     gridSize = gridSize,
@@ -600,14 +617,15 @@ private fun drawGridForGame(
 /**
  *  Set up animation for shadow ball movement
  *
- *  @param animateCtl Animate object that control the shadow ball movement for the game
- *  @param gameViewModel Game view model
+ * @param animateCtl Animate object that control the shadow ball movement for the game
+ * @param gameViewModel View Model that manage business logic for Game Screen. For more
+ * details, see [GameViewModel]
  */
 @Composable
 fun GameAnimateShadowBallMovementSetup(
     animateCtl: Animatable<Float, AnimationVector1D>,
     gameViewModel: GameViewModel
-)  {
+) {
     LaunchedEffect(Unit) {
         // Use coroutine to ensure both animation and sound happen in parallel
         coroutineScope {
@@ -630,4 +648,3 @@ fun GameAnimateShadowBallMovementSetup(
         } // coroutine scope
     }  // LaunchedEffect
 }
-

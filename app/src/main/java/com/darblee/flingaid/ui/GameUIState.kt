@@ -9,6 +9,10 @@ import com.darblee.flingaid.Direction
  *
  *  [Solver State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
  *
+ * It uses UDF (Unidirectional Data FLow) and immutable classes to represent the UI state.
+ *
+ * It will be managed in a observable flow called "StateFlow" Android composable will listen for it.
+ *
  * @param _mode The public field is [mode] (read-only access). The current game mode. Possible game
  * mode is defined at [GameMode]
  * @param _movingDirection The public field is [movingDirection] (read-only access). Direction to
@@ -16,7 +20,7 @@ import com.darblee.flingaid.Direction
  * @param _movingChain The public field is [movingChain] (read-only access). Movement chain in the current turn
  */
 data class GameUIState(
-    private var _mode : GameMode = GameMode.WaitingOnUser,
+    private var _mode: GameMode = GameMode.WaitingOnUser,
     private var _movingDirection: Direction = Direction.NO_WINNING_DIRECTION,
     private val _movingChain: List<MovingRec> = listOf()
 ) {

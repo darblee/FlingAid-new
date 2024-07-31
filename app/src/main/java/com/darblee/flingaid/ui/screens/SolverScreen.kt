@@ -107,7 +107,6 @@ import kotlin.math.abs
 @Composable
 fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController) {
 
-
     val solverViewModel: SolverViewModel = viewModel()
 
     LoadSolverFileOnlyOnce(solverViewModel)
@@ -133,7 +132,9 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         }
 
         SolverUiState.SolverMode.AnnounceNoPossibleSolution -> {
+            // TODO : Replace toast with a custom dialog
             gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
+
             solverViewModel.setModeToNoMoveAvailable()
         }
 
@@ -180,7 +181,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 /**
  * Populate the solver board by loading content from the solver game file
  *
- * @param solverViewModel Solver View Model that manage business logic for Solver Screen. FOr more
+ * @param solverViewModel Solver View Model that manage business logic for Solver Screen. For more
  * details, see [SolverViewModel]
  */
 @Composable
@@ -324,7 +325,7 @@ private fun Instruction_DynamicLogo(
  * Show all the control buttons on top of the screen. These buttons
  * are "find the solution" button and "reset" button
  *
- * @param solverViewModel Solver View Model that manage business logic for Solver Screen. FOr more
+ * @param solverViewModel Solver View Model that manage business logic for Solver Screen. For more
  * details, see [SolverViewModel]
  * @param readyToFindSolution Determine whether it is ready to start looking for a solution or not
  * @param currentlyThinking Determine whether it is currently in thinking mode or not
@@ -430,7 +431,7 @@ private fun ControlButtonsForSolver(
  *
  * @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
- * @param solverViewModel Solver View Model that manage business logic for Solver Screen. FOr more
+ * @param solverViewModel Solver View Model that manage business logic for Solver Screen. For more
  * details, see [SolverViewModel]
  * @param announceVictory Indicate whether it need to show animated victory message or not
  * @param moveBallInfo Info to process moving the ball. A null means there is no need to move ball

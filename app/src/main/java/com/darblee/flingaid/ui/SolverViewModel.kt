@@ -1,7 +1,6 @@
 package com.darblee.flingaid.ui
 
 import android.util.Log
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -25,7 +24,7 @@ import java.util.concurrent.CyclicBarrier
  * - It manage the business logic for the game. This includes the thinking activity.
  * - It is the sole source of truth for the solve game state.
  * - It prepare data for the UI. All information flow one direction to the UI
- * - It has a longer lifetime than the composable
+ * - It has a longer lifetime than the composable.
  *
  * [State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
  *
@@ -196,13 +195,12 @@ object SolverViewModel : ViewModel() {
     /**
      * New board so we need to set mode accordingly
      */
-    private fun setModeBaseOnBoard()
-    {
-        if (ballCount() < 2 ) {
+    private fun setModeBaseOnBoard() {
+        if (ballCount() < 2) {
             setModeToNoMoveAvailable()
         } else {
-            // There is more than one ball on board. User can perform action.
-            setModeToWaitingOnNextMove()
+            // There is more than one ball on board. User can start looking for a possible solution
+            setModeToReadyToFindSolution()
         }
 
     }
@@ -211,13 +209,10 @@ object SolverViewModel : ViewModel() {
     /**
      * Set UI state to "Announce Victory" mode
      */
-    private fun  setModeToAnnounceVictory()
-    {
+    private fun setModeToAnnounceVictory() {
         _uiSolverState.update { currentState ->
             currentState.copy(
                 _mode = SolverUiState.SolverMode.AnnounceVictory,
-                _winningMovingChainX = mutableListOf(),
-                _winningDirectionX = Direction.NO_WINNING_DIRECTION,
             )
         }
     }
@@ -225,13 +220,10 @@ object SolverViewModel : ViewModel() {
     /**
      * Set UI state to "One Ball Left" mode
      */
-    fun  setModeToNoMoveAvailable()
-    {
+    fun setModeToNoMoveAvailable() {
         _uiSolverState.update { currentState ->
             currentState.copy(
                 _mode = SolverUiState.SolverMode.NoMoveAvailable,
-                _winningMovingChainX = mutableListOf(),
-                _winningDirectionX = Direction.NO_WINNING_DIRECTION,
             )
         }
     }
@@ -239,31 +231,27 @@ object SolverViewModel : ViewModel() {
     /**
      * Set UI state to "Waiting on User Next Move
      */
-    private fun setModeToWaitingOnNextMove()
-    {
+    private fun setModeToReadyToFindSolution() {
         _uiSolverState.update { currentState ->
             currentState.copy(
                 _mode = SolverUiState.SolverMode.ReadyToFindSolution,
-                _winningMovingChainX = mutableListOf(),
-                _winningDirectionX = Direction.NO_WINNING_DIRECTION,
             )
         }
-
     }
 
     /**
      * Set mode to "Show Ball Movement"
      */
-    fun setModeToShowBallMovement(winningDirection: Direction, winningMovingChain: List<MovingRec>)
-    {
+    fun setModeToShowBallMovement(
+        winningDirection: Direction,
+        winningMovingChain: List<MovingRec>
+    ) {
         val moveBallRec = SolverUiState.SolverMode.MoveBall
         moveBallRec.winningDirMoveBall = winningDirection
-        moveBallRec.winingMovingChainMoveBall  = winningMovingChain
+        moveBallRec.winingMovingChainMoveBall = winningMovingChain
         _uiSolverState.update { curState ->
             curState.copy(
                 _mode = SolverUiState.SolverMode.MoveBall,
-                _winningDirectionX = winningDirection,
-                _winningMovingChainX = winningMovingChain,
             )
         }
     }
@@ -291,7 +279,7 @@ object SolverViewModel : ViewModel() {
      */
     fun findWinningMove() {
         gThinkingProgress = 0
-        val thinkingRec : SolverUiState.SolverMode.Thinking = SolverUiState.SolverMode.Thinking
+        val thinkingRec: SolverUiState.SolverMode.Thinking = SolverUiState.SolverMode.Thinking
         thinkingRec.progress = 0.0f
 
         _uiSolverState.update { currentStatus ->
@@ -379,7 +367,11 @@ object SolverViewModel : ViewModel() {
 
             _winningDirection_from_tasks = task1_WinningDirection
 
-            val movingChain = _solverBallPos.buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
+            val movingChain = _solverBallPos.buildMovingChain(
+                winningSolverGridPos.row,
+                winningSolverGridPos.col,
+                winningDir
+            )
 
             setModeToReadyToMove(winningDir, movingChain)
 
@@ -399,7 +391,11 @@ object SolverViewModel : ViewModel() {
 
                 _winningDirection_from_tasks = task2_WinningDirection
 
-                val movingChain = _solverBallPos.buildMovingChain(winningSolverGridPos.row, winningSolverGridPos.col, winningDir)
+                val movingChain = _solverBallPos.buildMovingChain(
+                    winningSolverGridPos.row,
+                    winningSolverGridPos.col,
+                    winningDir
+                )
 
                 setModeToReadyToMove(winningDir, movingChain)
 
@@ -410,8 +406,6 @@ object SolverViewModel : ViewModel() {
 
                 _uiSolverState.update { currentState ->
                     currentState.copy(
-                        _winningDirectionX = Direction.NO_WINNING_DIRECTION,
-                        _winningMovingChainX = mutableStateListOf(),
                         _mode = SolverUiState.SolverMode.AnnounceNoPossibleSolution
                     )
                 }
@@ -427,16 +421,16 @@ object SolverViewModel : ViewModel() {
      * @param winningDirection Direction of the move
      * @param winningMovingChain MovingCHain of the move
      */
-    private fun setModeToReadyToMove(winningDirection: Direction, winningMovingChain: List<MovingRec>)
-    {
+    private fun setModeToReadyToMove(
+        winningDirection: Direction,
+        winningMovingChain: List<MovingRec>
+    ) {
         val readyToMoveRec = SolverUiState.SolverMode.ReadyToMove
         readyToMoveRec.winingMovingChainPreview = winningMovingChain
         readyToMoveRec.winningDirectionPreview = winningDirection
 
         _uiSolverState.update { curState ->
             curState.copy(
-                _winningDirectionX = winningDirection,
-                _winningMovingChainX = winningMovingChain,
                 _mode = readyToMoveRec
             )
         }
@@ -567,7 +561,8 @@ object SolverViewModel : ViewModel() {
 
             if (newValue > currentValue) {
                 currentValue = newValue
-                val thinkingRec : SolverUiState.SolverMode.Thinking = SolverUiState.SolverMode.Thinking
+                val thinkingRec: SolverUiState.SolverMode.Thinking =
+                    SolverUiState.SolverMode.Thinking
                 thinkingRec.progress = currentValue
                 _uiSolverState.update { currentState ->
 
@@ -575,7 +570,8 @@ object SolverViewModel : ViewModel() {
                     // did not trigger a composition
                     currentState.copy(
                         _mode = thinkingRec,
-                        _recomposeFlag = !_uiSolverState.value._recomposeFlag)
+                        _recomposeFlag = !_uiSolverState.value._recomposeFlag
+                    )
                 }
             }
 
@@ -598,8 +594,8 @@ object SolverViewModel : ViewModel() {
      */
     fun getWinningMoveCount(
         pos: Pos,
-        direction: Direction): Int
-    {
+        direction: Direction
+    ): Int {
         val game = SolverEngine()
         game.populateGrid((_solverBallPos.ballList))
 
@@ -621,7 +617,7 @@ object SolverViewModel : ViewModel() {
             winningMoveCount = targetRow - winningRow
         }
 
-        if (direction== Direction.RIGHT) {
+        if (direction == Direction.RIGHT) {
             targetCol = game.findTargetColOnMoveRight(winningRow, winningCol)
             winningMoveCount = targetCol - winningCol
         }
@@ -642,8 +638,7 @@ object SolverViewModel : ViewModel() {
      * @param pos Position of the ball to move from
      * @param direction Direction of ball movement
      */
-    fun moveBallToWin(pos: Pos, direction: Direction)
-    {
+    fun moveBallToWin(pos: Pos, direction: Direction) {
         val game = SolverEngine()
         game.populateGrid((_solverBallPos.ballList))
 
@@ -680,13 +675,6 @@ object SolverViewModel : ViewModel() {
 
         _solverBallPos.saveBallListToFile()
 
-        _uiSolverState.update { currentState ->
-            currentState.copy(
-                _winningDirectionX = Direction.NO_WINNING_DIRECTION,
-                _winningMovingChainX = mutableListOf(),
-            )
-        }
-
         // If there is more ball, then automatically look for the next winnable move
         if (ballCount() > 1) {
             findWinningMove()
@@ -708,11 +696,12 @@ object SolverViewModel : ViewModel() {
      * @param ballsToErase Used during ball animation. We need to temporarily
      * erase the animation ball as the animation routine will display it
      */
-    fun drawSolverBallsOnGrid(drawScope: DrawScope,
-                            gridSize: Float,
-                            displayBallImage: ImageBitmap,
-                            ballsToErase: List<MovingRec> = listOf())
-    {
+    fun drawSolverBallsOnGrid(
+        drawScope: DrawScope,
+        gridSize: Float,
+        displayBallImage: ImageBitmap,
+        ballsToErase: List<MovingRec> = listOf()
+    ) {
         _solverBallPos.drawAllBalls(drawScope, gridSize, displayBallImage, ballsToErase)
     }
 }
