@@ -67,14 +67,14 @@ data class SolverUiState(
         }
         data object ReadyToFindSolution : SolverMode()
         data object ReadyToMove: SolverMode() {
-            var winningDirection : Direction = Direction.NO_WINNING_DIRECTION
-            var winingMovingChain : List<MovingRec> = listOf()
+            var winningDirectionPreview : Direction = Direction.NO_WINNING_DIRECTION
+            var winingMovingChainPreview : List<MovingRec> = listOf()
         }
         data object AnnounceNoPossibleSolution: SolverMode()
         data object AnnounceVictory : SolverMode()
         data object MoveBall : SolverMode() {
-            var winningDirection : Direction = Direction.NO_WINNING_DIRECTION
-            var winingMovingChain : List<MovingRec> = listOf()
+            var winningDirMoveBall : Direction = Direction.NO_WINNING_DIRECTION
+            var winingMovingChainMoveBall : List<MovingRec> = listOf()
         }
     }
 }

@@ -361,8 +361,8 @@ private fun ControlButtonsForSolver(
                 if (readyToMove) {
 
                     solverViewModel.setModeToShowBallMovement(
-                        readyToMoveInfo.winningDirection,
-                        readyToMoveInfo.winingMovingChain
+                        readyToMoveInfo.winningDirectionPreview,
+                        readyToMoveInfo.winingMovingChainPreview
                     )
                 }
 
@@ -439,6 +439,8 @@ private fun ControlButtonsForSolver(
  * @param solverViewModel Solver View Model that manage business logic for Solver Screen. FOr more
  * details, see [SolverViewModel]
  * @param announceVictory Indicate whether it need to show animated victory message or not
+ * @param moveBallInfo Info to process moving the ball. A null means there is no need to move ball
+ * @param currentlyThinking Indicate whether it is currently thinking or not
  */
 @Composable
 private fun DrawSolverBoard(
@@ -491,8 +493,8 @@ private fun DrawSolverBoard(
     // Set-up the particles, which is used for the explosion animated effect
         particles = remember {
             generateExplosionParticles(
-                moveBallInfo!!.winingMovingChain,
-                moveBallInfo.winningDirection
+                moveBallInfo!!.winingMovingChainMoveBall,
+                moveBallInfo.winningDirMoveBall
             )
         }.toMutableList()
 
@@ -504,8 +506,8 @@ private fun DrawSolverBoard(
             { pos: Pos, direction: Direction -> solverViewModel.moveBallToWin(pos, direction) }
 
         AnimateBallMovementsSetup(
-            movingChain = moveBallInfo!!.winingMovingChain,
-            direction = moveBallInfo.winningDirection,
+            movingChain = moveBallInfo!!.winingMovingChainMoveBall,
+            direction = moveBallInfo.winningDirMoveBall,
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
             moveBallTask = solverMoveBallTask
@@ -623,7 +625,7 @@ private fun DrawSolverBoard(
             if (showBallMovementAnimation) {
                 // The animation routine already show the ball in its starting position. We need
                 // to erase it from normal draw ball
-                val ballsToErase = moveBallInfo!!.winingMovingChain
+                val ballsToErase = moveBallInfo!!.winingMovingChainMoveBall
                 solverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage, ballsToErase)
             } else {
                 // No need to animate ball movement, but now need to check if we need to show
@@ -659,8 +661,8 @@ private fun DrawSolverBoard(
                     animateBallMovementChainCtlList = animateBallMovementChain,
                     animateParticleExplosionCtl = animateParticleExplosion,
                     particles = particles,
-                    direction = moveBallInfo!!.winningDirection,
-                    movingChain = moveBallInfo.winingMovingChain
+                    direction = moveBallInfo!!.winningDirMoveBall,
+                    movingChain = moveBallInfo.winingMovingChainMoveBall
                 )
             }
 

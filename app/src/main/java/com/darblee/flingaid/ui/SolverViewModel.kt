@@ -257,8 +257,8 @@ object SolverViewModel : ViewModel() {
     fun setModeToShowBallMovement(winningDirection: Direction, winningMovingChain: List<MovingRec>)
     {
         val moveBallRec = SolverUiState.SolverMode.MoveBall
-        moveBallRec.winningDirection = winningDirection
-        moveBallRec.winingMovingChain  = winningMovingChain
+        moveBallRec.winningDirMoveBall = winningDirection
+        moveBallRec.winingMovingChainMoveBall  = winningMovingChain
         _uiSolverState.update { curState ->
             curState.copy(
                 _mode = SolverUiState.SolverMode.MoveBall,
@@ -423,8 +423,8 @@ object SolverViewModel : ViewModel() {
     private fun setModeToReadyToMove(winningDirection: Direction, winningMovingChain: List<MovingRec>)
     {
         val ReadyToMoveRec : SolverUiState.SolverMode.ReadyToMove = SolverUiState.SolverMode.ReadyToMove
-        ReadyToMoveRec.winingMovingChain = winningMovingChain
-        ReadyToMoveRec.winningDirection = winningDirection
+        ReadyToMoveRec.winingMovingChainPreview = winningMovingChain
+        ReadyToMoveRec.winningDirectionPreview = winningDirection
 
         _uiSolverState.update { curState ->
             curState.copy(
