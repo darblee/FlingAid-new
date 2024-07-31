@@ -121,28 +121,44 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     when (solverUIState.mode) {
         SolverUiState.SolverMode.Thinking -> {
+            Log.i("Solver Recompose:", "Thinking : Show Thinking Progress")
+
             val thinkingRec : SolverUiState.SolverMode.Thinking = solverUIState.mode.let { SolverUiState.SolverMode.Thinking }
             curThinkingLvl = thinkingRec.progress
         }
 
-        SolverUiState.SolverMode.ReadyToFindSolution -> { readyToFindSolution = true }
+        SolverUiState.SolverMode.ReadyToFindSolution -> {
+            Log.i("Solver Recompose:", "ReadyToFindSolution : Enable \"Find Solution\" button")
+
+            readyToFindSolution = true
+        }
 
         SolverUiState.SolverMode.ReadyToMove -> {
+            Log.i("Solver Recompose:", "ReadyToMove : Enable \"Move Ball\" button")
+
             readyToMoveRec = solverUIState.mode.let { SolverUiState.SolverMode.ReadyToMove }
         }
 
         SolverUiState.SolverMode.AnnounceNoPossibleSolution -> {
+            Log.i("Solver Recompose:", "AnnounceNoPossibleSolution : Send message no winnable move")
+
             // TODO : Replace toast with a custom dialog
             gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
 
             solverViewModel.setModeToNoMoveAvailable()
         }
 
-        SolverUiState.SolverMode.AnnounceVictory -> { announceVictory = true }
+        SolverUiState.SolverMode.AnnounceVictory -> {
+            Log.i("Solver Recompose:", "AnnounceVictory : Show Victory message")
+
+            announceVictory = true
+        }
 
         SolverUiState.SolverMode.NoMoveAvailable -> { /* Do nothing */}
 
         SolverUiState.SolverMode.MoveBall -> {
+            Log.i("Solver Recompose:", "MoveBall : Move the ball")
+
             moveBallRec = solverUIState.mode.let { SolverUiState.SolverMode.MoveBall }
         }
     }

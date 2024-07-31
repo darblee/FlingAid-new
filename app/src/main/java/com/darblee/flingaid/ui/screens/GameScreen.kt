@@ -99,35 +99,42 @@ import kotlin.math.abs
 fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) {
 
     val gameViewModel: GameViewModel = viewModel()
+    var moveBallRec : GameUIState.GameMode.MoveBall? = null // null means it is NOT moving the ball
 
     LoadGameFileOnlyOnce(gameViewModel)
 
     var announceVictory = false
 
+
     val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
 
     when (gameUIState.mode) {
         GameUIState.GameMode.WonGame -> {
+            Log.i("Game Recompose: ", "WonGame : Announce Victory")
             announceVictory = true
         }
 
-        GameUIState.GameMode.WaitingOnUser -> { /* do nothing */
+        GameUIState.GameMode.WaitingOnUser -> {
+            Log.i("Game Recompose: ", "WaitingOnUser : Do nothing")
         }
 
-        GameUIState.GameMode.NoAvailableMove -> { /* TODO: Need to send message to user there is no available move */
+        GameUIState.GameMode.NoAvailableMove -> {
+            Log.i("Game Recompose: ", "NoAvailableMove : Do nothing")
         }
 
-        GameUIState.GameMode.MoveBall -> { /* It will process ball movement animation. DIsable control buttons */
+        GameUIState.GameMode.MoveBall -> {
+            Log.i("Game Recompose: ", "MoveBall : Do nothing")
+            moveBallRec = gameUIState.mode.let { GameUIState.GameMode.MoveBall }
         }
 
-        GameUIState.GameMode.ShowShadowMovement -> { /* It will process shadow movement. DIsable control buttons */
+        GameUIState.GameMode.ShowShadowMovement -> {
+            Log.i("Game Recompose: ", "ShowShadowMovement : Do nothing")
         }
 
-        GameUIState.GameMode.LookingForHint -> { /* TODO: Process looking for hint */
+        GameUIState.GameMode.LookingForHint -> {
+            Log.i("Game Recompose: ", "LookingForHint : Do nothing")
         }
     }
-
-    Log.i(Global.DEBUG_PREFIX, "Game Screen Recompose : Mode is ${gameUIState.mode}")
 
     HandleBackPressKeyForGameScreen(gameUIState.mode, navController, announceVictory)
 
@@ -143,7 +150,8 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             modifier = Modifier.fillMaxSize(),
             gameViewModel = gameViewModel,
             gameUIState = gameUIState,
-            announceVictory = announceVictory
+            announceVictory = announceVictory,
+            moveBallRec = moveBallRec
         )
     }
 }
@@ -365,6 +373,7 @@ private fun DrawGameBoard(
     gameViewModel: GameViewModel = viewModel(),
     gameUIState: GameUIState,
     announceVictory: Boolean,
+    moveBallRec: GameUIState.GameMode.MoveBall?,
 ) {
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
@@ -395,11 +404,11 @@ private fun DrawGameBoard(
         }
     }
 
-    if (gameUIState.mode == GameUIState.GameMode.MoveBall) {
+    if (moveBallRec != null) {
 
         // Set-up the particles, which is used for the explosion animated effect
         particles = remember {
-            generateExplosionParticles(gameUIState.movingChain, gameUIState.movingDirection)
+            generateExplosionParticles(moveBallRec.movingChain, moveBallRec.moveDirection)
         }.toMutableList()
 
         /**
@@ -409,8 +418,8 @@ private fun DrawGameBoard(
             { pos: Pos, direction: Direction -> gameViewModel.moveBall(pos, direction) }
 
         AnimateBallMovementsSetup(
-            movingChain = gameUIState.movingChain,
-            direction = gameUIState.movingDirection,
+            movingChain = moveBallRec.movingChain,
+            direction = moveBallRec.moveDirection,
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
             moveBallTask = gameMoveBallTask
@@ -517,8 +526,8 @@ private fun DrawGameBoard(
 
             displayBallImage.prepareToDraw()   // cache it
 
-            if (gameUIState.mode == GameUIState.GameMode.MoveBall) {
-                val ballsToErase = gameUIState.movingChain
+            if (moveBallRec != null) {
+                val ballsToErase = moveBallRec.movingChain
 
                 gameViewModel.drawGameBallsOnGrid(
                     drawScope,
@@ -533,8 +542,8 @@ private fun DrawGameBoard(
                     animateBallMovementChainCtlList = animateBallMovementChain,
                     animateParticleExplosionCtl = animateParticleExplosion,
                     particles = particles,
-                    direction = gameUIState.movingDirection,
-                    movingChain = gameUIState.movingChain
+                    direction = moveBallRec.moveDirection,
+                    movingChain = moveBallRec.movingChain
                 )
             } else {
                 gameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage)

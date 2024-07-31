@@ -254,8 +254,8 @@ object GameViewModel : ViewModel() {
         }
 
         val moveBallRec = GameUIState.GameMode.MoveBall
-        moveBallRec.MoveDirection = direction
-        moveBallRec.MovingChain = movingChain
+        moveBallRec.moveDirection = direction
+        moveBallRec.movingChain = movingChain
         _uiGameState.update { curState ->
             curState.copy(
                 _mode = moveBallRec,

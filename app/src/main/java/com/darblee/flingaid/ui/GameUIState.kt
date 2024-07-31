@@ -45,8 +45,8 @@ data class GameUIState(
     sealed class GameMode {
         data object WaitingOnUser : GameMode()
         data object MoveBall : GameMode() {
-            var MoveDirection : Direction = Direction.NO_WINNING_DIRECTION
-            var MovingChain : BallMoveSet = listOf()
+            var moveDirection : Direction = Direction.NO_WINNING_DIRECTION
+            var movingChain : BallMoveSet = listOf()
         }
         data object ShowShadowMovement : GameMode()
         data object LookingForHint : GameMode()
