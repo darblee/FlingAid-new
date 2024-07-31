@@ -218,7 +218,6 @@ object SolverViewModel : ViewModel() {
                 _mode = SolverUiState.SolverMode.AnnounceVictory,
                 _winningMovingChain = mutableListOf(),
                 _winningDirection = Direction.NO_WINNING_DIRECTION,
-                _thinkingProgressLevel = 0f
             )
         }
     }
@@ -233,7 +232,6 @@ object SolverViewModel : ViewModel() {
                 _mode = SolverUiState.SolverMode.NoMoveAvailable,
                 _winningMovingChain = mutableListOf(),
                 _winningDirection = Direction.NO_WINNING_DIRECTION,
-                _thinkingProgressLevel = 0f
             )
         }
     }
@@ -248,7 +246,6 @@ object SolverViewModel : ViewModel() {
                 _mode = SolverUiState.SolverMode.ReadyToFindSolution,
                 _winningMovingChain = mutableListOf(),
                 _winningDirection = Direction.NO_WINNING_DIRECTION,
-                _thinkingProgressLevel = 0f
             )
         }
 
@@ -291,11 +288,12 @@ object SolverViewModel : ViewModel() {
      */
     fun findWinningMove() {
         gThinkingProgress = 0
+        val thinkingRec : SolverUiState.SolverMode.Thinking = SolverUiState.SolverMode.Thinking
+        thinkingRec.progress = 0.0f
 
         _uiSolverState.update { currentStatus ->
             currentStatus.copy(
-                _mode = SolverUiState.SolverMode.Thinking,
-                _thinkingProgressLevel = 0.0f
+                _mode = thinkingRec,
             )
         }
         viewModelScope.launch {
@@ -555,11 +553,15 @@ object SolverViewModel : ViewModel() {
 
             if (newValue > currentValue) {
                 currentValue = newValue
+                val thinkingRec : SolverUiState.SolverMode.Thinking = SolverUiState.SolverMode.Thinking
+                thinkingRec.progress = currentValue
                 _uiSolverState.update { currentState ->
+
+                    // _recomposeFlag is used to trigger recomposition manual as changing the progress
+                    // did not trigger a composition
                     currentState.copy(
-                        _thinkingProgressLevel = currentValue,
-                        _mode = SolverUiState.SolverMode.Thinking
-                    )
+                        _mode = thinkingRec,
+                        _recomposeFlag = !_uiSolverState.value._recomposeFlag)
                 }
             }
 

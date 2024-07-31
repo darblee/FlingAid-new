@@ -22,28 +22,29 @@ data class MovingRec(
  * These UI state data needs to be preserved in the event there is a configuration change
  * (e.g. screen size change, screen rotation).
  *
+ *  It uses UDF (Unidirectional Data FLow) and immutable classes to represent the UI state.
+ *
  * It will be managed in a observable flow called "StateFlow" Android composable will listen for it.
  *
  * [Solver State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
  *
  * @param _mode The public field is [mode] (read-only access). The current game mode. Possible game
  * mode is defined at [SolverMode]
- * @param _thinkingProgressLevel  The public field is [thinkingProgressLevel] (read-only access).
- * Percentage of thinking process
  * @param _winningDirection The public field is [winningDirection] (read-only access). Direction
  * on the current to move that will lead toward a win
  * @param _winningMovingChain The public field is [winningMovingChain] (read-only). Ball movements
  * is tracked in list of multiple move for each ball in the chain.
+ * @param _recomposeFlag Flag used to trigger a recomposition. A change in item's property (e.g. progress)
+ * did not trigger a recomposition. (COuld this be a Jetpack compose bug?)  So I need to trigger this
+ * manual by changing the value of [_recomposeFlag]
  */
 data class SolverUiState(
     private var _mode : SolverMode = SolverMode.NoMoveAvailable,
-    var _thinkingProgressLevel: Float = 0.0f,
     var _winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
-    val _winningMovingChain: List<MovingRec> = listOf()
+    val _winningMovingChain: List<MovingRec> = listOf(),
+    var _recomposeFlag: Boolean = false
 ) {
     var mode = _mode
-        private set
-    var thinkingProgressLevel = _thinkingProgressLevel
         private set
     var winningDirection = _winningDirection
         private set
@@ -61,7 +62,9 @@ data class SolverUiState(
      */
     sealed class SolverMode {
         data object NoMoveAvailable : SolverMode()   // Equivalent to game won condition
-        data object Thinking : SolverMode()
+        data object Thinking : SolverMode() {
+            var progress : Float = 0.0f
+        }
         data object ReadyToFindSolution : SolverMode()
         data object ReadyToMove: SolverMode()
         data object AnnounceNoPossibleSolution: SolverMode()

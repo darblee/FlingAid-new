@@ -118,15 +118,16 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var readyToFindSolution = false
     var readyToMove = false
     var showBallMovementAnimation = false
-    var currentlyThinking = false
-    var thinkingProgressLevel = 0.0f
+
+    val constNotThinkingValue = -1.0f  // Must be less than 0f. It indicates it is not thinking.
+    var currentThinkingLevel = constNotThinkingValue
 
     val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
 
     when (solverUIState.mode) {
         SolverUiState.SolverMode.Thinking -> {
-            currentlyThinking = true
-            thinkingProgressLevel = solverUIState.thinkingProgressLevel
+            val thinkingRec : SolverUiState.SolverMode.Thinking = solverUIState.mode.let { SolverUiState.SolverMode.Thinking }
+            currentThinkingLevel = thinkingRec.progress
         }
 
         SolverUiState.SolverMode.ReadyToFindSolution -> { readyToFindSolution = true }
@@ -155,11 +156,11 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Instruction_DynamicLogo(currentlyThinking, thinkingProgressLevel)
+        Instruction_DynamicLogo(currentThinkingLevel)
         ControlButtonsForSolver(
             solverViewModel = solverViewModel,
             readyToFindSolution = readyToFindSolution,
-            currentlyThinking = currentlyThinking,
+            currentlyThinking = (currentThinkingLevel != constNotThinkingValue),
             readyToMove = readyToMove,
             winningDirection = solverUIState.winningDirection,
             winningMovingChain = solverUIState.winningMovingChain
@@ -170,7 +171,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             solverViewModel = solverViewModel,
             solverUIState = solverUIState,
             showBallMovementAnimation = showBallMovementAnimation,
-            announceVictory)
+            announceVictory = announceVictory
+        )
     }
 }
 
@@ -241,12 +243,10 @@ private fun HandleBackPressKeyForSolverScreen(
  * Display the game logo. Game logo also change to animation
  * when it is searching for the solution.
  *
- * @param currentlyThinking Determine whether it is currently in thinking mode or not
- * @param thinkingProgressLevel Thinking progress level
+ * @param thinkingProgressLevel Thinking progress level. Value of -1.0 f means it is not thinking.
  */
 @Composable
 private fun Instruction_DynamicLogo(
-    currentlyThinking: Boolean,
     thinkingProgressLevel: Float
 ) {
     val logoSize = 125.dp
@@ -257,8 +257,10 @@ private fun Instruction_DynamicLogo(
             .padding(5.dp),
         horizontalArrangement = Arrangement.SpaceAround
     ) {
+        val NotThinking = thinkingProgressLevel == -1.0f
+
         Box {
-            if (!currentlyThinking) {
+            if (NotThinking) {
                 val imageModifier = Modifier
                     .size(logoSize)
                     .align(Alignment.Center)
@@ -473,7 +475,6 @@ private fun DrawSolverBoard(
         LaunchedEffect(true) {
             animateVictoryMessage.stop()
             animateVictoryMessage.snapTo(0f)
-
         }
     }
 
