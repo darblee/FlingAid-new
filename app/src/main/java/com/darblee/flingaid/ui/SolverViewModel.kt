@@ -216,8 +216,8 @@ object SolverViewModel : ViewModel() {
         _uiSolverState.update { currentState ->
             currentState.copy(
                 _mode = SolverUiState.SolverMode.AnnounceVictory,
-                _winningMovingChain = mutableListOf(),
-                _winningDirection = Direction.NO_WINNING_DIRECTION,
+                _winningMovingChainX = mutableListOf(),
+                _winningDirectionX = Direction.NO_WINNING_DIRECTION,
             )
         }
     }
@@ -230,8 +230,8 @@ object SolverViewModel : ViewModel() {
         _uiSolverState.update { currentState ->
             currentState.copy(
                 _mode = SolverUiState.SolverMode.NoMoveAvailable,
-                _winningMovingChain = mutableListOf(),
-                _winningDirection = Direction.NO_WINNING_DIRECTION,
+                _winningMovingChainX = mutableListOf(),
+                _winningDirectionX = Direction.NO_WINNING_DIRECTION,
             )
         }
     }
@@ -244,8 +244,8 @@ object SolverViewModel : ViewModel() {
         _uiSolverState.update { currentState ->
             currentState.copy(
                 _mode = SolverUiState.SolverMode.ReadyToFindSolution,
-                _winningMovingChain = mutableListOf(),
-                _winningDirection = Direction.NO_WINNING_DIRECTION,
+                _winningMovingChainX = mutableListOf(),
+                _winningDirectionX = Direction.NO_WINNING_DIRECTION,
             )
         }
 
@@ -256,11 +256,14 @@ object SolverViewModel : ViewModel() {
      */
     fun setModeToShowBallMovement(winningDirection: Direction, winningMovingChain: List<MovingRec>)
     {
+        val moveBallRec = SolverUiState.SolverMode.MoveBall
+        moveBallRec.winningDirection = winningDirection
+        moveBallRec.winingMovingChain  = winningMovingChain
         _uiSolverState.update { curState ->
             curState.copy(
                 _mode = SolverUiState.SolverMode.MoveBall,
-                _winningDirection = winningDirection,
-                _winningMovingChain = winningMovingChain,
+                _winningDirectionX = winningDirection,
+                _winningMovingChainX = winningMovingChain,
             )
         }
     }
@@ -407,8 +410,8 @@ object SolverViewModel : ViewModel() {
 
                 _uiSolverState.update { currentState ->
                     currentState.copy(
-                        _winningDirection = Direction.NO_WINNING_DIRECTION,
-                        _winningMovingChain = mutableStateListOf(),
+                        _winningDirectionX = Direction.NO_WINNING_DIRECTION,
+                        _winningMovingChainX = mutableStateListOf(),
                         _mode = SolverUiState.SolverMode.AnnounceNoPossibleSolution
                     )
                 }
@@ -419,11 +422,15 @@ object SolverViewModel : ViewModel() {
 
     private fun setModeToReadyToMove(winningDirection: Direction, winningMovingChain: List<MovingRec>)
     {
+        val ReadyToMoveRec : SolverUiState.SolverMode.ReadyToMove = SolverUiState.SolverMode.ReadyToMove
+        ReadyToMoveRec.winingMovingChain = winningMovingChain
+        ReadyToMoveRec.winningDirection = winningDirection
+
         _uiSolverState.update { curState ->
             curState.copy(
-                _winningDirection = winningDirection,
-                _winningMovingChain = winningMovingChain,
-                _mode = SolverUiState.SolverMode.ReadyToMove
+                _winningDirectionX = winningDirection,
+                _winningMovingChainX = winningMovingChain,
+                _mode = ReadyToMoveRec
             )
         }
 
@@ -668,8 +675,8 @@ object SolverViewModel : ViewModel() {
 
         _uiSolverState.update { currentState ->
             currentState.copy(
-                _winningDirection = Direction.NO_WINNING_DIRECTION,
-                _winningMovingChain = mutableListOf(),
+                _winningDirectionX = Direction.NO_WINNING_DIRECTION,
+                _winningMovingChainX = mutableListOf(),
             )
         }
 

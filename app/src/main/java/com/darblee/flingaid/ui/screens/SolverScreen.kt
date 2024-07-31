@@ -81,7 +81,6 @@ import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
-import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUiState
 import com.darblee.flingaid.ui.SolverViewModel
@@ -108,7 +107,6 @@ import kotlin.math.abs
 @Composable
 fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController) {
 
-    Log.i(Global.DEBUG_PREFIX, "Solver Screen - recompose")
 
     val solverViewModel: SolverViewModel = viewModel()
 
@@ -117,12 +115,14 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var announceVictory = false
     var readyToFindSolution = false
     var readyToMove = false
-    var showBallMovementAnimation = false
 
     val constNotThinkingValue = -1.0f  // Must be less than 0f. It indicates it is not thinking.
     var currentThinkingLevel = constNotThinkingValue
 
     val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
+
+    var readyToMoveInfo : SolverUiState.SolverMode.ReadyToMove = solverUIState.mode.let { SolverUiState.SolverMode.ReadyToMove }
+    var moveBallRec : SolverUiState.SolverMode.MoveBall? = null  // null means it is NOT in "Move Ball" mode
 
     when (solverUIState.mode) {
         SolverUiState.SolverMode.Thinking -> {
@@ -132,7 +132,10 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
         SolverUiState.SolverMode.ReadyToFindSolution -> { readyToFindSolution = true }
 
-        SolverUiState.SolverMode.ReadyToMove -> { readyToMove = true }
+        SolverUiState.SolverMode.ReadyToMove -> {
+            readyToMove = true
+            readyToMoveInfo = SolverUiState.SolverMode.ReadyToMove
+        }
 
         SolverUiState.SolverMode.AnnounceNoPossibleSolution -> {
             gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
@@ -143,8 +146,11 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
         SolverUiState.SolverMode.NoMoveAvailable -> { /* Do nothing */}
 
-        SolverUiState.SolverMode.MoveBall -> {  showBallMovementAnimation = true  }
+        SolverUiState.SolverMode.MoveBall -> {
+            moveBallRec = solverUIState.mode.let { SolverUiState.SolverMode.MoveBall }
+        }
     }
+    Log.i(Global.DEBUG_PREFIX, "Solver Screen Recompose : Mode is ${solverUIState.mode}")
 
     // Need special handling of back key press events. Do not navigate when:
     // - It is in middle of thinking
@@ -162,17 +168,17 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             readyToFindSolution = readyToFindSolution,
             currentlyThinking = (currentThinkingLevel != constNotThinkingValue),
             readyToMove = readyToMove,
-            winningDirection = solverUIState.winningDirection,
-            winningMovingChain = solverUIState.winningMovingChain
+            readyToMoveInfo = readyToMoveInfo
         )
 
         DrawSolverBoard(
             modifier = Modifier.fillMaxSize(),
             solverViewModel = solverViewModel,
             solverUIState = solverUIState,
-            showBallMovementAnimation = showBallMovementAnimation,
-            announceVictory = announceVictory
-        )
+            announceVictory = announceVictory,
+            moveBallInfo = moveBallRec,
+            currentlyThinking = (currentThinkingLevel != constNotThinkingValue),
+            )
     }
 }
 
@@ -328,8 +334,8 @@ private fun Instruction_DynamicLogo(
  * @param readyToFindSolution Determine whether it is ready to start looking for a solution or not
  * @param currentlyThinking Determine whether it is currently in thinking mode or not
  * @param readyToMove Determine whether it is ready to make winning move or not
- * @param winningDirection If it is ready to move, then this is the direction of the move
- * @param winningMovingChain If it is ready to move, then this is the moving details
+ * @param readyToMoveInfo if mode is set to this object, then will also contains winning direction
+ * and winning moving chain
  */
 @Composable
 private fun ControlButtonsForSolver(
@@ -337,8 +343,7 @@ private fun ControlButtonsForSolver(
     readyToFindSolution: Boolean,
     currentlyThinking: Boolean,
     readyToMove: Boolean,
-    winningDirection: Direction,
-    winningMovingChain: List<MovingRec>
+    readyToMoveInfo: SolverUiState.SolverMode.ReadyToMove
 ) {
     val view = LocalView.current
     val context = LocalContext.current
@@ -354,9 +359,10 @@ private fun ControlButtonsForSolver(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
                 if (readyToMove) {
+
                     solverViewModel.setModeToShowBallMovement(
-                        winningDirection,
-                        winningMovingChain
+                        readyToMoveInfo.winningDirection,
+                        readyToMoveInfo.winingMovingChain
                     )
                 }
 
@@ -432,8 +438,6 @@ private fun ControlButtonsForSolver(
  *  elements
  * @param solverViewModel Solver View Model that manage business logic for Solver Screen. FOr more
  * details, see [SolverViewModel]
- * @param solverUIState Current UI state of the solver game
- * @param showBallMovementAnimation Indicate whether it need to do ball movement animation
  * @param announceVictory Indicate whether it need to show animated victory message or not
  */
 @Composable
@@ -441,9 +445,12 @@ private fun DrawSolverBoard(
     modifier: Modifier = Modifier,
     solverViewModel: SolverViewModel = viewModel(),
     solverUIState: SolverUiState,
-    showBallMovementAnimation: Boolean,
     announceVictory: Boolean,
+    moveBallInfo: SolverUiState.SolverMode.MoveBall?,
+    currentlyThinking: Boolean,
 ) {
+    val showBallMovementAnimation = (moveBallInfo != null)
+
     val context = LocalContext.current
 
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -481,22 +488,29 @@ private fun DrawSolverBoard(
     // Ball movement must have at least 2 balls in the movement chain
     if (showBallMovementAnimation) {
 
-        // Set-up the particles, which is used for the explosion animated effect
-       particles = remember {
-            generateExplosionParticles(solverUIState.winningMovingChain, solverUIState.winningDirection)
+    // Set-up the particles, which is used for the explosion animated effect
+        particles = remember {
+            generateExplosionParticles(
+                moveBallInfo!!.winingMovingChain,
+                moveBallInfo.winningDirection
+            )
         }.toMutableList()
+
 
         /**
          * The following lambda functions are used in [AnimateBallMovementsSetup] routine
          */
-        val solverMoveBallTask = { pos: Pos, direction: Direction -> solverViewModel.moveBallToWin(pos, direction)}
+        val solverMoveBallTask =
+            { pos: Pos, direction: Direction -> solverViewModel.moveBallToWin(pos, direction) }
 
         AnimateBallMovementsSetup(
-            movingChain = solverUIState.winningMovingChain,
-            direction = solverUIState.winningDirection,
+            movingChain = moveBallInfo!!.winingMovingChain,
+            direction = moveBallInfo.winningDirection,
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
-            moveBallTask = solverMoveBallTask)
+            moveBallTask = solverMoveBallTask
+        )
+
     } else {
         particles.clear()
         LaunchedEffect(true) {
@@ -539,7 +553,7 @@ private fun DrawSolverBoard(
 
                             view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
-                            if (solverUIState.mode == SolverUiState.SolverMode.Thinking) {
+                            if (currentlyThinking) {
                                 Toast
                                     .makeText(
                                         context,
@@ -609,7 +623,7 @@ private fun DrawSolverBoard(
             if (showBallMovementAnimation) {
                 // The animation routine already show the ball in its starting position. We need
                 // to erase it from normal draw ball
-                val ballsToErase = solverUIState.winningMovingChain
+                val ballsToErase = moveBallInfo!!.winingMovingChain
                 solverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage, ballsToErase)
             } else {
                 // No need to animate ball movement, but now need to check if we need to show
@@ -619,18 +633,18 @@ private fun DrawSolverBoard(
                     // If there is a known winnable move, then provide user a review of the next
                     // winnable move by showing the animated ball movement in a shadow (transparent)
                     if (hasFoundWinnableMove(solverUIState)) {
-                        if (solverUIState.winningMovingChain.isNotEmpty()) {
+                        if (solverUIState.winningMovingChainX.isNotEmpty()) {
                             val moveCount = solverViewModel.getWinningMoveCount(
-                                pos = solverUIState.winningMovingChain[0].pos,
-                                direction = solverUIState.winningDirection)
+                                pos = solverUIState.winningMovingChainX[0].pos,
+                                direction = solverUIState.winningDirX)
                             animateShadowBallMovementsPerform(
                                 drawScope = drawScope,
                                 gridSize = gridSize,
                                 animateCtl = animatePreviewWinningMove,
                                 displayBallImage = displayBallImage,
                                 distance = moveCount,
-                                direction = solverUIState.winningDirection,
-                                pos = solverUIState.winningMovingChain[0].pos
+                                direction = solverUIState.winningDirX,
+                                pos = solverUIState.winningMovingChainX[0].pos
                             )
                         }
                     }
@@ -645,8 +659,8 @@ private fun DrawSolverBoard(
                     animateBallMovementChainCtlList = animateBallMovementChain,
                     animateParticleExplosionCtl = animateParticleExplosion,
                     particles = particles,
-                    direction = solverUIState.winningDirection,
-                    movingChain = solverUIState.winningMovingChain
+                    direction = moveBallInfo!!.winningDirection,
+                    movingChain = moveBallInfo.winingMovingChain
                 )
             }
 
@@ -664,7 +678,7 @@ private fun DrawSolverBoard(
  * Determine if we have a winnable move
  */
 fun hasFoundWinnableMove(uiState: SolverUiState): Boolean {
-    return when (uiState.winningDirection) {
+    return when (uiState.winningDirX) {
         Direction.UP,
         Direction.DOWN,
         Direction.LEFT,

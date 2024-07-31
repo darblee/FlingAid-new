@@ -30,9 +30,9 @@ data class MovingRec(
  *
  * @param _mode The public field is [mode] (read-only access). The current game mode. Possible game
  * mode is defined at [SolverMode]
- * @param _winningDirection The public field is [winningDirection] (read-only access). Direction
+ * @param _winningDirectionX The public field is [winningDirX] (read-only access). Direction
  * on the current to move that will lead toward a win
- * @param _winningMovingChain The public field is [winningMovingChain] (read-only). Ball movements
+ * @param _winningMovingChainX The public field is [winningMovingChainX] (read-only). Ball movements
  * is tracked in list of multiple move for each ball in the chain.
  * @param _recomposeFlag Flag used to trigger a recomposition. A change in item's property (e.g. progress)
  * did not trigger a recomposition. (COuld this be a Jetpack compose bug?)  So I need to trigger this
@@ -40,15 +40,15 @@ data class MovingRec(
  */
 data class SolverUiState(
     private var _mode : SolverMode = SolverMode.NoMoveAvailable,
-    var _winningDirection: Direction = Direction.NO_WINNING_DIRECTION,
-    val _winningMovingChain: List<MovingRec> = listOf(),
+    var _winningDirectionX: Direction = Direction.NO_WINNING_DIRECTION,
+    val _winningMovingChainX: List<MovingRec> = listOf(),
     var _recomposeFlag: Boolean = false
 ) {
     var mode = _mode
         private set
-    var winningDirection = _winningDirection
+    var winningDirX = _winningDirectionX
         private set
-    var winningMovingChain = _winningMovingChain
+    var winningMovingChainX = _winningMovingChainX
         private set
 
     /**
@@ -66,9 +66,15 @@ data class SolverUiState(
             var progress : Float = 0.0f
         }
         data object ReadyToFindSolution : SolverMode()
-        data object ReadyToMove: SolverMode()
+        data object ReadyToMove: SolverMode() {
+            var winningDirection : Direction = Direction.NO_WINNING_DIRECTION
+            var winingMovingChain : List<MovingRec> = listOf()
+        }
         data object AnnounceNoPossibleSolution: SolverMode()
         data object AnnounceVictory : SolverMode()
-        data object MoveBall : SolverMode()
+        data object MoveBall : SolverMode() {
+            var winningDirection : Direction = Direction.NO_WINNING_DIRECTION
+            var winingMovingChain : List<MovingRec> = listOf()
+        }
     }
 }
