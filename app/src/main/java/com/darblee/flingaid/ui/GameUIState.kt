@@ -6,13 +6,7 @@ import com.darblee.flingaid.Direction
 /**
  * The UI state of game screen
  *
- * It will be managed in a observable flow. Android composable will listen for it.
- *
- *  [Solver State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
- *
- * It uses UDF (Unidirectional Data FLow) and immutable classes to represent the UI state.
- *
- * It will be managed in a observable flow called "StateFlow" Android composable will listen for it.
+ * For details, see [GameViewModel]
  *
  * @param _mode The public field is [mode] (read-only access). The current game mode. Possible game
  * mode is defined at [GameMode]

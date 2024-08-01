@@ -156,7 +156,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         }
 
         SolverUIState.SolverMode.NoMoveAvailable -> {
-            Log.i("Solver Recompose:", "${solverUIState.mode} : DO nothing. Need to disable move/find button")
+            Log.i("Solver Recompose:", "${solverUIState.mode} : Do nothing. Need to disable move/find button")
         }
 
         SolverUIState.SolverMode.MoveBall -> {
@@ -578,13 +578,7 @@ private fun DrawSolverBoard(
                             view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
                             if (currentlyThinking) {
-                                Toast
-                                    .makeText(
-                                        context,
-                                        "Unable to modify board while still searching",
-                                        Toast.LENGTH_SHORT
-                                    )
-                                    .show()
+                                gameToast(context, "Unable to modify board while it is still thinking")
                             } else {
                                 val row = (tapOffset.y / gridSize).toInt()
                                 val col = (tapOffset.x / gridSize).toInt()

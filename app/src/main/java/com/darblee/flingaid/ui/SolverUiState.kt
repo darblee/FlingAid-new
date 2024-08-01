@@ -6,7 +6,10 @@ import com.darblee.flingaid.utilities.Pos
 import kotlinx.serialization.Serializable
 
 /**
- * Moving record
+ * **Moving record**
+ *
+ * **Developer's note**: Need to make [Serializable] so that object can be put in common format
+ * (cross-platform support) as content will be stored
  *
  *  @property pos: where to move from
  *  @property distance: how far to move
@@ -20,14 +23,7 @@ data class MovingRec(
 /**
  * The UI state of the solver screen
  *
- * These UI state data needs to be preserved in the event there is a configuration change
- * (e.g. screen size change, screen rotation).
- *
- * It uses UDF (Unidirectional Data FLow) and immutable classes to represent the UI state.
- *
- * It will be managed in a observable flow called "StateFlow" Android composable will listen for it.
- *
- * [Solver State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
+ * For details, see [SolverViewModel]
  *
  * @param _mode The public field is [mode] (read-only access). The current game mode. Possible game
  * mode is defined at [SolverMode]

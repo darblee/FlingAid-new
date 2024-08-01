@@ -17,20 +17,23 @@ import kotlinx.coroutines.flow.update
 import java.io.File
 
 /**
- * **View Model for the Game**
+ * **View Model for the  Game**
  *
- * - It manage the business logic for the game. This includes the thinking activity.
- * - It is the sole source of truth for the solve game state.
- * - It prepare data for the UI. All information flow one direction to the UI
- * - It has a longer lifetime than the composable
- *
+ * - It Manage the business logic for the game. This includes the thinking activity.
+ * - It holds the source of truth for the solve game state.
+ * - It prepare data for the UI and follow UDF (Unidirectional Data FLow) to the UI
+ * - It has a longer lifetime than the composable.
+ * - All fields in UI state [GameUIState] is stateless. It can be re-created after reading the game board ball
+ * positions. The application can survive process death. No need to save state to persistent
+ * storage.
+ *  - There can only be one [GameViewModel] instance. Hence, use the singleton class (object)
+ * - Here is the overall state machine:
  * [State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
  *
- * There can only be one GameViewModel instance. Hence, use the singleton class (object)
- *
- * [SolverUIState] State of UI
+ * [GameUIState] State of UI
  *
  * **Ball Management**
+ *
  * Managing the ball on the game board
  * - [loadGameFile] : Define the file to store the ball position information
  * - [ballCount]
