@@ -49,7 +49,7 @@ data class SolverUiState(
      * @property NoMoveAvailable No more move is available
      * @property Thinking Computer to look for solution
      * @property ReadyToFindSolution Waiting for user action.
-     * @property ReadyToMove Found a solution. Now waiting for user action
+     * @property HasWinningMoveWaitingToMove Found a solution. Now waiting for user to move it
      * @property AnnounceNoPossibleSolution Could not find a solution. Need to inform user there is no solution
      * before going back to [ReadyToFindSolution]
      * @property AnnounceVictory Need to announce the victory message
@@ -61,7 +61,7 @@ data class SolverUiState(
             var progress : Float = 0.0f
         }
         data object ReadyToFindSolution : SolverMode()
-        data object ReadyToMove: SolverMode() {
+        data object HasWinningMoveWaitingToMove: SolverMode() {
             var winningDirectionPreview : Direction = Direction.NO_WINNING_DIRECTION
             var winingMovingChainPreview : BallMoveSet = listOf()
         }

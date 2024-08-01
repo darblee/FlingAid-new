@@ -216,8 +216,9 @@ object GameViewModel : ViewModel() {
     }
 
     /**
-     * CHeck if the upcoming move is valid move or not. It will return the appropiate move result type
-     * and set the UI state accordingly.
+     * Attempt to set up the ball move based on input, which is from user's swipe action.
+     * If first check if the upcoming move is valid move or not. It will return the appropriate
+     * move result type and set the UI state accordingly.
      *
      * @param initialRow Row position to move the ball from
      * @param initialCol Column position to move the ball from
@@ -228,7 +229,7 @@ object GameViewModel : ViewModel() {
      * - [MoveResult.InvalidNoRoom] This is not a valid move. There is no room to move the ball
      * - [MoveResult.InvalidNoBall] This is not a valid move. There is no ball in the provided position
      * - [MoveResult.InvalidNoBump] This is not a valid move as it moves the ball of the edge. It
-     * set the game mode to [GameUIState.GameMode.ShowShadowMovement]
+     * set the game mode to [GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove]
      */
     fun setupNextMove(initialRow: Int, initialCol: Int, direction : Direction): MoveResult
     {
@@ -241,11 +242,12 @@ object GameViewModel : ViewModel() {
         if (movingChain.isEmpty())
             return MoveResult.InvalidNoRoom
 
-        // We can move the ball. Now check if we have bump another ball
+        // If only one ball is moving, then it did not bump another ball. Hence, this is
+        // an invalid move. We need to inform user this is invalid by showing shadow move.
         if (movingChain.size == 1) {
             _uiGameState.update { curState ->
                 curState.copy(
-                    _mode = GameUIState.GameMode.ShowShadowMovement,
+                    _mode = GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove,
                     _movingDirection = direction,
                     _movingChain = movingChain
                 )

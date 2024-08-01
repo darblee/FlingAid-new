@@ -426,7 +426,7 @@ object SolverViewModel : ViewModel() {
         winningDirection: Direction,
         winningMovingChain: BallMoveSet
     ) {
-        val readyToMoveRec = SolverUiState.SolverMode.ReadyToMove
+        val readyToMoveRec = SolverUiState.SolverMode.HasWinningMoveWaitingToMove
         readyToMoveRec.winingMovingChainPreview = winningMovingChain
         readyToMoveRec.winningDirectionPreview = winningDirection
 

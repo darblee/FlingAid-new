@@ -110,29 +110,29 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
 
     when (gameUIState.mode) {
         GameUIState.GameMode.WonGame -> {
-            Log.i("Game Recompose: ", "WonGame : Announce Victory")
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Announce Victory")
             announceVictory = true
         }
 
         GameUIState.GameMode.WaitingOnUser -> {
-            Log.i("Game Recompose: ", "WaitingOnUser : Do nothing")
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
         }
 
         GameUIState.GameMode.NoAvailableMove -> {
-            Log.i("Game Recompose: ", "NoAvailableMove : Do nothing")
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
         }
 
         GameUIState.GameMode.MoveBall -> {
-            Log.i("Game Recompose: ", "MoveBall : Do nothing")
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
             moveBallRec = gameUIState.mode.let { GameUIState.GameMode.MoveBall }
         }
 
-        GameUIState.GameMode.ShowShadowMovement -> {
-            Log.i("Game Recompose: ", "ShowShadowMovement : Do nothing")
+        GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove -> {
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
         }
 
         GameUIState.GameMode.LookingForHint -> {
-            Log.i("Game Recompose: ", "LookingForHint : Do nothing")
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
         }
     }
 
@@ -440,7 +440,7 @@ private fun DrawGameBoard(
      */
     val animateShadowMovement = remember { Animatable(initialValue = 0f) }
 
-    if (gameUIState.mode == GameUIState.GameMode.ShowShadowMovement)
+    if (gameUIState.mode == GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove)
         GameAnimateShadowBallMovementSetup(animateShadowMovement, gameViewModel)
 
     Box(
@@ -548,7 +548,7 @@ private fun DrawGameBoard(
             } else {
                 gameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage)
 
-                if (gameUIState.mode == GameUIState.GameMode.ShowShadowMovement) {
+                if (gameUIState.mode == GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove) {
                     if (gameUIState.movingChain.isNotEmpty()) {
                         animateShadowBallMovementsPerform(
                             drawScope = drawScope,
