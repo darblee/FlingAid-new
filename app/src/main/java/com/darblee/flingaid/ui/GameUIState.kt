@@ -22,14 +22,8 @@ import com.darblee.flingaid.Direction
  */
 data class GameUIState(
     private var _mode: GameMode = GameMode.WaitingOnUser,
-    private var _movingDirection: Direction = Direction.NO_WINNING_DIRECTION,
-    private val _movingChain: BallMoveSet = listOf()
 ) {
     var mode = _mode
-        private set
-    var movingDirection = _movingDirection
-        private set
-    var movingChain = _movingChain
         private set
 
     /**

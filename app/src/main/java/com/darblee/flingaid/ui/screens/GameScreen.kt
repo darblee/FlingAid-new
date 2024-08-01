@@ -101,6 +101,9 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     val gameViewModel: GameViewModel = viewModel()
     var moveBallRec : GameUIState.GameMode.MoveBall? = null // null means it is NOT moving the ball
 
+    // null means it is NOT IndicateInvalidMoveByShowingShadowMove mode.
+    var shadowBallRec : GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove? = null
+
     LoadGameFileOnlyOnce(gameViewModel)
 
     var announceVictory = false
@@ -123,12 +126,13 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         }
 
         GameUIState.GameMode.MoveBall -> {
-            Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Process moving ball")
             moveBallRec = gameUIState.mode.let { GameUIState.GameMode.MoveBall }
         }
 
         GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove -> {
-            Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Do shadow ball move plus error sound")
+            shadowBallRec = gameUIState.mode.let { GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove }
         }
 
         GameUIState.GameMode.LookingForHint -> {
@@ -149,9 +153,9 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         DrawGameBoard(
             modifier = Modifier.fillMaxSize(),
             gameViewModel = gameViewModel,
-            gameUIState = gameUIState,
             announceVictory = announceVictory,
-            moveBallRec = moveBallRec
+            moveBallRec = moveBallRec,
+            shadowBallRec = shadowBallRec
         )
     }
 }
@@ -371,9 +375,9 @@ private fun GameControlButtonsForGame(
 private fun DrawGameBoard(
     modifier: Modifier = Modifier,
     gameViewModel: GameViewModel = viewModel(),
-    gameUIState: GameUIState,
     announceVictory: Boolean,
     moveBallRec: GameUIState.GameMode.MoveBall?,
+    shadowBallRec: GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove?,
 ) {
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
@@ -440,7 +444,7 @@ private fun DrawGameBoard(
      */
     val animateShadowMovement = remember { Animatable(initialValue = 0f) }
 
-    if (gameUIState.mode == GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove)
+    if (shadowBallRec != null)
         GameAnimateShadowBallMovementSetup(animateShadowMovement, gameViewModel)
 
     Box(
@@ -548,18 +552,16 @@ private fun DrawGameBoard(
             } else {
                 gameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage)
 
-                if (gameUIState.mode == GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove) {
-                    if (gameUIState.movingChain.isNotEmpty()) {
-                        animateShadowBallMovementsPerform(
-                            drawScope = drawScope,
-                            gridSize = gridSize,
-                            displayBallImage = displayBallImage,
-                            animateCtl = animateShadowMovement,
-                            distance = gameUIState.movingChain[0].distance,
-                            direction = gameUIState.movingDirection,
-                            pos = gameUIState.movingChain[0].pos
-                        )
-                    }
+                if (shadowBallRec != null) {
+                    animateShadowBallMovementsPerform(
+                        drawScope = drawScope,
+                        gridSize = gridSize,
+                        displayBallImage = displayBallImage,
+                        animateCtl = animateShadowMovement,
+                        distance = shadowBallRec.shadowMovingChain[0].distance,
+                        direction = shadowBallRec.shadowMoveDirection,
+                        pos = shadowBallRec.shadowMovingChain[0].pos
+                    )
                 }
             }
 

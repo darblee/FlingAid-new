@@ -201,9 +201,7 @@ object GameViewModel : ViewModel() {
     {
         _uiGameState.update { curState ->
             curState.copy(
-                _mode = GameUIState.GameMode.WaitingOnUser,
-                _movingDirection = Direction.NO_WINNING_DIRECTION,
-                _movingChain = listOf()
+                _mode = GameUIState.GameMode.WaitingOnUser
             )
         }
     }
@@ -245,11 +243,12 @@ object GameViewModel : ViewModel() {
         // If only one ball is moving, then it did not bump another ball. Hence, this is
         // an invalid move. We need to inform user this is invalid by showing shadow move.
         if (movingChain.size == 1) {
+            val shadowMoveBallRec = GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove
+            shadowMoveBallRec.shadowMoveDirection = direction
+            shadowMoveBallRec.shadowMovingChain = movingChain
             _uiGameState.update { curState ->
                 curState.copy(
-                    _mode = GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove,
-                    _movingDirection = direction,
-                    _movingChain = movingChain
+                    _mode = shadowMoveBallRec
                 )
             }
             return MoveResult.InvalidNoBump
@@ -260,9 +259,7 @@ object GameViewModel : ViewModel() {
         moveBallRec.movingChain = movingChain
         _uiGameState.update { curState ->
             curState.copy(
-                _mode = moveBallRec,
-                _movingDirection = direction,
-                _movingChain = movingChain
+                _mode = moveBallRec
             )
         }
         return MoveResult.Valid
@@ -314,17 +311,13 @@ object GameViewModel : ViewModel() {
 
         _gameBallPos.saveBallListToFile()
 
-        val gameMode = if (ballCount() == 1) {
-            GameUIState.GameMode.WonGame
-        } else {
-            GameUIState.GameMode.WaitingOnUser
-        }
-
         _uiGameState.update { curState ->
             curState.copy(
-                _mode = gameMode,
-                _movingDirection = Direction.NO_WINNING_DIRECTION,
-                _movingChain = listOf()
+                _mode = if (ballCount() == 1) {
+                    GameUIState.GameMode.WonGame
+                } else {
+                    GameUIState.GameMode.WaitingOnUser
+                }
             )
         }
     }
