@@ -31,7 +31,7 @@ import java.util.concurrent.CyclicBarrier
  *
  * There can only be one SolverViewModel instance. Hence, use the singleton class (object)
  *
- * [SolverUiState] State of UI
+ * [SolverUIState] State of UI
  *
  * **Ball Management**
  * Managing the ball on the game board
@@ -133,7 +133,7 @@ object SolverViewModel : ViewModel() {
      *
      * For reference, see [ https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn ]
      */
-    private val _uiSolverState = MutableStateFlow(SolverUiState())
+    private val _uiSolverState = MutableStateFlow(SolverUIState())
 
     /**
      * Holds the [_uiSolverState] as a state flow.
@@ -152,7 +152,7 @@ object SolverViewModel : ViewModel() {
      * `private set` this is internally modifiable and read-only access from the outside.
      * This ensure information flow in one direction from the view model to the UI
      */
-    internal var uiState: StateFlow<SolverUiState> = _uiSolverState.asStateFlow()
+    internal var uiState: StateFlow<SolverUIState> = _uiSolverState.asStateFlow()
         private set
 
     /**
@@ -213,7 +213,7 @@ object SolverViewModel : ViewModel() {
     private fun setModeToAnnounceVictory() {
         _uiSolverState.update { currentState ->
             currentState.copy(
-                _mode = SolverUiState.SolverMode.AnnounceVictory,
+                _mode = SolverUIState.SolverMode.AnnounceVictory,
             )
         }
     }
@@ -224,7 +224,7 @@ object SolverViewModel : ViewModel() {
     fun setModeToNoMoveAvailable() {
         _uiSolverState.update { currentState ->
             currentState.copy(
-                _mode = SolverUiState.SolverMode.NoMoveAvailable,
+                _mode = SolverUIState.SolverMode.NoMoveAvailable,
             )
         }
     }
@@ -235,7 +235,7 @@ object SolverViewModel : ViewModel() {
     private fun setModeToReadyToFindSolution() {
         _uiSolverState.update { currentState ->
             currentState.copy(
-                _mode = SolverUiState.SolverMode.ReadyToFindSolution,
+                _mode = SolverUIState.SolverMode.ReadyToFindSolution,
             )
         }
     }
@@ -247,7 +247,7 @@ object SolverViewModel : ViewModel() {
         winningDirection: Direction,
         winningMovingChain: BallMoveSet
     ) {
-        val moveBallRec = SolverUiState.SolverMode.MoveBall
+        val moveBallRec = SolverUIState.SolverMode.MoveBall
         moveBallRec.winningDirMoveBall = winningDirection
         moveBallRec.winingMovingChainMoveBall = winningMovingChain
         _uiSolverState.update { curState ->
@@ -280,7 +280,7 @@ object SolverViewModel : ViewModel() {
      */
     fun findWinningMove() {
         gThinkingProgress = 0
-        val thinkingRec: SolverUiState.SolverMode.Thinking = SolverUiState.SolverMode.Thinking
+        val thinkingRec: SolverUIState.SolverMode.Thinking = SolverUIState.SolverMode.Thinking
         thinkingRec.progress = 0.0f
 
         _uiSolverState.update { currentStatus ->
@@ -407,7 +407,7 @@ object SolverViewModel : ViewModel() {
 
                 _uiSolverState.update { currentState ->
                     currentState.copy(
-                        _mode = SolverUiState.SolverMode.AnnounceNoPossibleSolution
+                        _mode = SolverUIState.SolverMode.AnnounceNoPossibleSolution
                     )
                 }
             }
@@ -416,7 +416,7 @@ object SolverViewModel : ViewModel() {
     }
 
     /**
-     * Update [SolverUiState] to "ReadyToMove" mode. Provide the associated information such
+     * Update [SolverUIState] to "ReadyToMove" mode. Provide the associated information such
      * winning direction and winning moving chain
      *
      * @param winningDirection Direction of the move
@@ -426,7 +426,7 @@ object SolverViewModel : ViewModel() {
         winningDirection: Direction,
         winningMovingChain: BallMoveSet
     ) {
-        val readyToMoveRec = SolverUiState.SolverMode.HasWinningMoveWaitingToMove
+        val readyToMoveRec = SolverUIState.SolverMode.HasWinningMoveWaitingToMove
         readyToMoveRec.winingMovingChainPreview = winningMovingChain
         readyToMoveRec.winningDirectionPreview = winningDirection
 
@@ -555,15 +555,15 @@ object SolverViewModel : ViewModel() {
         _totalProcessCount =
             (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
 
-        while (_uiSolverState.value.mode == SolverUiState.SolverMode.Thinking) {
+        while (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) {
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
             val newValue: Float =
                 (gThinkingProgress.toFloat() / (_totalProcessCount) * 100.0).toFloat()
 
             if (newValue > currentValue) {
                 currentValue = newValue
-                val thinkingRec: SolverUiState.SolverMode.Thinking =
-                    SolverUiState.SolverMode.Thinking
+                val thinkingRec: SolverUIState.SolverMode.Thinking =
+                    SolverUIState.SolverMode.Thinking
                 thinkingRec.progress = currentValue
                 _uiSolverState.update { currentState ->
 
@@ -578,9 +578,9 @@ object SolverViewModel : ViewModel() {
 
             // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
             // loop breakout when it has finished thinking
-            if (_uiSolverState.value.mode == SolverUiState.SolverMode.Thinking) Thread.sleep(500)
-            if (_uiSolverState.value.mode == SolverUiState.SolverMode.Thinking) Thread.sleep(500)
-            if (_uiSolverState.value.mode == SolverUiState.SolverMode.Thinking) Thread.sleep(500)
+            if (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) Thread.sleep(500)
+            if (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) Thread.sleep(500)
+            if (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) Thread.sleep(500)
         }
         Log.i(Global.DEBUG_PREFIX, "Finished thinking")
     }

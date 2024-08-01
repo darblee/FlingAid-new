@@ -28,7 +28,7 @@ import java.io.File
  *
  * There can only be one GameViewModel instance. Hence, use the singleton class (object)
  *
- * [SolverUiState] State of UI
+ * [SolverUIState] State of UI
  *
  * **Ball Management**
  * Managing the ball on the game board

@@ -36,7 +36,7 @@ data class MovingRec(
  * So this field is used to workaround this bug by manually trigger recompose by changing the
  * value of [_recomposeFlag]
  */
-data class SolverUiState(
+data class SolverUIState(
     private var _mode : SolverMode = SolverMode.NoMoveAvailable,
     var _recomposeFlag: Boolean = false
 ) {

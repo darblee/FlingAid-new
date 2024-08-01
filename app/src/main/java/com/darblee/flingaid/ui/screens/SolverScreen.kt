@@ -82,7 +82,7 @@ import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
 import com.darblee.flingaid.ui.Particle
-import com.darblee.flingaid.ui.SolverUiState
+import com.darblee.flingaid.ui.SolverUIState
 import com.darblee.flingaid.ui.SolverViewModel
 import com.darblee.flingaid.utilities.AnimateBallMovementsSetup
 import com.darblee.flingaid.utilities.AnimateVictoryMessageSetup
@@ -114,32 +114,32 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var announceVictory = false
     var readyToFindSolution = false
     var curThinkingLvl : Float? = null                                 // null means it is NOT in "Thinking" mode
-    var moveBallRec : SolverUiState.SolverMode.MoveBall? = null       // null means it is NOT in "Move Ball" mode
-    var readyToMoveRec : SolverUiState.SolverMode.HasWinningMoveWaitingToMove? = null // null means it is NOT in "Ready to move" mode
+    var moveBallRec : SolverUIState.SolverMode.MoveBall? = null       // null means it is NOT in "Move Ball" mode
+    var readyToMoveRec : SolverUIState.SolverMode.HasWinningMoveWaitingToMove? = null // null means it is NOT in "Ready to move" mode
 
     val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
 
     when (solverUIState.mode) {
-        SolverUiState.SolverMode.Thinking -> {
+        SolverUIState.SolverMode.Thinking -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Show Thinking Progress")
 
-            val thinkingRec : SolverUiState.SolverMode.Thinking = solverUIState.mode.let { SolverUiState.SolverMode.Thinking }
+            val thinkingRec : SolverUIState.SolverMode.Thinking = solverUIState.mode.let { SolverUIState.SolverMode.Thinking }
             curThinkingLvl = thinkingRec.progress
         }
 
-        SolverUiState.SolverMode.ReadyToFindSolution -> {
+        SolverUIState.SolverMode.ReadyToFindSolution -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Enable \"Find Solution\" button")
 
             readyToFindSolution = true
         }
 
-        SolverUiState.SolverMode.HasWinningMoveWaitingToMove -> {
+        SolverUIState.SolverMode.HasWinningMoveWaitingToMove -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Enable \"Move Ball\" button")
 
-            readyToMoveRec = solverUIState.mode.let { SolverUiState.SolverMode.HasWinningMoveWaitingToMove }
+            readyToMoveRec = solverUIState.mode.let { SolverUIState.SolverMode.HasWinningMoveWaitingToMove }
         }
 
-        SolverUiState.SolverMode.AnnounceNoPossibleSolution -> {
+        SolverUIState.SolverMode.AnnounceNoPossibleSolution -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Send message no winnable move")
 
             // TODO : Replace toast with a custom dialog
@@ -148,18 +148,20 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             solverViewModel.setModeToNoMoveAvailable()
         }
 
-        SolverUiState.SolverMode.AnnounceVictory -> {
+        SolverUIState.SolverMode.AnnounceVictory -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Show Victory message")
 
             announceVictory = true
         }
 
-        SolverUiState.SolverMode.NoMoveAvailable -> { /* Do nothing */}
+        SolverUIState.SolverMode.NoMoveAvailable -> {
+            Log.i("Solver Recompose:", "${solverUIState.mode} : DO nothing. Need to disable move/find button")
+        }
 
-        SolverUiState.SolverMode.MoveBall -> {
+        SolverUIState.SolverMode.MoveBall -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Move the ball")
 
-            moveBallRec = solverUIState.mode.let { SolverUiState.SolverMode.MoveBall }
+            moveBallRec = solverUIState.mode.let { SolverUIState.SolverMode.MoveBall }
         }
     }
 
@@ -237,7 +239,7 @@ private fun LoadSolverFileOnlyOnce(solverViewModel: SolverViewModel)
  */
 @Composable
 private fun HandleBackPressKeyForSolverScreen(
-    mode: SolverUiState.SolverMode,
+    mode: SolverUIState.SolverMode,
     navController: NavHostController,
     announceVictory: Boolean
 ) {
@@ -246,7 +248,7 @@ private fun HandleBackPressKeyForSolverScreen(
     if (backPressed) {
         backPressed = false
         if (announceVictory) return
-        if (mode == SolverUiState.SolverMode.Thinking) return
+        if (mode == SolverUIState.SolverMode.Thinking) return
 
         navController.popBackStack()
         return
@@ -350,7 +352,7 @@ private fun ControlButtonsForSolver(
     solverViewModel: SolverViewModel = viewModel(),
     readyToFindSolution: Boolean,
     currentlyThinking: Boolean,
-    readyToMoveRec: SolverUiState.SolverMode.HasWinningMoveWaitingToMove?,
+    readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?,
 ) {
     val view = LocalView.current
     val context = LocalContext.current
@@ -456,9 +458,9 @@ private fun DrawSolverBoard(
     modifier: Modifier = Modifier,
     solverViewModel: SolverViewModel = viewModel(),
     announceVictory: Boolean,
-    moveBallInfo: SolverUiState.SolverMode.MoveBall?,
+    moveBallInfo: SolverUIState.SolverMode.MoveBall?,
     currentlyThinking: Boolean,
-    readyToMoveRec: SolverUiState.SolverMode.HasWinningMoveWaitingToMove?
+    readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?
 ) {
     val showBallMovementAnimation = (moveBallInfo != null)
     val showPreviewMovementAnimation = (readyToMoveRec != null)

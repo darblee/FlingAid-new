@@ -16,9 +16,6 @@ import com.darblee.flingaid.Direction
  *
  * @param _mode The public field is [mode] (read-only access). The current game mode. Possible game
  * mode is defined at [GameMode]
- * @param _movingDirection The public field is [movingDirection] (read-only access). Direction to
- * move the ball from
- * @param _movingChain The public field is [movingChain] (read-only access). Movement chain in the current turn
  */
 data class GameUIState(
     private var _mode: GameMode = GameMode.WaitingOnUser,
