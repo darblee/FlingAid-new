@@ -113,9 +113,11 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     var announceVictory = false
     var readyToFindSolution = false
-    var curThinkingLvl : Float? = null                                 // null means it is NOT in "Thinking" mode
-    var moveBallRec : SolverUIState.SolverMode.MoveBall? = null       // null means it is NOT in "Move Ball" mode
-    var readyToMoveRec : SolverUIState.SolverMode.HasWinningMoveWaitingToMove? = null // null means it is NOT in "Ready to move" mode
+
+    // "null" value means these properties is in "false" (or "off") state
+    var curThinkingLvl : Float? = null
+    var moveBallRec : SolverUIState.SolverMode.MoveBall? = null
+    var readyToMoveRec : SolverUIState.SolverMode.HasWinningMoveWaitingToMove? = null
 
     val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -141,7 +143,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
         SolverUIState.SolverMode.AnnounceNoPossibleSolution -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Send message no winnable move")
-
             // TODO : Replace toast with a custom dialog
             gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
 
@@ -243,17 +244,22 @@ private fun HandleBackPressKeyForSolverScreen(
     navController: NavHostController,
     announceVictory: Boolean
 ) {
+    val context = LocalContext.current
+
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
         backPressed = false
         if (announceVictory) return
-        if (mode == SolverUIState.SolverMode.Thinking) return
 
-        navController.popBackStack()
-        return
+        if (mode == SolverUIState.SolverMode.Thinking) {
+            gameToast(context, "Can not exit while it is in thinking mode", false)
+        } else {
+            navController.popBackStack()
+        }
     }
 }
+
 
 /**
  * Provide instruction on how to play Solver Screen.
@@ -462,6 +468,7 @@ private fun DrawSolverBoard(
     currentlyThinking: Boolean,
     readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?
 ) {
+
     val showBallMovementAnimation = (moveBallInfo != null)
     val showPreviewMovementAnimation = (readyToMoveRec != null)
 
