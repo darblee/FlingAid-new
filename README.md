@@ -5,3 +5,7 @@
 
 **Solver State Machine**
 ![Solver State Machine](SolverViewModel-State-Machine.bmp)
+
+| Actions | MoveBall | NoAvailableMove |
+| --------| -------- | ---------------- |
+| test    |          | Third            |
