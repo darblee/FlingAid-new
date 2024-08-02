@@ -161,7 +161,6 @@ object SolverViewModel : ViewModel() {
      */
     init {
         reset()
-        gThinkingProgress = 0
     }
 
     /**
@@ -170,6 +169,10 @@ object SolverViewModel : ViewModel() {
      * - Remove any saved game file
      */
     fun reset() {
+        Log.i(Global.DEBUG_PREFIX, "SolverViewModel reset")
+
+        gThinkingProgress = 0
+
         _solverBallPos.ballList.clear()
         _solverBallPos.removeGameFile()
 
@@ -183,6 +186,12 @@ object SolverViewModel : ViewModel() {
      * @param solverGridPos The position of the ball
      */
     fun toggleBallPosition(solverGridPos: Pos) {
+
+        if (uiState.value.mode == SolverUIState.SolverMode.Thinking) {
+            stopThinking()
+            Thread.sleep(500)
+        }
+
         if (_solverBallPos.ballList.contains(solverGridPos)) {
             _solverBallPos.ballList.remove(solverGridPos)
         } else {
@@ -198,13 +207,18 @@ object SolverViewModel : ViewModel() {
      * New board so we need to set mode accordingly
      */
     private fun setModeBaseOnBoard() {
+        task1WinningRow = -1
+        task1WinningCol = -1
+        task2WinningRow = -1
+        task2WinningCol = -1
+        gThinkingProgress = 0
+
         if (ballCount() < 2) {
             setModeToNoMoveAvailable()
         } else {
             // There is more than one ball on board. User can start looking for a possible solution
             setModeToReadyToFindSolution()
         }
-
     }
 
     /******************  Set mode routines ********************************/
@@ -310,13 +324,18 @@ object SolverViewModel : ViewModel() {
                 gMultipleThread = true
                 _totalProcessCount =
                     (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
+
+                // 2 threads have invoke "await" and these two thread have completed
                 cyclicBarrier = CyclicBarrier(2) {
+                    gMultipleThread = false
                     Log.i(Global.DEBUG_PREFIX, "Reached a converged point between 2 parallel tasks")
                     recordThinkingResult()
                 }
             } else {
-                gMultipleThread = false
+
+                // 1 thread invoke "await" and this single thread have completed
                 cyclicBarrier = CyclicBarrier(1) {
+                    gMultipleThread = false
                     Log.i(Global.DEBUG_PREFIX, "Reached a converged point. One thread")
                     recordThinkingResult()
                 }
@@ -349,7 +368,7 @@ object SolverViewModel : ViewModel() {
             if (gMultipleThread) {
                 gThinkingThread2.start()
             }
-        }
+        } // viewModelScope
     }
 
     /**
@@ -379,7 +398,7 @@ object SolverViewModel : ViewModel() {
 
         } else {
 
-            // Task1 does not have the winning result. NOw check on task #2
+            // Task1 does not have the winning result. Now check on task #2
             if ((task2_WinningDirection != Direction.NO_WINNING_DIRECTION) &&
                 (task2_WinningDirection != Direction.INCOMPLETE)
             ) {
@@ -413,7 +432,12 @@ object SolverViewModel : ViewModel() {
                 }
             }
         }
+
         gThinkingProgress = 0
+        task1WinningRow = -1
+        task1WinningCol = -1
+        task2WinningRow = -1
+        task2WinningCol = -1
     }
 
     /**
@@ -491,6 +515,34 @@ object SolverViewModel : ViewModel() {
         } catch (e: InterruptedException) {
             Log.i("${Global.DEBUG_PREFIX} 1", "Interruption detected")
         }
+    }
+
+    /**
+     * Quickly stop thinking progress threads.
+     *
+     * Make sure all threads has completed before this function exits.
+     */
+    fun stopThinking() {
+        if (!gMultipleThread) return
+
+        if (gThinkingThread1.isAlive) {
+            Log.i(Global.DEBUG_PREFIX, "Thread 1 is alive, make it end quickly by setting direction to \"No Winning Direction\"")
+            task1_WinningDirection = Direction.NO_WINNING_DIRECTION
+        }
+
+        if (gThinkingThread2.isAlive) {
+            Log.i(Global.DEBUG_PREFIX, "Thread 2 is alive, make it end quickly by setting direction to \"No Winning Direction\"")
+            task2_WinningDirection = Direction.NO_WINNING_DIRECTION
+        }
+
+        while (gThinkingThread1.isAlive || gThinkingThread2.isAlive) {
+            Thread.sleep(250)
+        }
+        gThinkingProgress = 0
+        task1WinningRow = -1
+        task1WinningCol = -1
+        task2WinningRow = -1
+        task2WinningCol = -1
     }
 
     /**

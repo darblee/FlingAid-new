@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.SoundEffectConstants
-import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -169,7 +168,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     // Need special handling of back key press events. Do not navigate when:
     // - It is in middle of thinking
     // - It is middle of announce victory message
-    HandleBackPressKeyForSolverScreen(solverUIState.mode, navController, announceVictory)
+    HandleBackPressKeyForSolverScreen(solverUIState.mode, navController, announceVictory, solverViewModel)
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -242,21 +241,21 @@ private fun LoadSolverFileOnlyOnce(solverViewModel: SolverViewModel)
 private fun HandleBackPressKeyForSolverScreen(
     mode: SolverUIState.SolverMode,
     navController: NavHostController,
-    announceVictory: Boolean
+    announceVictory: Boolean,
+    solverViewModel: SolverViewModel
 ) {
-    val context = LocalContext.current
-
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
         backPressed = false
+
         if (announceVictory) return
 
         if (mode == SolverUIState.SolverMode.Thinking) {
-            gameToast(context, "Can not exit while it is in thinking mode", false)
-        } else {
-            navController.popBackStack()
+            solverViewModel.stopThinking()
         }
+
+        navController.popBackStack()
     }
 }
 
@@ -361,7 +360,6 @@ private fun ControlButtonsForSolver(
     readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?,
 ) {
     val view = LocalView.current
-    val context = LocalContext.current
 
     val readyToMove = (readyToMoveRec != null)
 
@@ -414,12 +412,11 @@ private fun ControlButtonsForSolver(
         Button(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                if (currentlyThinking) {
-                    gameToast(context, "Unable to reset as it is currently busy finding a solution")
-                } else {
-                    // Reset the board game and set it back to idle state
-                    solverViewModel.reset()
-                }
+
+                if (currentlyThinking) solverViewModel.stopThinking()
+
+                // Reset the board game and set it back to idle state
+                solverViewModel.reset()
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -430,9 +427,6 @@ private fun ControlButtonsForSolver(
             modifier = Modifier
                 .weight(2F)
                 .padding(5.dp),
-            // Disable button while it is in active thinking mode or in the middle of announce
-            // victory message
-            enabled = (!currentlyThinking)
         ) {
             val iconWidth = Icons.Filled.Refresh.defaultWidth
             Icon(
@@ -573,20 +567,17 @@ private fun DrawSolverBoard(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onTap = { tapOffset ->
-                            // For unknown reason, we can not use uiState.state
+                            val row = (tapOffset.y / gridSize).toInt()
+                            val col = (tapOffset.x / gridSize).toInt()
+                            if ((row >= Global.MAX_ROW_SIZE) ||  (col >= Global.MAX_COL_SIZE)) return@detectTapGestures
 
                             view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
-                            if (currentlyThinking) {
-                                gameToast(context, "Unable to modify board while it is still thinking")
-                            } else {
-                                val row = (tapOffset.y / gridSize).toInt()
-                                val col = (tapOffset.x / gridSize).toInt()
-                                if ((row < Global.MAX_ROW_SIZE) && (col < Global.MAX_COL_SIZE)) {
-                                    solverViewModel.toggleBallPosition(Pos(row, col))
-                                    view.playSoundEffect(SoundEffectConstants.CLICK)
-                                }
-                            } // if thinkingStatus != GameState.thinking
+                            if (currentlyThinking) solverViewModel.stopThinking()
+
+                            solverViewModel.toggleBallPosition(Pos(row, col))
+                            view.playSoundEffect(SoundEffectConstants.CLICK)
+
                         }, // onTap
                     ) // detectTapGestures
                 } // .pointerInput

@@ -107,10 +107,9 @@ internal class SolverEngine {
             while (curRow != exceededRow) {
 
                 if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
-                    val threadInterrupt = Thread.interrupted()
                     Log.d(
                         "${Global.DEBUG_PREFIX}:",
-                        "Short circuit on row processing. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                        "Short circuit on row processing. task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
                     )
                     direction = Direction.INCOMPLETE  // We should quit the current thread
                     return@repeatBlock
@@ -145,10 +144,9 @@ internal class SolverEngine {
                             SolverViewModel.gThinkingProgress++
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
-                            val threadInterrupt = Thread.interrupted()
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after up. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                                "Short circuit on col processing after up. task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -165,10 +163,9 @@ internal class SolverEngine {
                             SolverViewModel.gThinkingProgress++
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
-                            val threadInterrupt = Thread.interrupted()
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after down. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                                "Short circuit on col processing after down. task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -185,10 +182,9 @@ internal class SolverEngine {
                             SolverViewModel.gThinkingProgress++
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
-                            val threadInterrupt = Thread.interrupted()
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after right. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                                "Short circuit on col processing after right. task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -205,10 +201,9 @@ internal class SolverEngine {
                             SolverViewModel.gThinkingProgress++
                         }
                         if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
-                            val threadInterrupt = Thread.interrupted()
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after left. Thread interrupt: $threadInterrupt  task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                                "Short circuit on col processing after left. task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock

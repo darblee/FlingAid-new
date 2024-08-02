@@ -283,11 +283,8 @@ private fun FlingAidTopAppBar(
                     IconButton(onClick =
                         {
                             Log.i(Global.DEBUG_PREFIX, "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}")
-                            if (SolverViewModel.uiState.value.mode == SolverUIState.SolverMode.Thinking) {
-                                gameToast(context, "Can not exit while it is in thinking mode", false)
-                            } else {
-                                navController.popBackStack()
-                            }
+                            if (SolverViewModel.uiState.value.mode == SolverUIState.SolverMode.Thinking) SolverViewModel.stopThinking()
+                            navController.popBackStack()
                         }
                     ) {
                         Icon(
@@ -298,8 +295,13 @@ private fun FlingAidTopAppBar(
                 }
 
                 Screen.Game -> {
-                    IconButton(onClick = { navController.popBackStack() })
+                    IconButton(onClick =
                     {
+                        Log.i(Global.DEBUG_PREFIX, "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}")
+                        // TODO: Clean-up any existing thread in Game Screen before existing
+                        navController.popBackStack()
+                    }
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Navigate back to home screen"
