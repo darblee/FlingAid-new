@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -241,17 +242,19 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
         )
     ) {
         Card(
-            shape = RoundedCornerShape(10.dp),
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
-                .fillMaxWidth()
+                .width(300.dp)
                 .padding(0.dp)
-                .height(IntrinsicSize.Min),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                .height(IntrinsicSize.Min)
+                .border(
+                    0.dp, color = MaterialTheme.colorScheme.outline,
+                    shape = RoundedCornerShape(16.dp)
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
         ) {
             Column(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
+                Modifier.fillMaxWidth()
             ) {
                 Row {
                     Column(Modifier.weight(1f)) {
@@ -263,18 +266,19 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
                     }
                     Column(Modifier.weight(3f)) {
                         Text(
-                            text = "Logout",
-                            color = Color.Black,
+                            text = stringResource(R.string.logout),
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .padding(8.dp, 16.dp, 8.dp, 2.dp)
                                 .align(Alignment.CenterHorizontally)
-                                .fillMaxWidth(), fontSize = 20.sp,
+                                .fillMaxWidth(),
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
                         )
                         Text(
-                            text = "Are you sure you want to exit?",
-                            color = Color.Black,
+                            text = stringResource(R.string.are_you_sure_you_want_to_exit),
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .padding(8.dp, 2.dp, 8.dp, 16.dp)
                                 .align(Alignment.CenterHorizontally)
@@ -286,7 +290,8 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
                 HorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .width(1.dp), color = Color.Gray
+                        .width(1.dp),
+                    color = MaterialTheme.colorScheme.outline
                 )
                 Row(Modifier.padding(top = 0.dp)) {
                     CompositionLocalProvider(
@@ -304,13 +309,14 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
                             shape = RoundedCornerShape(0.dp),
                             contentPadding = PaddingValues(0.dp)
                         ) {
-                            Text(text = "Not now", color = Color.Black)
+                            Text(text = stringResource(R.string.not_now),
+                                color = MaterialTheme.colorScheme.primary)
                         }
                     }
                     HorizontalDivider(
                         modifier = Modifier
                             .fillMaxHeight()
-                            .width(1.dp), color = Color.Gray
+                            .width(1.dp), color = MaterialTheme.colorScheme.outline
                     )
                     CompositionLocalProvider(
                         LocalMinimumInteractiveComponentEnforcement provides false,
@@ -329,7 +335,8 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
                             shape = RoundedCornerShape(0.dp),
                             contentPadding = PaddingValues()
                         ) {
-                            Text(text = "Exit", color = Color.Red)
+                            Text(text = stringResource(R.string.exit),
+                                color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }

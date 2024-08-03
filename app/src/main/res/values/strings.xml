@@ -7,4 +7,10 @@
     <string name="solver_title">Solver</string>
     <string name="game_title">Flicker</string>
     <string name="homepage_title">Main</string>
+    <string name="OK">OK</string>
+    <string name="there_is_no_winnable_move">There is no\nwinnable move</string>
+    <string name="are_you_sure_you_want_to_exit">Are you sure you want to exit?</string>
+    <string name="logout">Logout</string>
+    <string name="not_now">Not now</string>
+    <string name="exit">Exit</string>
 </resources>

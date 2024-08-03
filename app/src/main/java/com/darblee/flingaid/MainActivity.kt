@@ -10,13 +10,17 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -37,13 +41,17 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedTextField
@@ -53,8 +61,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -64,14 +74,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -410,48 +424,86 @@ private fun FlingAidTopAppBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AboutDialogPopup(
     onDismissRequest: () -> Unit,
     onConfirmation: () -> Unit
 ) {
-    Dialog(onDismissRequest = { onDismissRequest() }) {
+    Dialog(onDismissRequest = { onDismissRequest() },
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false)
+        ) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
+            shape = RoundedCornerShape(20.dp),
             modifier = Modifier
-                .padding(25.dp),
-            shape = RoundedCornerShape(16.dp),
+                .width(200.dp)
+                .padding(0.dp)
+                .height(IntrinsicSize.Min)
+                .border(0.dp, color = MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(20.dp)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
         ) {
             Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.ball),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                )
-                Text(
-                    text = stringResource(id = R.string.version) + " : " + BuildConfig.BUILD_TIME,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 10.dp, start = 10.dp, end = 10.dp)
-                )
-                Row(
-                    modifier = Modifier.wrapContentWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Button(
-                        onClick = { onConfirmation() },
-                        modifier = Modifier.padding(bottom = 10.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            modifier = Modifier.padding(end = 5.dp)
+                Modifier.fillMaxWidth(),
+            )  {
+                Row {
+                    Column(Modifier.weight(1f)) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ball),
+                            contentDescription = "Game",
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                    Column(Modifier.weight(3f)) {
+                        Text(
+                            text = stringResource(id = R.string.version),
+                            color = colorScheme.primary,
+                            modifier = Modifier
+                                .padding(2.dp, 4.dp, 2.dp, 0.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .fillMaxWidth(),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
                         )
                         Text(
-                            text = stringResource(id = R.string.back)
+                            text = BuildConfig.BUILD_TIME,
+                            color = colorScheme.primary,
+                            modifier = Modifier
+                                .padding(4.dp, 0.dp, 4.dp, 2.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .fillMaxWidth(),
+                            fontSize = 10.sp,
+                            textAlign = TextAlign.Center
                         )
+                    }
+                }
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .width(1.dp), color = colorScheme.outline
+                )
+                Row(Modifier.padding(top = 0.dp)) {
+                    CompositionLocalProvider(
+                        LocalMinimumInteractiveComponentEnforcement provides false,
+                    ) {
+                        TextButton(
+                            onClick = { onConfirmation() },
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp)
+                                .weight(1F)
+                                .border(0.dp, color = Color.Transparent)
+                                .height(48.dp),
+                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
+                            shape = RoundedCornerShape(0.dp),
+                            contentPadding = PaddingValues()
+                        ) {
+                            Text(text = stringResource(id = R.string.OK),
+                                color = colorScheme.primary)
+                        }
                     }
                 }
             }
@@ -470,14 +522,23 @@ private fun SettingPopup(
     onSoundSettingUpdated: (soundOn: Boolean) -> Unit,
     currentSoundSetting: Boolean
 ) {
-    Dialog(onDismissRequest = { onDismissRequest() }) {
+    Dialog(onDismissRequest = { onDismissRequest() },
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false)
+        ) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .width(350.dp)
                 .wrapContentHeight()
-                .padding(25.dp),
-            shape = RoundedCornerShape(16.dp),
+                .padding(25.dp)
+                .border(0.dp,
+                    color = colorScheme.outline,
+                    shape = RoundedCornerShape(16.dp)
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -491,17 +552,11 @@ private fun SettingPopup(
                 Row(
                     modifier = Modifier.wrapContentWidth(),
                     horizontalArrangement = Arrangement.Center
-                )
-                {
+                ) {
                     Button(onClick = { onConfirmation() })
                     {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            modifier = Modifier.padding(end = 5.dp)
-                        )
                         Text(
-                            text = stringResource(id = R.string.back),
+                            text = stringResource(id = R.string.OK),
                             fontSize = 14.sp
                         )
                     }

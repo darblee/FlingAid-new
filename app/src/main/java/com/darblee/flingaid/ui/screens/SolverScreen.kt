@@ -13,28 +13,41 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -61,14 +74,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -101,7 +118,7 @@ import kotlin.math.abs
  *  @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
  *  @param navController Central coordinator for managing navigation between destination screens,
- *  managing the back stack, and more
+ *  back stack, and more
  */
 @Composable
 fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController) {
@@ -112,6 +129,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     var announceVictory = false
     var readyToFindSolution = false
+
+    var showNoWinnableMoveDialogBox by remember { mutableStateOf(false) }
 
     // "null" value means these properties is in "false" (or "off") state
     var curThinkingLvl : Float? = null
@@ -142,10 +161,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
         SolverUIState.SolverMode.AnnounceNoPossibleSolution -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Send message no winnable move")
-            // TODO : Replace toast with a custom dialog
-            gameToast(LocalContext.current, "There is no winnable move", displayLonger = false)
+            showNoWinnableMoveDialogBox = true
 
-            solverViewModel.setModeToNoMoveAvailable()
         }
 
         SolverUIState.SolverMode.AnnounceVictory -> {
@@ -169,6 +186,14 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     // - It is in middle of thinking
     // - It is middle of announce victory message
     HandleBackPressKeyForSolverScreen(solverUIState.mode, navController, announceVictory, solverViewModel)
+
+    if (showNoWinnableMoveDialogBox) {
+        NoWinnableMoveDialog(
+            onDismissRequest = { showNoWinnableMoveDialogBox = false } ,
+            onConfirmation = { showNoWinnableMoveDialogBox = false }
+        )
+        solverViewModel.setModeToNoMoveAvailable()
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -569,7 +594,7 @@ private fun DrawSolverBoard(
                         onTap = { tapOffset ->
                             val row = (tapOffset.y / gridSize).toInt()
                             val col = (tapOffset.x / gridSize).toInt()
-                            if ((row >= Global.MAX_ROW_SIZE) ||  (col >= Global.MAX_COL_SIZE)) return@detectTapGestures
+                            if ((row >= Global.MAX_ROW_SIZE) || (col >= Global.MAX_COL_SIZE)) return@detectTapGestures
 
                             view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
@@ -757,6 +782,87 @@ private fun PlaySearchAnimation(modifier: Modifier) {
 }
 
 
+/**
+ * Dialog to inform user there is no winnable move
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NoWinnableMoveDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit)
+{
+    Dialog(
+        onDismissRequest = { onDismissRequest() },
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false
+        )
+    ) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .width(200.dp)
+                .padding(0.dp)
+                .height(IntrinsicSize.Min)
+                .border(0.dp, color = MaterialTheme.colorScheme.outline,
+                    shape = RoundedCornerShape(16.dp)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+        ) {
+            Column(
+                Modifier.fillMaxWidth()
+            ) {
+                Row {
+                    Column(Modifier.weight(1f)) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ball),
+                            contentDescription = "Game",
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                    Column(Modifier.weight(3f)) {
+                        Text(
+                            text = stringResource(R.string.there_is_no_winnable_move),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .padding(8.dp, 8.dp, 8.dp, 2.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .fillMaxWidth(),
+                            fontSize = 18.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .width(1.dp),
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Row(Modifier.padding(top = 0.dp)) {
+                    CompositionLocalProvider(
+                        LocalMinimumInteractiveComponentEnforcement provides false,
+                    ) {
+                        TextButton(
+                            onClick = { onConfirmation() },
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp)
+                                .weight(1F)
+                                .border(0.dp, color = Color.Transparent)
+                                .height(48.dp),
+                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
+                            shape = RoundedCornerShape(0.dp),
+                            contentPadding = PaddingValues()
+                        ) {
+                            Text(text = stringResource(id = R.string.OK),
+                                color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 /************************** Animation Routines **************************/
 
