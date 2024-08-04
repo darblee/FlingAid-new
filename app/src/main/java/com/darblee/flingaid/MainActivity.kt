@@ -4,13 +4,13 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -95,7 +95,6 @@ import com.darblee.flingaid.ui.SolverUIState
 import com.darblee.flingaid.ui.SolverViewModel
 import com.darblee.flingaid.ui.theme.SetColorTheme
 import com.darblee.flingaid.ui.theme.ColorThemeOption
-import com.darblee.flingaid.utilities.gameToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -134,11 +133,11 @@ class MainActivity : ComponentActivity() {
 
                 gSoundOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
 
-                if (gSoundOn) {
-                    gAudio_gameMusic.start()
-                }
-
                 keepSplashOnScreen = false // End the splash screen
+            }
+
+            if (gSoundOn) {
+                gAudio_gameMusic.start()
             }
 
             SetColorTheme(colorTheme)
@@ -182,6 +181,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        gAudio_gameMusic.release()
+        gAudio_doink.release()
+        gAudio_victory.release()
+        gAudio_swish.release()
+    }
+
     @SuppressLint("SourceLockedOrientationActivity")
     @Composable
     fun ForcePortraitMode() {
@@ -215,11 +222,25 @@ private fun MainViewImplementation(
 
 @Composable
 private fun SetUpGameAudioOnAppStart() {
+
     // Initiate the media player instance with the media file from the raw folder
+
+    val attributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_GAME)
+        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        .build()
+
     gAudio_doink = MediaPlayer.create(LocalContext.current, R.raw.doink)
+    gAudio_doink.setAudioAttributes(attributes)
+
     gAudio_victory = MediaPlayer.create(LocalContext.current, R.raw.victory)
+    gAudio_victory.setAudioAttributes(attributes)
+
     gAudio_gameMusic = MediaPlayer.create(LocalContext.current, R.raw.music2)
+    gAudio_gameMusic.setAudioAttributes(attributes)
+
     gAudio_swish = MediaPlayer.create(LocalContext.current, R.raw.swish)
+    gAudio_swish.setAudioAttributes(attributes)
 
     gAudio_gameMusic.isLooping = true
 

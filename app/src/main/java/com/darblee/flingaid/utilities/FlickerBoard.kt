@@ -1,5 +1,8 @@
 package com.darblee.flingaid.utilities
 
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.SoundPool
 import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
@@ -12,13 +15,17 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
@@ -27,6 +34,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.getSystemService
 import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
@@ -43,6 +51,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
+
 
 /**
  * Position on the game board
@@ -640,11 +649,12 @@ fun AnimateBallMovementsSetup(
 
             } // launch
 
-            launch {
-                val totalTimeLength = (movingChain[0].distance * 100)
+           launch {
+               val totalTimeLength = (movingChain[0].distance * 100)
                 delay((totalTimeLength * whenBallMakeContactRatio).toLong())
                 gAudio_swish.start()
             }
+
         }   // coroutine
     }
 }
