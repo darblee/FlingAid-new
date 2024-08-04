@@ -1,8 +1,6 @@
 package com.darblee.flingaid.ui.screens
 
 import android.graphics.Bitmap
-import android.media.AudioAttributes
-import android.media.SoundPool
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.SoundEffectConstants
@@ -88,7 +86,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -124,9 +121,7 @@ import kotlin.math.abs
 @Composable
 fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController) {
 
-    val solverViewModel: SolverViewModel = viewModel()
-
-    LoadSolverFileOnlyOnce(solverViewModel)
+    LoadSolverFileOnlyOnce()
 
     var announceVictory = false
     var readyToFindSolution = false
@@ -138,7 +133,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var moveBallRec : SolverUIState.SolverMode.MoveBall? = null
     var readyToMoveRec : SolverUIState.SolverMode.HasWinningMoveWaitingToMove? = null
 
-    val solverUIState by solverViewModel.uiState.collectAsStateWithLifecycle()
+    val solverUIState by SolverViewModel.uiState.collectAsStateWithLifecycle()
 
     when (solverUIState.mode) {
         SolverUIState.SolverMode.Thinking -> {
@@ -186,14 +181,14 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     // Need special handling of back key press events. Do not navigate when:
     // - It is in middle of thinking
     // - It is middle of announce victory message
-    HandleBackPressKeyForSolverScreen(solverUIState.mode, navController, announceVictory, solverViewModel)
+    HandleBackPressKeyForSolverScreen(solverUIState.mode, navController, announceVictory)
 
     if (showNoWinnableMoveDialogBox) {
         NoWinnableMoveDialog(
             onDismissRequest = { showNoWinnableMoveDialogBox = false } ,
             onConfirmation = { showNoWinnableMoveDialogBox = false }
         )
-        solverViewModel.setModeToNoMoveAvailable()
+        SolverViewModel.setModeToNoMoveAvailable()
     }
 
     Column(
@@ -203,7 +198,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     ) {
         Instruction_DynamicLogo(curThinkingLvl)
         ControlButtonsForSolver(
-            solverViewModel = solverViewModel,
             readyToFindSolution = readyToFindSolution,
             currentlyThinking = (curThinkingLvl != null),
             readyToMoveRec = readyToMoveRec
@@ -211,7 +205,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
         DrawSolverBoard(
             modifier = Modifier.fillMaxSize(),
-            solverViewModel = solverViewModel,
             announceVictory = announceVictory,
             moveBallInfo = moveBallRec,
             currentlyThinking = (curThinkingLvl != null),
@@ -222,12 +215,9 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
 /**
  * Populate the solver board by loading content from the solver game file
- *
- * @param solverViewModel Solver View Model that manage business logic for Solver Screen. For more
- * details, see [SolverViewModel]
  */
 @Composable
-private fun LoadSolverFileOnlyOnce(solverViewModel: SolverViewModel)
+private fun LoadSolverFileOnlyOnce()
 {
     /**
      * Need to ensure we only load the file once when we start the the solver game screen.
@@ -244,7 +234,7 @@ private fun LoadSolverFileOnlyOnce(solverViewModel: SolverViewModel)
     // Also need to minimize the need to do expensive time consuming file i/o operation.
     val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
     if (needToLoadSolverFile) {
-        solverViewModel.loadGameFile(solverBoardFile)
+        SolverViewModel.loadGameFile(solverBoardFile)
         Log.i(Global.DEBUG_PREFIX, "Loading from solver file")
         needToLoadSolverFile = false
     }
@@ -268,7 +258,6 @@ private fun HandleBackPressKeyForSolverScreen(
     mode: SolverUIState.SolverMode,
     navController: NavHostController,
     announceVictory: Boolean,
-    solverViewModel: SolverViewModel
 ) {
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
@@ -278,7 +267,7 @@ private fun HandleBackPressKeyForSolverScreen(
         if (announceVictory) return
 
         if (mode == SolverUIState.SolverMode.Thinking) {
-            solverViewModel.stopThinking()
+            SolverViewModel.stopThinking()
         }
 
         navController.popBackStack()
@@ -372,15 +361,12 @@ private fun Instruction_DynamicLogo(
  * Show all the control buttons on top of the screen. These buttons
  * are "find the solution" button and "reset" button
  *
- * @param solverViewModel Solver View Model that manage business logic for Solver Screen. For more
- * details, see [SolverViewModel]
  * @param readyToFindSolution Determine whether it is ready to start looking for a solution or not
  * @param currentlyThinking Determine whether it is currently in thinking mode or not
  * and winning moving chain
  */
 @Composable
 private fun ControlButtonsForSolver(
-    solverViewModel: SolverViewModel = viewModel(),
     readyToFindSolution: Boolean,
     currentlyThinking: Boolean,
     readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?,
@@ -401,14 +387,14 @@ private fun ControlButtonsForSolver(
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
                 if (readyToMove) {
 
-                    solverViewModel.setModeToShowBallMovement(
+                    SolverViewModel.setModeToShowBallMovement(
                         readyToMoveRec!!.winningDirectionPreview,
                         readyToMoveRec.winingMovingChainPreview
                     )
                 }
 
                 if (readyToFindSolution)  {
-                    solverViewModel.findWinningMove()
+                    SolverViewModel.findWinningMove()
                 }
             }, // OnClick
             shape = RoundedCornerShape(5.dp),
@@ -439,10 +425,10 @@ private fun ControlButtonsForSolver(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
-                if (currentlyThinking) solverViewModel.stopThinking()
+                if (currentlyThinking) SolverViewModel.stopThinking()
 
                 // Reset the board game and set it back to idle state
-                solverViewModel.reset()
+                SolverViewModel.reset()
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -473,8 +459,6 @@ private fun ControlButtonsForSolver(
  *
  * @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
- * @param solverViewModel Solver View Model that manage business logic for Solver Screen. For more
- * details, see [SolverViewModel]
  * @param announceVictory Indicate whether it need to show animated victory message or not
  * @param moveBallInfo Info to process moving the ball. A null means there is no need to move ball
  * @param currentlyThinking Indicate whether it is currently thinking or not
@@ -482,7 +466,6 @@ private fun ControlButtonsForSolver(
 @Composable
 private fun DrawSolverBoard(
     modifier: Modifier = Modifier,
-    solverViewModel: SolverViewModel = viewModel(),
     announceVictory: Boolean,
     moveBallInfo: SolverUIState.SolverMode.MoveBall?,
     currentlyThinking: Boolean,
@@ -519,7 +502,7 @@ private fun DrawSolverBoard(
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            { solverViewModel.setModeToNoMoveAvailable() },
+            { SolverViewModel.setModeToNoMoveAvailable() },
             animateCtl = animateVictoryMessage,
         )
     } else {
@@ -545,7 +528,7 @@ private fun DrawSolverBoard(
          * The following lambda functions are used in [AnimateBallMovementsSetup] routine
          */
         val solverMoveBallTask =
-            { pos: Pos, direction: Direction -> solverViewModel.moveBallToWin(pos, direction) }
+            { pos: Pos, direction: Direction -> SolverViewModel.moveBallToWin(pos, direction) }
 
         AnimateBallMovementsSetup(
             movingChain = moveBallInfo!!.winingMovingChainMoveBall,
@@ -599,9 +582,9 @@ private fun DrawSolverBoard(
 
                             view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
-                            if (currentlyThinking) solverViewModel.stopThinking()
+                            if (currentlyThinking) SolverViewModel.stopThinking()
 
-                            solverViewModel.toggleBallPosition(Pos(row, col))
+                            SolverViewModel.toggleBallPosition(Pos(row, col))
                             view.playSoundEffect(SoundEffectConstants.CLICK)
 
                         }, // onTap
@@ -627,7 +610,7 @@ private fun DrawSolverBoard(
                             if ((abs(dragXOffset) > minSwipeOffset) ||
                                 (abs(dragYOffset) > minSwipeOffset)
                             ) {
-                                if (solverViewModel.ballCount() > 1) {
+                                if (SolverViewModel.ballCount() > 1) {
                                     gameToast(context, "Use \"Find next\" button to move the ball")
                                 } else {
                                     gameToast(context, "No need to move the last ball")
@@ -659,17 +642,17 @@ private fun DrawSolverBoard(
                 // The animation routine already show the ball in its starting position. We need
                 // to erase it from normal draw ball
                 val ballsToErase = moveBallInfo!!.winingMovingChainMoveBall
-                solverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage, ballsToErase)
+                SolverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage, ballsToErase)
             } else {
                 // No need to animate ball movement, but now need to check if we need to show
                 // preview of next winning ball movement
-                solverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage)
+                SolverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage)
 
                 if (showPreviewMovementAnimation) {
 
                     if (readyToMoveRec!!.winingMovingChainPreview.isNotEmpty()) {
 
-                        val moveCount = solverViewModel.getWinningMoveCount(
+                        val moveCount = SolverViewModel.getWinningMoveCount(
                             pos =  readyToMoveRec.winingMovingChainPreview[0].pos,
                             direction = readyToMoveRec.winningDirectionPreview,
                         )

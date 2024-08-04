@@ -29,9 +29,11 @@ import java.util.concurrent.CyclicBarrier
  * - All fields in UI state [SolverUIState] is stateless. It can be re-created after reading the game board ball
  * positions. The application can survive process death. No need to save state to persistent
  * storage.
- *  - There can only be one [SolverViewModel] instance. Hence, use the singleton class (object)
+ * - There can only be one [SolverViewModel] instance. Hence, use the singleton class (object)
+ * - There is only one instance of this object.
  * - Here is the overall state machine:
  * [State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
+ *
  *
  * **Ball Management**
  *

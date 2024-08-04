@@ -65,7 +65,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
@@ -98,18 +97,16 @@ import kotlin.math.abs
 @Composable
 fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) {
 
-    val gameViewModel: GameViewModel = viewModel()
     var moveBallRec : GameUIState.GameMode.MoveBall? = null // null means it is NOT moving the ball
 
     // null means it is NOT IndicateInvalidMoveByShowingShadowMove mode.
     var shadowBallRec : GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove? = null
 
-    LoadGameFileOnlyOnce(gameViewModel)
+    LoadGameFileOnlyOnce()
 
     var announceVictory = false
 
-
-    val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
+    val gameUIState by GameViewModel.gameUIState.collectAsStateWithLifecycle()
 
     when (gameUIState.mode) {
         GameUIState.GameMode.WonGame -> {
@@ -148,11 +145,10 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         InstructionLogo()
-        GameControlButtonsForGame(gameViewModel)
+        GameControlButtonsForGame()
 
         DrawGameBoard(
             modifier = Modifier.fillMaxSize(),
-            gameViewModel = gameViewModel,
             announceVictory = announceVictory,
             moveBallRec = moveBallRec,
             shadowBallRec = shadowBallRec
@@ -162,12 +158,9 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
 
 /**
  * Populate the solver board by loading content from the solver game file
- *
- * @param gameViewModel View Model that manage business logic for Game Screen. For more
- * details, see [GameViewModel]
  */
 @Composable
-private fun LoadGameFileOnlyOnce(gameViewModel: GameViewModel) {
+private fun LoadGameFileOnlyOnce() {
     /**
      * Need to ensure we only load the file once when we start the the solver game screen.
      * If we load the file everytime we go down this path during recompose, it will trigger more
@@ -183,7 +176,7 @@ private fun LoadGameFileOnlyOnce(gameViewModel: GameViewModel) {
     // Also need to minimize the need to do expensive time consuming file i/o operation.
     val gameBoardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
     if (needToLoadGameFile) {
-        gameViewModel.loadGameFile(gameBoardFile)
+        GameViewModel.loadGameFile(gameBoardFile)
         Log.i(Global.DEBUG_PREFIX, "Loading from game file")
         needToLoadGameFile = false
     }
@@ -282,14 +275,9 @@ private fun InstructionLogo() {
 /**
  * Show all the control buttons on top of the screen. These buttons
  * are "find the solution" button and "reset" button
- *
- * @param gameViewModel View Model that manage business logic for Game Screen. For more
- * details, see [GameViewModel]
  */
 @Composable
-private fun GameControlButtonsForGame(
-    gameViewModel: GameViewModel = viewModel()
-) {
+private fun GameControlButtonsForGame() {
     val iconWidth = Icons.Filled.Refresh.defaultWidth
 
     Row(
@@ -300,7 +288,7 @@ private fun GameControlButtonsForGame(
         horizontalArrangement = Arrangement.SpaceAround,
     ) {
         Button(
-            onClick = { gameViewModel.generateNewGame(1) },
+            onClick = { GameViewModel.generateNewGame(1) },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
@@ -368,15 +356,11 @@ private fun GameControlButtonsForGame(
  *
  * @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
  *  elements
- * @param gameViewModel View Model that manage business logic for Game Screen. For more
- * details, see [GameViewModel]
- * @param gameUIState Current UI state of the game
  * @param announceVictory Indicate whether it need to show animated victory message or not
  */
 @Composable
 private fun DrawGameBoard(
     modifier: Modifier = Modifier,
-    gameViewModel: GameViewModel = viewModel(),
     announceVictory: Boolean,
     moveBallRec: GameUIState.GameMode.MoveBall?,
     shadowBallRec: GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove?,
@@ -400,7 +384,7 @@ private fun DrawGameBoard(
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            { gameViewModel.gameSetModeWaitingOnUser() },
+            { GameViewModel.gameSetModeWaitingOnUser() },
             animateCtl = animateVictoryMessage
         )
     } else {
@@ -421,7 +405,7 @@ private fun DrawGameBoard(
          * The following lambda functions are used in [AnimateBallMovementsSetup] routine
          */
         val gameMoveBallTask =
-            { pos: Pos, direction: Direction -> gameViewModel.moveBall(pos, direction) }
+            { pos: Pos, direction: Direction -> GameViewModel.moveBall(pos, direction) }
 
         AnimateBallMovementsSetup(
             movingChain = moveBallRec.movingChain,
@@ -447,7 +431,7 @@ private fun DrawGameBoard(
     val animateShadowMovement = remember { Animatable(initialValue = 0f) }
 
     if (shadowBallRec != null)
-        GameAnimateShadowBallMovementSetup(animateShadowMovement, gameViewModel)
+        GameAnimateShadowBallMovementSetup(animateShadowMovement)
 
     Box(
         modifier = Modifier
@@ -494,16 +478,16 @@ private fun DrawGameBoard(
                         onDragEnd = {
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) ->
-                                    gameViewModel.setupNextMove(dragRow, dragCol, Direction.LEFT)
+                                    GameViewModel.setupNextMove(dragRow, dragCol, Direction.LEFT)
 
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) ->
-                                    gameViewModel.setupNextMove(dragRow, dragCol, Direction.RIGHT)
+                                    GameViewModel.setupNextMove(dragRow, dragCol, Direction.RIGHT)
 
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) ->
-                                    gameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
+                                    GameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
 
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) ->
-                                    gameViewModel.setupNextMove(dragRow, dragCol, Direction.DOWN)
+                                    GameViewModel.setupNextMove(dragRow, dragCol, Direction.DOWN)
                             }
                             offsetX = 0F
                             offsetY = 0F
@@ -535,7 +519,7 @@ private fun DrawGameBoard(
             if (moveBallRec != null) {
                 val ballsToErase = moveBallRec.movingChain
 
-                gameViewModel.drawGameBallsOnGrid(
+                GameViewModel.drawGameBallsOnGrid(
                     drawScope,
                     gridSize,
                     displayBallImage,
@@ -552,7 +536,7 @@ private fun DrawGameBoard(
                     movingChain = moveBallRec.movingChain
                 )
             } else {
-                gameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage)
+                GameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage)
 
                 if (shadowBallRec != null) {
                     animateShadowBallMovementsPerform(
@@ -631,13 +615,10 @@ private fun drawGridForGame(
  *  Set up animation for shadow ball movement
  *
  * @param animateCtl Animate object that control the shadow ball movement for the game
- * @param gameViewModel View Model that manage business logic for Game Screen. For more
- * details, see [GameViewModel]
  */
 @Composable
 fun GameAnimateShadowBallMovementSetup(
     animateCtl: Animatable<Float, AnimationVector1D>,
-    gameViewModel: GameViewModel
 ) {
     LaunchedEffect(Unit) {
         // Use coroutine to ensure both animation and sound happen in parallel
@@ -652,7 +633,7 @@ fun GameAnimateShadowBallMovementSetup(
                 )
                 animateCtl.stop()
                 animateCtl.snapTo(0f)
-                gameViewModel.gameSetModeWaitingOnUser()
+                GameViewModel.gameSetModeWaitingOnUser()
             }  // launch
 
             launch {
