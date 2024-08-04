@@ -320,11 +320,14 @@ private fun FlingAidTopAppBar(
 
                 Screen.Solver -> {
                     IconButton(onClick =
-                        {
-                            Log.i(Global.DEBUG_PREFIX, "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}")
-                            if (SolverViewModel.uiState.value.mode == SolverUIState.SolverMode.Thinking) SolverViewModel.stopThinking()
-                            navController.popBackStack()
-                        }
+                    {
+                        Log.i(
+                            Global.DEBUG_PREFIX,
+                            "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}"
+                        )
+                        if (SolverViewModel.uiState.value.mode == SolverUIState.SolverMode.Thinking) SolverViewModel.stopThinking()
+                        navController.popBackStack()
+                    }
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
@@ -336,7 +339,10 @@ private fun FlingAidTopAppBar(
                 Screen.Game -> {
                     IconButton(onClick =
                     {
-                        Log.i(Global.DEBUG_PREFIX, "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}")
+                        Log.i(
+                            Global.DEBUG_PREFIX,
+                            "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}"
+                        )
                         // TODO: Clean-up any existing thread in Game Screen before existing
                         navController.popBackStack()
                     }
@@ -455,11 +461,13 @@ private fun AboutDialogPopup(
     onDismissRequest: () -> Unit,
     onConfirmation: () -> Unit
 ) {
-    Dialog(onDismissRequest = { onDismissRequest() },
+    Dialog(
+        onDismissRequest = { onDismissRequest() },
         properties = DialogProperties(
             dismissOnBackPress = true,
-            dismissOnClickOutside = false)
-        ) {
+            dismissOnClickOutside = false
+        )
+    ) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
             shape = RoundedCornerShape(20.dp),
@@ -467,12 +475,12 @@ private fun AboutDialogPopup(
                 .width(200.dp)
                 .padding(0.dp)
                 .height(IntrinsicSize.Min)
-                .border(0.dp, color = MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(20.dp)),
+                .border(0.dp, color = colorScheme.outline, shape = RoundedCornerShape(20.dp)),
             elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
         ) {
             Column(
                 Modifier.fillMaxWidth(),
-            )  {
+            ) {
                 Row {
                     Column(Modifier.weight(1f)) {
                         Image(
@@ -526,8 +534,10 @@ private fun AboutDialogPopup(
                             shape = RoundedCornerShape(0.dp),
                             contentPadding = PaddingValues()
                         ) {
-                            Text(text = stringResource(id = R.string.OK),
-                                color = colorScheme.primary)
+                            Text(
+                                text = stringResource(id = R.string.OK),
+                                color = colorScheme.primary
+                            )
                         }
                     }
                 }
@@ -547,11 +557,13 @@ private fun SettingPopup(
     onSoundSettingUpdated: (soundOn: Boolean) -> Unit,
     currentSoundSetting: Boolean
 ) {
-    Dialog(onDismissRequest = { onDismissRequest() },
+    Dialog(
+        onDismissRequest = { onDismissRequest() },
         properties = DialogProperties(
             dismissOnBackPress = true,
-            dismissOnClickOutside = false)
-        ) {
+            dismissOnClickOutside = false
+        )
+    ) {
         // Draw a rectangle shape with rounded corners inside the dialog
         Card(
             shape = RoundedCornerShape(16.dp),
@@ -559,7 +571,8 @@ private fun SettingPopup(
                 .width(350.dp)
                 .wrapContentHeight()
                 .padding(25.dp)
-                .border(0.dp,
+                .border(
+                    0.dp,
                     color = colorScheme.outline,
                     shape = RoundedCornerShape(16.dp)
                 ),

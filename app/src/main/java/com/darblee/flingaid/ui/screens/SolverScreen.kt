@@ -129,9 +129,9 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var showNoWinnableMoveDialogBox by remember { mutableStateOf(false) }
 
     // "null" value means these properties is in "false" (or "off") state
-    var curThinkingLvl : Float? = null
-    var moveBallRec : SolverUIState.SolverMode.MoveBall? = null
-    var readyToMoveRec : SolverUIState.SolverMode.HasWinningMoveWaitingToMove? = null
+    var curThinkingLvl: Float? = null
+    var moveBallRec: SolverUIState.SolverMode.MoveBall? = null
+    var readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove? = null
 
     val solverUIState by SolverViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -139,7 +139,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         SolverUIState.SolverMode.Thinking -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Show Thinking Progress")
 
-            val thinkingRec : SolverUIState.SolverMode.Thinking = solverUIState.mode.let { SolverUIState.SolverMode.Thinking }
+            val thinkingRec: SolverUIState.SolverMode.Thinking =
+                solverUIState.mode.let { SolverUIState.SolverMode.Thinking }
             curThinkingLvl = thinkingRec.progress
         }
 
@@ -152,7 +153,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         SolverUIState.SolverMode.HasWinningMoveWaitingToMove -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Enable \"Move Ball\" button")
 
-            readyToMoveRec = solverUIState.mode.let { SolverUIState.SolverMode.HasWinningMoveWaitingToMove }
+            readyToMoveRec =
+                solverUIState.mode.let { SolverUIState.SolverMode.HasWinningMoveWaitingToMove }
         }
 
         SolverUIState.SolverMode.AnnounceNoPossibleSolution -> {
@@ -168,7 +170,10 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         }
 
         SolverUIState.SolverMode.NoMoveAvailable -> {
-            Log.i("Solver Recompose:", "${solverUIState.mode} : Do nothing. Need to disable move/find button")
+            Log.i(
+                "Solver Recompose:",
+                "${solverUIState.mode} : Do nothing. Need to disable move/find button"
+            )
         }
 
         SolverUIState.SolverMode.MoveBall -> {
@@ -185,7 +190,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
     if (showNoWinnableMoveDialogBox) {
         NoWinnableMoveDialog(
-            onDismissRequest = { showNoWinnableMoveDialogBox = false } ,
+            onDismissRequest = { showNoWinnableMoveDialogBox = false },
             onConfirmation = { showNoWinnableMoveDialogBox = false }
         )
         SolverViewModel.setModeToNoMoveAvailable()
@@ -217,8 +222,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
  * Populate the solver board by loading content from the solver game file
  */
 @Composable
-private fun LoadSolverFileOnlyOnce()
-{
+private fun LoadSolverFileOnlyOnce() {
     /**
      * Need to ensure we only load the file once when we start the the solver game screen.
      * If we load the file everytime we go down this path during recompose, it will trigger more
@@ -273,7 +277,6 @@ private fun HandleBackPressKeyForSolverScreen(
         navController.popBackStack()
     }
 }
-
 
 /**
  * Provide instruction on how to play Solver Screen.
@@ -393,7 +396,7 @@ private fun ControlButtonsForSolver(
                     )
                 }
 
-                if (readyToFindSolution)  {
+                if (readyToFindSolution) {
                     SolverViewModel.findWinningMove()
                 }
             }, // OnClick
@@ -515,7 +518,7 @@ private fun DrawSolverBoard(
     // Ball movement must have at least 2 balls in the movement chain
     if (showBallMovementAnimation) {
 
-    // Set-up the particles, which is used for the explosion animated effect
+        // Set-up the particles, which is used for the explosion animated effect
         particles = remember {
             generateExplosionParticles(
                 moveBallInfo!!.winingMovingChainMoveBall,
@@ -642,7 +645,12 @@ private fun DrawSolverBoard(
                 // The animation routine already show the ball in its starting position. We need
                 // to erase it from normal draw ball
                 val ballsToErase = moveBallInfo!!.winingMovingChainMoveBall
-                SolverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage, ballsToErase)
+                SolverViewModel.drawSolverBallsOnGrid(
+                    drawScope,
+                    gridSize,
+                    displayBallImage,
+                    ballsToErase
+                )
             } else {
                 // No need to animate ball movement, but now need to check if we need to show
                 // preview of next winning ball movement
@@ -653,7 +661,7 @@ private fun DrawSolverBoard(
                     if (readyToMoveRec!!.winingMovingChainPreview.isNotEmpty()) {
 
                         val moveCount = SolverViewModel.getWinningMoveCount(
-                            pos =  readyToMoveRec.winingMovingChainPreview[0].pos,
+                            pos = readyToMoveRec.winingMovingChainPreview[0].pos,
                             direction = readyToMoveRec.winningDirectionPreview,
                         )
                         animateShadowBallMovementsPerform(
@@ -773,8 +781,8 @@ private fun PlaySearchAnimation(modifier: Modifier) {
 @Composable
 private fun NoWinnableMoveDialog(
     onDismissRequest: () -> Unit,
-    onConfirmation: () -> Unit)
-{
+    onConfirmation: () -> Unit
+) {
     Dialog(
         onDismissRequest = { onDismissRequest() },
         properties = DialogProperties(
@@ -788,8 +796,10 @@ private fun NoWinnableMoveDialog(
                 .width(200.dp)
                 .padding(0.dp)
                 .height(IntrinsicSize.Min)
-                .border(0.dp, color = MaterialTheme.colorScheme.outline,
-                    shape = RoundedCornerShape(16.dp)),
+                .border(
+                    0.dp, color = MaterialTheme.colorScheme.outline,
+                    shape = RoundedCornerShape(16.dp)
+                ),
             elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
         ) {
             Column(
@@ -838,8 +848,10 @@ private fun NoWinnableMoveDialog(
                             shape = RoundedCornerShape(0.dp),
                             contentPadding = PaddingValues()
                         ) {
-                            Text(text = stringResource(id = R.string.OK),
-                                color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                text = stringResource(id = R.string.OK),
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }

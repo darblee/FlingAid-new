@@ -33,7 +33,7 @@ data class MovingRec(
  * value of [_recomposeFlag]
  */
 data class SolverUIState(
-    private var _mode : SolverMode = SolverMode.NoMoveAvailable,
+    private var _mode: SolverMode = SolverMode.NoMoveAvailable,
     var _recomposeFlag: Boolean = false
 ) {
     var mode = _mode
@@ -54,18 +54,20 @@ data class SolverUIState(
     sealed class SolverMode {
         data object NoMoveAvailable : SolverMode()   // Equivalent to game won condition
         data object Thinking : SolverMode() {
-            var progress : Float = 0.0f
+            var progress: Float = 0.0f
         }
+
         data object ReadyToFindSolution : SolverMode()
-        data object HasWinningMoveWaitingToMove: SolverMode() {
-            var winningDirectionPreview : Direction = Direction.NO_WINNING_DIRECTION
-            var winingMovingChainPreview : BallMoveSet = listOf()
+        data object HasWinningMoveWaitingToMove : SolverMode() {
+            var winningDirectionPreview: Direction = Direction.NO_WINNING_DIRECTION
+            var winingMovingChainPreview: BallMoveSet = listOf()
         }
-        data object AnnounceNoPossibleSolution: SolverMode()
+
+        data object AnnounceNoPossibleSolution : SolverMode()
         data object AnnounceVictory : SolverMode()
         data object MoveBall : SolverMode() {
-            var winningDirMoveBall : Direction = Direction.NO_WINNING_DIRECTION
-            var winingMovingChainMoveBall : BallMoveSet = listOf()
+            var winningDirMoveBall: Direction = Direction.NO_WINNING_DIRECTION
+            var winingMovingChainMoveBall: BallMoveSet = listOf()
         }
     }
 }

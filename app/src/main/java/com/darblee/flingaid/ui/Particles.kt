@@ -9,6 +9,17 @@ import com.darblee.flingaid.utilities.randomInRange
 import com.darblee.flingaid.utilities.toPx
 import kotlin.math.pow
 
+/**
+ * Generate random list of particles, with different point positions and colors.
+ * Used with animation routine to create a visual effect of particle explosion
+ *
+ * @param color Specific ball color
+ * @param startRow Initial position of particle (row coordinate)
+ * @param startCol Initial position of particle (column coordinate)
+ * @param direction Direction of particles
+ * @param maxVerticalDisplacement Maximum vertical spread of the particles
+ * @param maxHorizontalDisplacement  Maximum horizontal spread of the particles
+ */
 class Particle(
     val color: Color,
     val startRow: Int,

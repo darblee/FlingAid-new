@@ -309,8 +309,10 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
                             shape = RoundedCornerShape(0.dp),
                             contentPadding = PaddingValues(0.dp)
                         ) {
-                            Text(text = stringResource(R.string.not_now),
-                                color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                text = stringResource(R.string.not_now),
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                     HorizontalDivider(
@@ -335,8 +337,10 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
                             shape = RoundedCornerShape(0.dp),
                             contentPadding = PaddingValues()
                         ) {
-                            Text(text = stringResource(R.string.exit),
-                                color = MaterialTheme.colorScheme.error)
+                            Text(
+                                text = stringResource(R.string.exit),
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                     }
                 }

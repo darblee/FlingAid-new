@@ -678,11 +678,11 @@ internal class SolverEngine {
         // If the next row is at 2nd last row (e.g. row = (Max Row - 2))), then handle it special since we are near the edge
         if (nextSrcRow == (Global.MAX_ROW_SIZE - 2)) {
             if (flickerGrid[(Global.MAX_ROW_SIZE - 1)][col]) {
-                flickerGrid[(Global.MAX_ROW_SIZE - 1)][col] = false // Fell of the edge. One less ball
-                // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
+                flickerGrid[(Global.MAX_ROW_SIZE - 1)][col] =
+                    false // Fell of the edge. One less ball
             } else {
-                flickerGrid[(Global.MAX_ROW_SIZE - 2)][col] = false // Fell of the edge. One less ball
-                // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
+                flickerGrid[(Global.MAX_ROW_SIZE - 2)][col] =
+                    false // Fell of the edge. One less ball
             }
             return
         }
@@ -764,11 +764,11 @@ internal class SolverEngine {
         // If the next row is at 2nd last column (e.g. col = (Max Col - 2))), then handle it special since we are near the edge
         if (nextSrcCol == (Global.MAX_COL_SIZE - 2)) {
             if (flickerGrid[row][(Global.MAX_COL_SIZE - 1)]) {
-                flickerGrid[row][(Global.MAX_COL_SIZE - 1)] = false // Fell of the edge. One less ball
-                // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
+                flickerGrid[row][(Global.MAX_COL_SIZE - 1)] =
+                    false // Fell of the edge. One less ball
             } else {
-                flickerGrid[row][(Global.MAX_COL_SIZE - 2)] = false // Fell of the edge. One less ball
-                // Log.d("GM: Details", "     ==> BALL DROPPED OPF")
+                flickerGrid[row][(Global.MAX_COL_SIZE - 2)] =
+                    false // Fell of the edge. One less ball
             }
             return
         }

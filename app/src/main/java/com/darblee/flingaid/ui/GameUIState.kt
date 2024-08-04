@@ -30,13 +30,15 @@ data class GameUIState(
     sealed class GameMode {
         data object WaitingOnUser : GameMode()
         data object MoveBall : GameMode() {
-            var moveDirection : Direction = Direction.NO_WINNING_DIRECTION
-            var movingChain : BallMoveSet = listOf()
+            var moveDirection: Direction = Direction.NO_WINNING_DIRECTION
+            var movingChain: BallMoveSet = listOf()
         }
+
         data object IndicateInvalidMoveByShowingShadowMove : GameMode() {
-            var shadowMoveDirection : Direction = Direction.NO_WINNING_DIRECTION
-            var shadowMovingChain : BallMoveSet = listOf()
+            var shadowMoveDirection: Direction = Direction.NO_WINNING_DIRECTION
+            var shadowMovingChain: BallMoveSet = listOf()
         }
+
         data object LookingForHint : GameMode()
         data object WonGame : GameMode()
         data object NoAvailableMove : GameMode()

@@ -528,12 +528,18 @@ object SolverViewModel : ViewModel() {
         if (!gMultipleThread) return
 
         if (gThinkingThread1.isAlive) {
-            Log.i(Global.DEBUG_PREFIX, "Thread 1 is alive, make it end quickly by setting direction to \"No Winning Direction\"")
+            Log.i(
+                Global.DEBUG_PREFIX,
+                "Thread 1 is alive, make it end quickly by setting direction to \"No Winning Direction\""
+            )
             task1_WinningDirection = Direction.NO_WINNING_DIRECTION
         }
 
         if (gThinkingThread2.isAlive) {
-            Log.i(Global.DEBUG_PREFIX, "Thread 2 is alive, make it end quickly by setting direction to \"No Winning Direction\"")
+            Log.i(
+                Global.DEBUG_PREFIX,
+                "Thread 2 is alive, make it end quickly by setting direction to \"No Winning Direction\""
+            )
             task2_WinningDirection = Direction.NO_WINNING_DIRECTION
         }
 

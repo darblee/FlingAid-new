@@ -66,7 +66,6 @@ object GameViewModel : ViewModel() {
     var task2_WinningDirection = Direction.NO_WINNING_DIRECTION
     var task1_WinningDirection = Direction.NO_WINNING_DIRECTION
 
-
     /**
      * [_totalProcessCount] is the total amount of thinking process involved in the current move.
      * [_totalBallInCurrentMove] total number of balls in the current move and current level
@@ -151,7 +150,7 @@ object GameViewModel : ViewModel() {
      * `private set` this is internally modifiable and read-only access from the outside.
      * This ensure information flow in one direction from the view model to the UI
      */
-     internal var gameUIState: StateFlow<GameUIState> = _uiGameState.asStateFlow()
+    internal var gameUIState: StateFlow<GameUIState> = _uiGameState.asStateFlow()
         private set
 
     /**
@@ -202,8 +201,7 @@ object GameViewModel : ViewModel() {
         _gameBallPos.saveBallListToFile()
     }
 
-    fun gameSetModeWaitingOnUser()
-    {
+    fun gameSetModeWaitingOnUser() {
         _uiGameState.update { curState ->
             curState.copy(
                 _mode = GameUIState.GameMode.WaitingOnUser
@@ -234,8 +232,7 @@ object GameViewModel : ViewModel() {
      * - [MoveResult.InvalidNoBump] This is not a valid move as it moves the ball of the edge. It
      * set the game mode to [GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove]
      */
-    fun setupNextMove(initialRow: Int, initialCol: Int, direction : Direction): MoveResult
-    {
+    fun setupNextMove(initialRow: Int, initialCol: Int, direction: Direction): MoveResult {
         if (!(_gameBallPos.ballList.contains(Pos(initialRow, initialCol))))
             return MoveResult.InvalidNoBall
 
@@ -278,8 +275,7 @@ object GameViewModel : ViewModel() {
      * @param pos Position of the ball to move from
      * @param direction Direction of ball movement
      */
-    fun moveBall(pos: Pos, direction: Direction)
-    {
+    fun moveBall(pos: Pos, direction: Direction) {
         val game = SolverEngine()
         game.populateGrid(_gameBallPos.ballList)
 
@@ -308,7 +304,7 @@ object GameViewModel : ViewModel() {
         }
 
         if (direction == Direction.LEFT) {
-                        targetCol = game.findTargetColOnMoveLeft(pos.row, pos.col)
+            targetCol = game.findTargetColOnMoveLeft(pos.row, pos.col)
             game.moveLeft(pos.col, targetCol, pos.row)
             _gameBallPos.ballList.clear()
             _gameBallPos.ballList = game.updateBallList()
@@ -336,11 +332,12 @@ object GameViewModel : ViewModel() {
      * @param ballsToErase Used during ball animation. We need to temporarily
      * erase the animation ball as the animation routine will display it
      */
-    fun drawGameBallsOnGrid(drawScope: DrawScope,
-                            gridSize: Float,
-                            displayBallImage: ImageBitmap,
-                            ballsToErase: BallMoveSet = listOf())
-    {
+    fun drawGameBallsOnGrid(
+        drawScope: DrawScope,
+        gridSize: Float,
+        displayBallImage: ImageBitmap,
+        ballsToErase: BallMoveSet = listOf()
+    ) {
         _gameBallPos.drawAllBalls(drawScope, gridSize, displayBallImage, ballsToErase)
     }
 
@@ -349,8 +346,7 @@ object GameViewModel : ViewModel() {
      *
      * Used primarily for debugging purposes
      */
-    private fun printBalls()
-    {
+    private fun printBalls() {
         _gameBallPos.printPositions()
     }
 }
