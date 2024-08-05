@@ -144,8 +144,8 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        InstructionLogo()
-        GameControlButtonsForGame()
+        GameInstructionLogo()
+        GameActionButtons()
 
         DrawGameBoard(
             modifier = Modifier.fillMaxSize(),
@@ -223,7 +223,7 @@ private fun HandleBackPressKeyForGameScreen(
  * when it is searching for the solution.
  */
 @Composable
-private fun InstructionLogo() {
+private fun GameInstructionLogo() {
     val logoSize = 125.dp
     Row(
         modifier = Modifier
@@ -277,7 +277,7 @@ private fun InstructionLogo() {
  * are "find the solution" button and "reset" button
  */
 @Composable
-private fun GameControlButtonsForGame() {
+private fun GameActionButtons() {
     val iconWidth = Icons.Filled.Refresh.defaultWidth
 
     Row(

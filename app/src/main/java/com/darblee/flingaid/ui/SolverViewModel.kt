@@ -475,7 +475,7 @@ object SolverViewModel : ViewModel() {
     private fun processTask1(totalBallCnt: Int) {
         try {
             Log.i("${Global.DEBUG_PREFIX} Task 1", "Task 1 has started")
-            val game1 = SolverEngine()
+            val game1 = FlickerEngine()
             game1.populateGrid(_solverBallPos.ballList)
 
             val (direction, finalRow, finalCol) = game1.foundWinningMove(
@@ -563,7 +563,7 @@ object SolverViewModel : ViewModel() {
     private fun processTask2(totalBallCnt: Int) {
         try {
             Log.i("${Global.DEBUG_PREFIX} Task 2", "Task 2 has started")
-            val game2 = SolverEngine()
+            val game2 = FlickerEngine()
             game2.populateGrid(_solverBallPos.ballList)
             task2_WinningDirection = Direction.INCOMPLETE
             val (direction, finalRow, finalCol) = game2.foundWinningMove(
@@ -658,7 +658,7 @@ object SolverViewModel : ViewModel() {
         pos: Pos,
         direction: Direction
     ): Int {
-        val game = SolverEngine()
+        val game = FlickerEngine()
         game.populateGrid((_solverBallPos.ballList))
 
         var winningMoveCount = 0
@@ -701,7 +701,7 @@ object SolverViewModel : ViewModel() {
      * @param direction Direction of ball movement
      */
     fun moveBallToWin(pos: Pos, direction: Direction) {
-        val game = SolverEngine()
+        val game = FlickerEngine()
         game.populateGrid((_solverBallPos.ballList))
 
         var targetRow: Int

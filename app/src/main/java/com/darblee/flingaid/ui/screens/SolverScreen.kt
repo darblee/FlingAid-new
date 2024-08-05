@@ -201,8 +201,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Instruction_DynamicLogo(curThinkingLvl)
-        ControlButtonsForSolver(
+        SolverInstructionLogo(curThinkingLvl)
+        SolverActionButtons(
             readyToFindSolution = readyToFindSolution,
             currentlyThinking = (curThinkingLvl != null),
             readyToMoveRec = readyToMoveRec
@@ -287,7 +287,7 @@ private fun HandleBackPressKeyForSolverScreen(
  * @param curThinkingLvl Thinking progress level. Value of null means it is not thinking.
  */
 @Composable
-private fun Instruction_DynamicLogo(
+private fun SolverInstructionLogo(
     curThinkingLvl: Float?
 ) {
     val logoSize = 125.dp
@@ -369,7 +369,7 @@ private fun Instruction_DynamicLogo(
  * and winning moving chain
  */
 @Composable
-private fun ControlButtonsForSolver(
+private fun SolverActionButtons(
     readyToFindSolution: Boolean,
     currentlyThinking: Boolean,
     readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?,

@@ -9,7 +9,7 @@ import com.darblee.flingaid.utilities.Pos
 /**
  * Engine that look for winnable move based on game layout information
  */
-internal class SolverEngine {
+internal class FlickerEngine {
     private var flickerGrid = Array(Global.MAX_ROW_SIZE) { BooleanArray(Global.MAX_COL_SIZE) }
 
     /**
@@ -45,8 +45,8 @@ internal class SolverEngine {
      * Set-up another solver engine instance. The new instance will have exact
      * copy of the current game board.
      */
-    private fun duplicate(): SolverEngine {
-        val tempBoard = SolverEngine()
+    private fun duplicate(): FlickerEngine {
+        val tempBoard = FlickerEngine()
 
         // Clone the board
         repeat(Global.MAX_ROW_SIZE) { curRow ->
@@ -935,4 +935,21 @@ internal class SolverEngine {
         }
         return ballList
     }
+
+    /**
+     * Move back one move
+     */
+    fun moveBack() {
+
+
+
+        clearGameBoard()
+        flickerGrid[1][2] = true
+        flickerGrid[2][2] = true
+        flickerGrid[5][2] = true
+        flickerGrid[3][4] = true
+
+        return
+    }
+
 }

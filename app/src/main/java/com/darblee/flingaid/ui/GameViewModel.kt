@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.io.File
+import kotlin.random.Random
 
 /**
  * **View Model for the  Game**
@@ -193,11 +194,18 @@ object GameViewModel : ViewModel() {
      * It will add balls to the ball list
      */
     fun generateNewGame(level: Int) {
+        val tempBoard = FlickerBoard()
+
+        var curRow = Random.nextInt(1, (Global.MAX_ROW_SIZE-1))
+        var curCol = Random.nextInt(1, (Global.MAX_COL_SIZE -1))
+        tempBoard.ballList.add(Pos(curRow, curCol))
+
+        val game = FlickerEngine()
+        game.populateGrid(tempBoard.ballList)
+        game.moveBack()
+
         _gameBallPos.ballList.clear()
-        _gameBallPos.ballList.add(Pos(1, 2))
-        _gameBallPos.ballList.add(Pos(2, 2))
-        _gameBallPos.ballList.add(Pos(5, 2))
-        _gameBallPos.ballList.add(Pos(3, 4))
+        _gameBallPos.ballList = game.updateBallList()
         _gameBallPos.saveBallListToFile()
     }
 
@@ -276,7 +284,7 @@ object GameViewModel : ViewModel() {
      * @param direction Direction of ball movement
      */
     fun moveBall(pos: Pos, direction: Direction) {
-        val game = SolverEngine()
+        val game = FlickerEngine()
         game.populateGrid(_gameBallPos.ballList)
 
         var targetRow: Int
