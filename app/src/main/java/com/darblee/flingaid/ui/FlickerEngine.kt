@@ -5,6 +5,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.utilities.Pos
+import kotlin.random.Random
 
 /**
  * Engine that look for winnable move based on game layout information
@@ -936,20 +937,400 @@ internal class FlickerEngine {
         return ballList
     }
 
+     data class ValidMove(
+         var addPosList : MutableList<Pos> = mutableListOf(),
+         var delPosList : MutableList<Pos> = mutableListOf()
+    )
+
     /**
      * Move back one move
      */
     fun moveBack() {
 
-
-
-        clearGameBoard()
-        flickerGrid[1][2] = true
+/*        clearGameBoard()
+       flickerGrid[1][2] = true
         flickerGrid[2][2] = true
         flickerGrid[5][2] = true
-        flickerGrid[3][4] = true
+        flickerGrid[3][4] = true*/
+
+        // Build a list of valid moves
+        // Each ball on grid could potentially have up to 4 valid moves (i.e. one in each direction)
+
+        val validMoveList =  mutableListOf<ValidMove>()
+
+        repeat(Global.MAX_ROW_SIZE) { curRow ->
+            repeat(Global.MAX_COL_SIZE) { curCol ->
+                if (flickerGrid[curRow][curCol]) {
+
+                    Log.i(Global.DEBUG_PREFIX, "Prev Move [$curRow, $curCol]")
+
+                    var move = backMoveUp(curRow, curCol)
+                    if (move != null) { validMoveList.add(move) }
+
+                    move = backMoveDown(curRow, curCol)
+                    if (move != null) { validMoveList.add(move) }
+
+                    move = backMoveLeft(curRow, curCol)
+                    if (move != null) { validMoveList.add((move)) }
+
+                    move = backMoveRight(curRow, curCol)
+                    if (move != null) { validMoveList.add((move)) }
+
+                }  // if flickerGrid[curRow][curCol] has a ball
+            }
+        }
+
+        val validMoveCount = validMoveList.size
+        if (validMoveCount == 0) {
+            Log.i(Global.DEBUG_PREFIX, "Unable to find any valid move")
+            return
+        }
+
+        // Randomly pick one of the valid moves
+        val i = Random.nextInt(validMoveCount)
+
+        Log.i(Global.DEBUG_PREFIX, "==================== LIST OF VALID MOVES ==================")
+        validMoveList.forEach {
+            Log.i(Global.DEBUG_PREFIX, "add pos: ${it.addPosList}    del pos: ${it.delPosList}")
+        }
+        val chosenValidMove = validMoveList[i]
+
+        Log.i(Global.DEBUG_PREFIX, "Chosen: add: ${chosenValidMove.addPosList}    del: ${chosenValidMove.delPosList}")
+
+        // Do the actual move
+        chosenValidMove.addPosList.forEach { curPos ->
+            flickerGrid[curPos.row][curPos.col] = true
+        }
+        chosenValidMove.delPosList.forEach { curPos->
+            flickerGrid[curPos.row][curPos.col] = false
+        }
 
         return
     }
 
+    /**
+     * Move back one move. Handling the UP direction only.
+     * - Find the departing ball source position
+     * - Find the action ball source position
+     * Put in these values into the move record
+     *
+     * @param actionBallTargetRow Position of the target action ball (row)
+     * @param actionBallTargetCol Position of the target action ball (column)
+     *
+     * @return [ValidMove]
+     *  If it is null, then it means there is no valid. Otherwise, it contain valid move
+     */
+    private fun backMoveUp(
+        actionBallTargetRow: Int, actionBallTargetCol: Int
+    ): ValidMove? {
+        val move = ValidMove()
+
+        // Find the departing ball source position
+
+        // Target action ball is on top edge. No room to have a departing ball above it.
+        // Hence, this is not a valid move
+        if (actionBallTargetRow == 0) return  (null)
+
+        // Make sure there is a clear path for departing ball to fall off the grid
+        var curTargetRowDeparting = actionBallTargetRow - 1
+        var validMove = true
+        while (curTargetRowDeparting > 0) {
+            if (flickerGrid[curTargetRowDeparting][actionBallTargetCol]) {
+                validMove = false
+                break
+            }
+            curTargetRowDeparting--
+        }
+
+        // This is invalid move if target ball could not fall off the grid since as there is
+        // other ball in the path
+        if (!validMove) return (null)
+
+        // The departing ball is good
+        val departBallUpPos = Pos((actionBallTargetRow - 1), actionBallTargetCol)
+
+        /************************************************************/
+
+        // Find the action source ball
+
+        // Check for sufficient space for action ball to hit the target ball
+        // in the up direction
+
+        // Destination action ball is at bottom edge. No room for action ball to move up to it
+        if (actionBallTargetRow == (Global.MAX_ROW_SIZE - 1)) return (null)
+
+        // Find the number of spaces for action ball to move upward
+        var curActionBallRow = actionBallTargetRow + 1
+        var numSpaceForActionBall = 0
+        while (curActionBallRow <= (Global.MAX_ROW_SIZE - 1)) {
+            if (flickerGrid[curActionBallRow][actionBallTargetCol]) {
+                // There is a ball in this location. So we reached the end of path to put in the source ball
+                break
+            }
+            numSpaceForActionBall++
+            curActionBallRow++
+        }
+
+        // There is no room for action ball to move, hence this is not valid
+        if (numSpaceForActionBall == 0) return (null)
+
+        // We have a valid move. Now we need to randomly choose one of the source position
+        val actionBallSrcUpPos =
+            if (numSpaceForActionBall == 1) {
+                Pos((actionBallTargetRow + 1), actionBallTargetCol)
+            } else {
+                Pos((actionBallTargetRow + (Random.nextInt(numSpaceForActionBall) + 1)), actionBallTargetCol)
+            }
+
+        move.addPosList.add(actionBallSrcUpPos)
+        move.addPosList.add(departBallUpPos)
+        move.delPosList.add(Pos(actionBallTargetRow, actionBallTargetCol))
+
+        return (move)
+    }
+
+    /**
+     * Move back one move. Handling the DOWN direction only.
+     * - Find the departing ball source position
+     * - Find the action ball source position
+     * Put in these values into the move record
+     *
+     * @param actionBallTargetRow Position of the target action ball (row)
+     * @param actionBallTargetCol Position of the target action ball (column)
+     *
+     * @return [ValidMove]
+     * If it is null, then it means there is no valid. Otherwise, it contain valid move
+     */
+    private fun backMoveDown(
+        actionBallTargetRow: Int, actionBallTargetCol: Int
+    ): ValidMove? {
+        val move = ValidMove()
+
+        // Find the departing ball source position
+
+        // Target action ball is on bottom edge. No room to have a departing ball below it.
+        // Hence, this is not a valid move
+        if (actionBallTargetRow == (Global.MAX_ROW_SIZE - 1)) return (null)
+
+        // Make sure there is a clear path for departing ball to fall off the grid
+        var curTargetRowDeparting = actionBallTargetRow + 1
+        var validMove = true
+        while (curTargetRowDeparting < Global.MAX_ROW_SIZE) {
+            if (flickerGrid[curTargetRowDeparting][actionBallTargetCol]) {
+                validMove = false
+                break
+            }
+            curTargetRowDeparting++
+        }
+
+        // This is invalid move if target ball could not fall off the grid since as there is
+        // other ball in the path
+        if (!validMove)  return (null)
+
+        // The departing ball is good
+        val departBallDownPos = Pos((actionBallTargetRow + 1), actionBallTargetCol)
+
+        /************************************************************/
+
+        // Find the action source ball
+
+        // Check for sufficient space for action ball to hit the target ball
+        // in the down direction
+
+        // Destination action ball is at top edge. No room for action ball to move down to it
+        if (actionBallTargetRow == 0)  return (null)
+
+        // Find the number of spaces for action ball to move downward
+        var curActionBallRow = actionBallTargetRow - 1
+        var numSpaceForActionBall = 0
+        while (curActionBallRow >= 0) {
+            if (flickerGrid[curActionBallRow][actionBallTargetCol]) {
+                // There is a ball in this location. So we reached the end of path to put in the source ball
+                break
+            }
+            numSpaceForActionBall++
+            curActionBallRow--
+        }
+
+        // If is no room for action ball to move, then this is not a valid move
+        if (numSpaceForActionBall == 0)  return (null)
+
+        // We have a valid move. Now we need to randomly choose one of the source position
+        val actionBallSrcDownPos =
+            if (numSpaceForActionBall == 1) {
+                 Pos((actionBallTargetRow - 1), actionBallTargetCol)
+            } else {
+                 Pos((actionBallTargetRow - (Random.nextInt(numSpaceForActionBall) + 1)), actionBallTargetCol)
+            }
+
+        move.addPosList.add(actionBallSrcDownPos)
+        move.addPosList.add(departBallDownPos)
+        move.delPosList.add(Pos(actionBallTargetRow, actionBallTargetCol))
+
+        return (move)
+    }
+
+    /**
+     * Move back one move. Handling the LEFT direction only.
+     * - Find the departing ball source position
+     * - Find the action ball source position
+     * Put in these values into the move record
+     *
+     * @param actionBallTargetRow Position of the target action ball (row)
+     * @param actionBallTargetCol Position of the target action ball (column)
+     *
+     * @return [ValidMove]
+     *  If it is null, then it means there is no valid. Otherwise, it contain valid move
+     */
+    private fun backMoveLeft(
+        actionBallTargetRow: Int, actionBallTargetCol: Int
+    ): ValidMove?
+    {
+        val move = ValidMove()
+
+        // Find the departing ball source position
+
+        // Target action ball is on left edge. No room to have a departing ball on the left of it.
+        // Hence, this is not a valid move
+        if (actionBallTargetCol == 0) { return (null) }
+
+        // Make sure there is a clear path for departing ball to fall off the grid
+        var curTargetColDeparting = actionBallTargetCol - 1
+        var validMove = true
+        while (curTargetColDeparting > 0) {
+            if (flickerGrid[actionBallTargetRow][curTargetColDeparting]) {
+                validMove = false
+                break
+            }
+            curTargetColDeparting--
+        }
+
+        // This is invalid move if target ball could not fall off the grid as there is
+        // other ball in the path
+        if (!validMove) { return (null) }
+
+        // The departing ball is good
+        val departBallLeftPos = Pos((actionBallTargetRow), actionBallTargetCol - 1)
+
+        /************************************************************/
+
+        // Find the action source ball
+
+        // Check for sufficient space for action ball to hit the target ball
+        // in the left direction
+
+        // Destination action ball is at right edge. No room to have action ball move from the left
+        if (actionBallTargetCol == (Global.MAX_COL_SIZE - 1)) { return (null) }
+
+        // Find the number of spaces for action ball to move from the left
+        var curActionBallCol = actionBallTargetCol + 1
+        var numSpaceForActionBall = 0
+        while (curActionBallCol <= (Global.MAX_COL_SIZE - 1)) {
+            if (flickerGrid[actionBallTargetRow][curActionBallCol]) {
+                // There is a ball in this location. So we reached the end of path to put in the source ball
+                break
+            }
+            numSpaceForActionBall++
+            curActionBallCol++
+        }
+
+        // There is no room for action ball to move, hence this is not valid
+        if (numSpaceForActionBall == 0) { return (null) }
+
+        // We have a valid move. Now we need to randomly choose one of the source position
+        val actionBallSrcLeftPos =
+            if (numSpaceForActionBall == 1) {
+                Pos(actionBallTargetRow, (actionBallTargetCol + 1))
+            } else {
+                Pos(actionBallTargetRow, (actionBallTargetCol + Random.nextInt(numSpaceForActionBall) + 1))
+            }
+
+        move.addPosList.add(departBallLeftPos)
+        move.addPosList.add(actionBallSrcLeftPos)
+        move.delPosList.add(Pos(actionBallTargetRow, actionBallTargetCol))
+
+        return (move)
+    }
+
+    /**
+     * Move back one move. Handling the RIGHT direction only.
+     * - Find the departing ball source position
+     * - Find the action ball source position
+     * Put in these values into the move record
+     *
+     * @param actionBallTargetRow Position of the target action ball (row)
+     * @param actionBallTargetCol Position of the target action ball (column)
+     *
+     * @return [ValidMove]
+     *  If it is null, then it means there is no valid. Otherwise, it contain valid move
+     */
+    private fun backMoveRight(
+        actionBallTargetRow: Int, actionBallTargetCol: Int
+    ): ValidMove? {
+        val move = ValidMove()
+
+        // Find the departing ball source position
+
+        // Target action ball is on right edge. No room to have a departing ball on the right of it.
+        // Hence, this is not a valid move
+        if (actionBallTargetCol == (Global.MAX_COL_SIZE - 1)) { return (null) }
+
+        // Make sure there is a clear path for departing ball to fall off the grid
+        var curTargetColDeparting = actionBallTargetCol + 1
+        var validMove = true
+        while (curTargetColDeparting <= (Global.MAX_COL_SIZE - 1 )) {
+            if (flickerGrid[actionBallTargetRow][curTargetColDeparting]) {
+                validMove = false
+                break
+            }
+            curTargetColDeparting++
+        }
+
+        // This is invalid move if target ball could not fall off the grid since as there is
+        // other ball in the path
+        if (!validMove) { return (null) }
+
+        // The departing ball is good
+        val departBallRightPos = Pos((actionBallTargetRow), actionBallTargetCol + 1)
+
+        /************************************************************/
+
+        // Find the action source ball
+
+        // Check for sufficient space for action ball to hit the target ball
+        // in the right direction
+
+        // Destination action ball is at left edge. No room to have action ball move from the right
+        if (actionBallTargetCol == 0) { return (null) }
+
+        // Find the number of spaces for action ball to move from the right
+        var curActionBallCol = actionBallTargetCol - 1
+        var numSpaceForActionBall = 0
+        while (curActionBallCol >= 0) {
+            if (flickerGrid[actionBallTargetRow][curActionBallCol]) {
+                // There is a ball in this location. So we reached the end of path to put in the source ball
+                break
+            }
+            numSpaceForActionBall++
+            curActionBallCol--
+        }
+
+        // There is no room for action ball to move, hence this is not valid
+        if (numSpaceForActionBall == 0) { return (null) }
+
+        // We have a valid move. Now we need to randomly choose one of the source position
+        val actionBallSrcRightPos =
+            if (numSpaceForActionBall == 1) {
+                Pos(actionBallTargetRow, (actionBallTargetCol - 1))
+            } else {
+                Pos(actionBallTargetRow, (actionBallTargetCol - Random.nextInt(numSpaceForActionBall)-1))
+            }
+
+        move.addPosList.add(departBallRightPos)
+        move.addPosList.add(actionBallSrcRightPos)
+        move.delPosList.add(Pos(actionBallTargetRow, actionBallTargetCol))
+
+        return (move)
+    }
 }
+

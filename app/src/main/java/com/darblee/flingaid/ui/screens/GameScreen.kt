@@ -288,7 +288,7 @@ private fun GameActionButtons() {
         horizontalArrangement = Arrangement.SpaceAround,
     ) {
         Button(
-            onClick = { GameViewModel.generateNewGame(1) },
+            onClick = { GameViewModel.generateNewGame(5) },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(

@@ -196,13 +196,17 @@ object GameViewModel : ViewModel() {
     fun generateNewGame(level: Int) {
         val tempBoard = FlickerBoard()
 
-        var curRow = Random.nextInt(1, (Global.MAX_ROW_SIZE-1))
-        var curCol = Random.nextInt(1, (Global.MAX_COL_SIZE -1))
+        val curRow = Random.nextInt(1, (Global.MAX_ROW_SIZE-1))
+        val curCol = Random.nextInt(1, (Global.MAX_COL_SIZE -1))
+
         tempBoard.ballList.add(Pos(curRow, curCol))
 
         val game = FlickerEngine()
         game.populateGrid(tempBoard.ballList)
-        game.moveBack()
+
+        repeat(level) {
+            game.moveBack()
+        }
 
         _gameBallPos.ballList.clear()
         _gameBallPos.ballList = game.updateBallList()
