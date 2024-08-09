@@ -8,6 +8,24 @@ import com.darblee.flingaid.utilities.Pos
 import kotlin.random.Random
 
 /**
+ * Track the thinking process to find the winning move.
+ *
+ * _Developer's note:_ `internal` means it will only be visible within that module. A module
+ * is a set of Kotlin files that are compiled together e.g. a library or application. It provides real
+ * encapsulation for the implementation details. In this case, it is shared wit the SolverEngine class.
+ */
+internal var gThinkingProgress = 0
+
+/**
+ * Store the winning direction for each corresponding task. Only 1 task will have the winning move
+ * but we do not know which ones.
+ * - Winning Direction from thread #1
+ * - Winning Direction from thread #2
+ */
+internal var gTask1WinningDirection = Direction.NO_WINNING_DIRECTION
+internal var gTask2WinningDirection = Direction.NO_WINNING_DIRECTION
+
+/**
  * Engine that look for winnable move based on game layout information
  */
 internal class FlickerEngine {
@@ -107,10 +125,10 @@ internal class FlickerEngine {
         run repeatBlock@{
             while (curRow != exceededRow) {
 
-                if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
+                if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                     Log.d(
                         "${Global.DEBUG_PREFIX}:",
-                        "Short circuit on row processing. task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                        "Short circuit on row processing. task1: ${gTask1WinningDirection} task2: ${gTask2WinningDirection}"
                     )
                     direction = Direction.INCOMPLETE  // We should quit the current thread
                     return@repeatBlock
@@ -142,12 +160,12 @@ internal class FlickerEngine {
                         }
 
                         if (curSearchLevel == 2) {
-                            SolverViewModel.gThinkingProgress++
+                            gThinkingProgress++
                         }
-                        if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
+                        if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after up. task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                                "Short circuit on col processing after up. task1: ${gTask1WinningDirection} task2: ${gTask2WinningDirection}"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -161,12 +179,12 @@ internal class FlickerEngine {
                         }
 
                         if (curSearchLevel == 2) {
-                            SolverViewModel.gThinkingProgress++
+                            gThinkingProgress++
                         }
-                        if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
+                        if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after down. task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                                "Short circuit on col processing after down. task1: ${gTask1WinningDirection} task2: ${gTask2WinningDirection}"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -180,12 +198,12 @@ internal class FlickerEngine {
                         }
 
                         if (curSearchLevel == 2) {
-                            SolverViewModel.gThinkingProgress++
+                            gThinkingProgress++
                         }
-                        if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
+                        if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after right. task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                                "Short circuit on col processing after right. task1: ${gTask1WinningDirection} task2: ${gTask2WinningDirection}"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -199,12 +217,12 @@ internal class FlickerEngine {
                         }
 
                         if (curSearchLevel == 2) {
-                            SolverViewModel.gThinkingProgress++
+                            gThinkingProgress++
                         }
-                        if (Thread.interrupted() || (SolverViewModel.task1_WinningDirection != Direction.INCOMPLETE) || (SolverViewModel.task2_WinningDirection != Direction.INCOMPLETE)) {
+                        if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after left. task1: ${SolverViewModel.task1_WinningDirection} task2: ${SolverViewModel.task2_WinningDirection}"
+                                "Short circuit on col processing after left. task1: ${gTask1WinningDirection} task2: ${gTask2WinningDirection}"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -946,12 +964,6 @@ internal class FlickerEngine {
      * Move back one move
      */
     fun moveBack() {
-
-/*        clearGameBoard()
-       flickerGrid[1][2] = true
-        flickerGrid[2][2] = true
-        flickerGrid[5][2] = true
-        flickerGrid[3][4] = true*/
 
         // Build a list of valid moves
         // Each ball on grid could potentially have up to 4 valid moves (i.e. one in each direction)

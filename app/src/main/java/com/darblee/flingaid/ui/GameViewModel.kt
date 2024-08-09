@@ -5,6 +5,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
@@ -14,7 +15,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.io.File
+import java.util.concurrent.CyclicBarrier
 import kotlin.random.Random
 
 /**
@@ -196,8 +199,8 @@ object GameViewModel : ViewModel() {
     fun generateNewGame(level: Int) {
         val tempBoard = FlickerBoard()
 
-        val curRow = Random.nextInt(1, (Global.MAX_ROW_SIZE-1))
-        val curCol = Random.nextInt(1, (Global.MAX_COL_SIZE -1))
+        val curRow = Random.nextInt(1, (Global.MAX_ROW_SIZE - 1))
+        val curCol = Random.nextInt(1, (Global.MAX_COL_SIZE - 1))
 
         tempBoard.ballList.add(Pos(curRow, curCol))
 
@@ -361,4 +364,91 @@ object GameViewModel : ViewModel() {
     private fun printBalls() {
         _gameBallPos.printPositions()
     }
+
+    private lateinit var gThinkingThread: Thread
+
+    private var task_WinningDirection = Direction.NO_WINNING_DIRECTION
+    private var taskWinningRow = -1
+    private var taskWinningCol = -1
+
+    /**
+     * Find hint
+     */
+    fun getHint() {
+        val gTotalBallCount = _gameBallPos.ballList.size
+
+        viewModelScope.launch {
+
+            // 1 thread invoke "await" and this single thread have completed
+            val cyclicBarrier = CyclicBarrier(1) {
+                recordThinkingResult()
+            }
+
+            gThinkingThread = Thread {
+                processTask(gTotalBallCount)
+                Log.i(
+                    "${Global.DEBUG_PREFIX} Hint:",
+                    "Task is completed. Now waiting for all threads to complete."
+                )
+                cyclicBarrier.await()
+            }
+
+            gThinkingThread.start()
+        }
+    }
+
+    /* Process the  task.
+     *
+     * It is tracked using the hardcoded task #1 meta data
+     *
+     * @param totalBallCnt Used to determine whether it has winnable move or not
+     */
+    private fun processTask(totalBallCnt: Int) {
+        try {
+            Log.i("${Global.DEBUG_PREFIX} Task:", "Task has started")
+            val game = FlickerEngine()
+            game.populateGrid(_gameBallPos.ballList)
+
+            val (direction, finalRow, finalCol) = game.foundWinningMove(
+                totalBallCnt, 1, 1
+            )
+
+            Log.i(
+                "${Global.DEBUG_PREFIX} Finish Task",
+                "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol"
+            )
+
+            task_WinningDirection = direction
+
+            when (direction) {
+
+                Direction.INCOMPLETE -> {
+                    Log.i(
+                        Global.DEBUG_PREFIX,
+                        "Task got incomplete. It expect task2 has deterministic result"
+                    )
+                }
+
+                Direction.NO_WINNING_DIRECTION -> {
+                    Log.i(Global.DEBUG_PREFIX, "Task concluded there is no winning move")
+                }
+
+                else -> {
+                    // Task #1 got winning move
+                    task_WinningDirection = direction
+                    taskWinningRow = finalRow
+                    taskWinningCol = finalCol
+                }
+            }
+        } catch (e: InterruptedException) {
+            Log.i("${Global.DEBUG_PREFIX} 1", "Interruption detected")
+        }
+    }
+
+    private fun recordThinkingResult()
+    {
+
+    }
+
+    /******************  Set mode routines ******************************************/
 }

@@ -326,7 +326,7 @@ private fun GameActionButtons() {
         }
 
         Button(
-            onClick = { },
+            onClick = { GameViewModel.getHint() },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
