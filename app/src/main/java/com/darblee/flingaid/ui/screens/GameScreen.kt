@@ -517,11 +517,13 @@ private fun DrawGameBoard(
 
         val minSwipeOffset = gridSize
 
+        val allowSwipe = (moveBallRec == null)
+
         Canvas(
             modifier = modifier
                 .fillMaxSize()
                 .padding(15.dp)
-                .pointerInput(Unit) {
+                .pointerInput(allowSwipe) {
                     detectDragGestures(
                         onDragStart = { offset: Offset ->
                             dragRow = (offset.y / gridSize).toInt()
@@ -534,18 +536,27 @@ private fun DrawGameBoard(
                             offsetY += dragAmount.y
                         },
                         onDragEnd = {
+
                             when {
-                                (offsetX < 0F && abs(offsetX) > minSwipeOffset) ->
+                                (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
+                                    if (allowSwipe)
                                     GameViewModel.setupNextMove(dragRow, dragCol, Direction.LEFT)
+                                }
 
-                                (offsetX > 0F && abs(offsetX) > minSwipeOffset) ->
+                                (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
+                                    if (allowSwipe)
                                     GameViewModel.setupNextMove(dragRow, dragCol, Direction.RIGHT)
+                                }
 
-                                (offsetY < 0F && abs(offsetY) > minSwipeOffset) ->
+                                (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
+                                    if (allowSwipe)
                                     GameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
+                                }
 
-                                (offsetY > 0F && abs(offsetY) > minSwipeOffset) ->
+                                (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
+                                    if (allowSwipe)
                                     GameViewModel.setupNextMove(dragRow, dragCol, Direction.DOWN)
+                                }
                             }
                             offsetX = 0F
                             offsetY = 0F
