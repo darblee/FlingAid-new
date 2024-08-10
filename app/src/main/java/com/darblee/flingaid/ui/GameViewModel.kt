@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.concurrent.CyclicBarrier
 import kotlin.random.Random
 
 /**
@@ -51,42 +50,6 @@ import kotlin.random.Random
  */
 object GameViewModel : ViewModel() {
 
-    /**
-     *
-     * Track the thinking process to find the winning move on the user's hint request
-     *
-     * _Developer's note:_ `internal` means it will only be visible within that module. A module
-     * is a set of Kotlin files that are compiled together e.g. a library or application. It provides real
-     * encapsulation for the implementation details. In this case, it is shared wit the SolverEngine class.
-     */
-    private var gHintThinkingProgress = 0
-
-    /**
-     * Store the winning direction for each corresponding task. Only 1 task will have the winning move
-     * but we do not know which ones.
-     * - Winning Direction from thread #1
-     * - Winning Direction from thread #2
-     */
-    var task2_WinningDirection = Direction.NO_WINNING_DIRECTION
-    var task1_WinningDirection = Direction.NO_WINNING_DIRECTION
-
-    /**
-     * [_totalProcessCount] is the total amount of thinking process involved in the current move.
-     * [_totalBallInCurrentMove] total number of balls in the current move and current level
-     *
-     * The total is 2 levels of thinking.
-     * Next level is (number of balls - 1) x 4 directions
-     * Current level is the number of balls x 4 direction
-     * Total = (Next level) x (current level)
-     */
-    private var _totalProcessCount: Float = 0.0F
-    private var _totalBallInCurrentMove = 0
-
-    /**
-     * The direction of the winning move obtained from the tasks calculation
-     */
-    private var _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
-
     /********************************* BALL MANAGEMENT ****************************/
 
     private var _gameBallPos = FlickerBoard()
@@ -113,7 +76,7 @@ object GameViewModel : ViewModel() {
      *
      * @return Number of active balls
      */
-    private fun ballCount(): Int {
+    fun ballCount(): Int {
         return (_gameBallPos.getBallCount())
     }
 
@@ -162,7 +125,6 @@ object GameViewModel : ViewModel() {
      */
     init {
         reset()
-        gHintThinkingProgress = 0
     }
 
     /**
@@ -174,21 +136,7 @@ object GameViewModel : ViewModel() {
         _gameBallPos.ballList.clear()
         _gameBallPos.removeGameFile()
 
-        gameSetIDLEstate()
-    }
-
-    /**
-     * Update [gameUIState]  thinking status to Idle state.
-     *
-     */
-    private fun gameSetIDLEstate(
-    ) {
-        _uiGameState.update { currentState ->
-            currentState.copy(
-                _mode = GameUIState.GameMode.WaitingOnUser
-            )
-        }
-        gHintThinkingProgress = 0
+        gameSetModeNewGame()
     }
 
     /**
@@ -214,12 +162,14 @@ object GameViewModel : ViewModel() {
         _gameBallPos.ballList.clear()
         _gameBallPos.ballList = game.updateBallList()
         _gameBallPos.saveBallListToFile()
+
+        gameSetModeNewGame()
     }
 
-    fun gameSetModeWaitingOnUser() {
+    fun gameSetModeNewGame() {
         _uiGameState.update { curState ->
             curState.copy(
-                _mode = GameUIState.GameMode.WaitingOnUser
+                _mode = GameUIState.GameMode.NewGame
             )
         }
     }
@@ -332,7 +282,7 @@ object GameViewModel : ViewModel() {
                 _mode = if (ballCount() == 1) {
                     GameUIState.GameMode.WonGame
                 } else {
-                    GameUIState.GameMode.WaitingOnUser
+                    GameUIState.GameMode.NewGame
                 }
             )
         }
@@ -365,90 +315,121 @@ object GameViewModel : ViewModel() {
         _gameBallPos.printPositions()
     }
 
-    private lateinit var gThinkingThread: Thread
-
-    private var task_WinningDirection = Direction.NO_WINNING_DIRECTION
-    private var taskWinningRow = -1
-    private var taskWinningCol = -1
-
     /**
      * Find hint
      */
     fun getHint() {
-        val gTotalBallCount = _gameBallPos.ballList.size
-
         viewModelScope.launch {
+            gTask1WinningDirection = Direction.INCOMPLETE
+            gTask2WinningDirection = Direction.INCOMPLETE
+            gThinkingProgress = 0
 
-            // 1 thread invoke "await" and this single thread have completed
-            val cyclicBarrier = CyclicBarrier(1) {
-                recordThinkingResult()
-            }
-
-            gThinkingThread = Thread {
-                processTask(gTotalBallCount)
-                Log.i(
-                    "${Global.DEBUG_PREFIX} Hint:",
-                    "Task is completed. Now waiting for all threads to complete."
-                )
-                cyclicBarrier.await()
-            }
-
-            gThinkingThread.start()
-        }
-    }
-
-    /* Process the  task.
-     *
-     * It is tracked using the hardcoded task #1 meta data
-     *
-     * @param totalBallCnt Used to determine whether it has winnable move or not
-     */
-    private fun processTask(totalBallCnt: Int) {
-        try {
             Log.i("${Global.DEBUG_PREFIX} Task:", "Task has started")
             val game = FlickerEngine()
             game.populateGrid(_gameBallPos.ballList)
 
-            val (direction, finalRow, finalCol) = game.foundWinningMove(
-                totalBallCnt, 1, 1
+            val (direction, row, col) = game.foundWinningMove(
+                _gameBallPos.ballList.size, 1, 1
             )
 
             Log.i(
                 "${Global.DEBUG_PREFIX} Finish Task",
-                "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol"
+                "Conclusion: Direction = $direction, row=$row, col=$col"
             )
 
-            task_WinningDirection = direction
+            if ((direction == Direction.INCOMPLETE) || (direction == Direction.NO_WINNING_DIRECTION)) {
+                Log.i(Global.DEBUG_PREFIX, "No winnable move found.")
+                setModeToNoWinnableMoveWithDialog()
+                return@launch
+            }
 
+            // We have a hint. Now get the distance
+            var distance = 0
             when (direction) {
-
-                Direction.INCOMPLETE -> {
-                    Log.i(
-                        Global.DEBUG_PREFIX,
-                        "Task got incomplete. It expect task2 has deterministic result"
-                    )
+                Direction.UP -> {
+                    distance = row - game.findTargetRowOnMoveUp(row, col)
                 }
 
-                Direction.NO_WINNING_DIRECTION -> {
-                    Log.i(Global.DEBUG_PREFIX, "Task concluded there is no winning move")
+                Direction.DOWN -> {
+                    distance = game.findTargetRowOnMoveDown(row, col) - row
+                }
+
+                Direction.LEFT -> {
+                    distance = col - game.findTargetColOnMoveLeft(row, col)
+                }
+
+                Direction.RIGHT -> {
+                    distance = game.findTargetColOnMoveRight(row, col) - col
                 }
 
                 else -> {
-                    // Task #1 got winning move
-                    task_WinningDirection = direction
-                    taskWinningRow = finalRow
-                    taskWinningCol = finalCol
+                    Log.i(Global.DEBUG_PREFIX, "Got unexpected direction value")
                 }
             }
-        } catch (e: InterruptedException) {
-            Log.i("${Global.DEBUG_PREFIX} 1", "Interruption detected")
+
+            setModeToShowHint(Pos(row, col), direction, distance)
         }
     }
 
-    private fun recordThinkingResult()
-    {
+    /******************  Set mode routines ******************************************/
 
+    /**
+     * Set mode to "Show Hint"
+     *
+     * Update the [_uiGameState] state flow with this "Show Hint" mode information
+     * and send it to Game Screen
+     *
+     * @param pos Ball position to start shadow movement
+     * @param direction Direction of the shadow movement
+     * @param distance Distance of the shadow movement
+     */
+    private fun setModeToShowHint(pos: Pos, direction: Direction, distance: Int) {
+        val move = MovingRec(pos, distance)
+        val movingChain = mutableListOf<MovingRec>()
+        movingChain.add(move)
+
+        val showHintRec = GameUIState.GameMode.ShowHint
+        showHintRec.shadowMovingChain = movingChain
+        showHintRec.shadowMoveDirection = direction
+
+        _uiGameState.update { curState ->
+            curState.copy(
+                _mode = showHintRec
+            )
+        }
     }
 
-    /******************  Set mode routines ******************************************/
+    /**
+     * Set mode to "No Winnable Move with dialog". Basically, to indicate the game could no longer be winnable
+     * without reset or ga back to previous moves. ALso informing game screen to show the dialog informing
+     * user there is no winnable move
+     *
+     * Update the [_uiGameState] state flow with this "Show Hint" mode information
+     * and send it to Game Screen
+     *
+     */
+    private fun setModeToNoWinnableMoveWithDialog() {
+        _uiGameState.update { curState ->
+            curState.copy(
+                _mode = GameUIState.GameMode.NoWinnnableMoveWithDiaglog
+            )
+        }
+    }
+
+
+    /**
+     * Set mode to "No Winnable Move". Basically, to indicate the game could no longer be winnable
+     * without reset or ga back to previous moves.
+     *
+     * Update the [_uiGameState] state flow with this "Show Hint" mode information
+     * and send it to Game Screen
+     *
+     */
+    fun setModeToNoWinnableMove() {
+        _uiGameState.update { curState ->
+            curState.copy(
+                _mode = GameUIState.GameMode.NoWinnableMove
+            )
+        }
+    }
 }

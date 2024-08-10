@@ -5,31 +5,64 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.KeyframesSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
+import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_swish
 import com.darblee.flingaid.gAudio_victory
 import com.darblee.flingaid.ui.MovingRec
@@ -371,6 +404,7 @@ fun drawBallOnGrid(
 
 /* The set-up routine is done on each screen - GameScreen & SolverScreen */
 
+
 /**
  * Animate the shadowed ball movement.
  *
@@ -429,6 +463,27 @@ fun animateShadowBallMovementsPerform(
 /*************** Ball Movement ************************************/
 
 /* The set-up routine is done on each screen - GameScreen & SolverScreen */
+
+/**
+ * Animate the shadowed ball movement endlessly in a loop. This is a set-up.
+ *
+ * @param animateCtl Animate Object that control animation state of shadowed movement, which loop
+ *  * forever.
+ */
+@Composable
+fun AnimateShadowBallMovementSetup(animateCtl: Animatable<Float, AnimationVector1D>) {
+    LaunchedEffect(Unit) {
+        animateCtl.snapTo(0f)
+        animateCtl.animateTo(
+            targetValue = 1f, animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Restart
+            )
+        )
+    }
+}
+
 
 /**
  * Create all particles, which is used for the explosion animated effect
@@ -790,4 +845,87 @@ fun AnimateVictoryMessageSetup(
             }
         }  // coroutineScope
     } // LaunchedEffect
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NoWinnableMoveDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = { onDismissRequest() },
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false
+        )
+    ) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .width(200.dp)
+                .padding(0.dp)
+                .height(IntrinsicSize.Min)
+                .border(
+                    0.dp, color = MaterialTheme.colorScheme.outline,
+                    shape = RoundedCornerShape(16.dp)
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+        ) {
+            Column(
+                Modifier.fillMaxWidth()
+            ) {
+                Row {
+                    Column(Modifier.weight(1f)) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ball),
+                            contentDescription = "Game",
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                    Column(Modifier.weight(3f)) {
+                        Text(
+                            text = stringResource(R.string.there_is_no_winnable_move),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .padding(8.dp, 8.dp, 8.dp, 2.dp)
+                                .align(Alignment.CenterHorizontally)
+                                .fillMaxWidth(),
+                            fontSize = 18.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .width(1.dp),
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Row(Modifier.padding(top = 0.dp)) {
+                    CompositionLocalProvider(
+                        LocalMinimumInteractiveComponentEnforcement provides false,
+                    ) {
+                        TextButton(
+                            onClick = { onConfirmation() },
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(0.dp)
+                                .weight(1F)
+                                .border(0.dp, color = Color.Transparent)
+                                .height(48.dp),
+                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
+                            shape = RoundedCornerShape(0.dp),
+                            contentPadding = PaddingValues()
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.OK),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

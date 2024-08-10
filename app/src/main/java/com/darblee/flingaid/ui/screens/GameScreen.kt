@@ -73,9 +73,12 @@ import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_doink
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
+import com.darblee.flingaid.ui.GameViewModel.setModeToNoWinnableMove
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.utilities.AnimateBallMovementsSetup
+import com.darblee.flingaid.utilities.AnimateShadowBallMovementSetup
 import com.darblee.flingaid.utilities.AnimateVictoryMessageSetup
+import com.darblee.flingaid.utilities.NoWinnableMoveDialog
 import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
@@ -97,10 +100,11 @@ import kotlin.math.abs
 @Composable
 fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) {
 
-    var moveBallRec : GameUIState.GameMode.MoveBall? = null // null means it is NOT moving the ball
-
-    // null means it is NOT IndicateInvalidMoveByShowingShadowMove mode.
+    var moveBallRec : GameUIState.GameMode.MoveBall? = null
     var shadowBallRec : GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove? = null
+    var hintBallRec : GameUIState.GameMode.ShowHint ?= null
+    var noWinnableMove by remember {  mutableStateOf( false ) }
+    var showNoWinnableMoveDialogBox by remember { mutableStateOf(false) }
 
     LoadGameFileOnlyOnce()
 
@@ -114,12 +118,21 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             announceVictory = true
         }
 
-        GameUIState.GameMode.WaitingOnUser -> {
+        GameUIState.GameMode.NewGame -> {
             Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
+            noWinnableMove = false
         }
 
-        GameUIState.GameMode.NoAvailableMove -> {
-            Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
+        GameUIState.GameMode.NoWinnnableMoveWithDiaglog -> {
+            noWinnableMove = true
+            showNoWinnableMoveDialogBox = true
+            Log.i("Game Recompose: ", "${gameUIState.mode} : send dialog box indicating there is no winnable move")
+        }
+
+        GameUIState.GameMode.NoWinnableMove -> {
+            noWinnableMove = true
+            Log.i("Game Recompose: ", "${gameUIState.mode} : No winnable move. No dialog needed")
+
         }
 
         GameUIState.GameMode.MoveBall -> {
@@ -132,6 +145,14 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             shadowBallRec = gameUIState.mode.let { GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove }
         }
 
+        GameUIState.GameMode.ShowHint -> {
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Show hint by do a shadow ball movement ")
+            hintBallRec = gameUIState.mode.let {
+                GameUIState.GameMode.ShowHint
+            }
+            Log.i(Global.DEBUG_PREFIX, "Show hint rec: ${hintBallRec.shadowMovingChain}, ${hintBallRec.shadowMoveDirection}")
+        }
+
         GameUIState.GameMode.LookingForHint -> {
             Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
         }
@@ -139,19 +160,33 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
 
     HandleBackPressKeyForGameScreen(gameUIState.mode, navController, announceVictory)
 
+    if (showNoWinnableMoveDialogBox) {
+        NoWinnableMoveDialog(
+            onDismissRequest = { showNoWinnableMoveDialogBox = false },
+            onConfirmation = { showNoWinnableMoveDialogBox = false }
+        )
+        setModeToNoWinnableMove()
+    }
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         GameInstructionLogo()
-        GameActionButtons()
+        GameActionButtons(hintBallRec = hintBallRec,
+            moveBallRec = moveBallRec,
+            announceVictory = announceVictory,
+            resetWinnableMove = { noWinnableMove = false },
+            noWinnableMove
+        )
 
         DrawGameBoard(
             modifier = Modifier.fillMaxSize(),
             announceVictory = announceVictory,
             moveBallRec = moveBallRec,
-            shadowBallRec = shadowBallRec
+            shadowBallRec = shadowBallRec,
+            hintBallRec = hintBallRec
         )
     }
 }
@@ -181,7 +216,6 @@ private fun LoadGameFileOnlyOnce() {
         needToLoadGameFile = false
     }
 }
-
 
 /**
  *  Handle Back Press Key. Intercept backPress key while on Game  screen.
@@ -214,7 +248,6 @@ private fun HandleBackPressKeyForGameScreen(
         return
     }
 }
-
 
 /**
  * Provide instruction on how to play Game Screen.
@@ -277,7 +310,14 @@ private fun GameInstructionLogo() {
  * are "find the solution" button and "reset" button
  */
 @Composable
-private fun GameActionButtons() {
+private fun GameActionButtons(
+    hintBallRec: GameUIState.GameMode.ShowHint?,
+    moveBallRec: GameUIState.GameMode.MoveBall?,
+    announceVictory: Boolean,
+    resetWinnableMove: () -> Unit,
+    noWinnableMove: Boolean
+)
+{
     val iconWidth = Icons.Filled.Refresh.defaultWidth
 
     Row(
@@ -288,7 +328,11 @@ private fun GameActionButtons() {
         horizontalArrangement = Arrangement.SpaceAround,
     ) {
         Button(
-            onClick = { GameViewModel.generateNewGame(5) },
+            onClick =
+            {
+                resetWinnableMove.invoke()
+                GameViewModel.generateNewGame(10)
+            },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
@@ -303,11 +347,13 @@ private fun GameActionButtons() {
                 imageVector = Icons.Filled.Create, contentDescription = "New Game",
                 modifier = Modifier.size(iconWidth)
             )
-            Text(text = "New Game")
+            Text(text = stringResource(R.string.new_game))
         }
 
         Button(
-            onClick = { },
+            onClick = {
+                resetWinnableMove.invoke()
+            },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
@@ -336,6 +382,9 @@ private fun GameActionButtons() {
             modifier = Modifier
                 .weight(4F)
                 .padding(2.dp),
+            enabled = (hintBallRec == null) && (moveBallRec == null ) &&
+                    (!announceVictory) && (GameViewModel.ballCount() > 1) && (!noWinnableMove)
+
         ) {
             Icon(
                 imageVector = Icons.Filled.Info, contentDescription = "Hint",
@@ -364,6 +413,7 @@ private fun DrawGameBoard(
     announceVictory: Boolean,
     moveBallRec: GameUIState.GameMode.MoveBall?,
     shadowBallRec: GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove?,
+    hintBallRec: GameUIState.GameMode.ShowHint?,
 ) {
     val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
@@ -384,7 +434,7 @@ private fun DrawGameBoard(
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            { GameViewModel.gameSetModeWaitingOnUser() },
+            { GameViewModel.gameSetModeNewGame() },
             animateCtl = animateVictoryMessage
         )
     } else {
@@ -392,6 +442,14 @@ private fun DrawGameBoard(
             animateVictoryMessage.stop()
             animateVictoryMessage.snapTo(0F)
         }
+    }
+
+    /**
+     * Animation control that handle showing hint
+     */
+    val animateHintMove = remember { Animatable(initialValue = 0f) }
+    if (hintBallRec != null) {
+        AnimateShadowBallMovementSetup(animateHintMove)
     }
 
     if (moveBallRec != null) {
@@ -516,6 +574,18 @@ private fun DrawGameBoard(
 
             displayBallImage.prepareToDraw()   // cache it
 
+            if (hintBallRec != null) {
+                animateShadowBallMovementsPerform(
+                    drawScope = drawScope,
+                    gridSize = gridSize,
+                    animateCtl = animateHintMove,
+                    displayBallImage = displayBallImage,
+                    distance = hintBallRec.shadowMovingChain[0].distance,
+                    direction = hintBallRec.shadowMoveDirection,
+                    pos = hintBallRec.shadowMovingChain[0].pos
+                )
+            }
+
             if (moveBallRec != null) {
                 val ballsToErase = moveBallRec.movingChain
 
@@ -633,7 +703,7 @@ fun GameAnimateShadowBallMovementSetup(
                 )
                 animateCtl.stop()
                 animateCtl.snapTo(0f)
-                GameViewModel.gameSetModeWaitingOnUser()
+                GameViewModel.gameSetModeNewGame()
             }  // launch
 
             launch {

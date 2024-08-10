@@ -13,4 +13,5 @@
     <string name="logout">Logout</string>
     <string name="not_now">Not now</string>
     <string name="exit">Exit</string>
+    <string name="new_game">New Game</string>
 </resources>

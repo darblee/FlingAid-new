@@ -241,6 +241,7 @@ object SolverViewModel : ViewModel() {
 
     /**
      * Set mode to "Show Ball Movement"
+     *
      */
     fun setModeToShowBallMovement(
         winningDirection: Direction,
@@ -444,7 +445,6 @@ object SolverViewModel : ViewModel() {
                 _mode = readyToMoveRec
             )
         }
-
     }
 
     /**

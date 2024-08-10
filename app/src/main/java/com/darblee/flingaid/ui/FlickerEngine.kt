@@ -128,7 +128,7 @@ internal class FlickerEngine {
                 if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                     Log.d(
                         "${Global.DEBUG_PREFIX}:",
-                        "Short circuit on row processing. task1: ${gTask1WinningDirection} task2: ${gTask2WinningDirection}"
+                        "Short circuit on row processing. task1: $gTask1WinningDirection task2: $gTask2WinningDirection"
                     )
                     direction = Direction.INCOMPLETE  // We should quit the current thread
                     return@repeatBlock
@@ -165,7 +165,7 @@ internal class FlickerEngine {
                         if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after up. task1: ${gTask1WinningDirection} task2: ${gTask2WinningDirection}"
+                                "Short circuit on col processing after up. task1: $gTask1WinningDirection task2: $gTask2WinningDirection"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -184,7 +184,7 @@ internal class FlickerEngine {
                         if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after down. task1: ${gTask1WinningDirection} task2: ${gTask2WinningDirection}"
+                                "Short circuit on col processing after down. task1: $gTask1WinningDirection task2: $gTask2WinningDirection"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -203,7 +203,7 @@ internal class FlickerEngine {
                         if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after right. task1: ${gTask1WinningDirection} task2: ${gTask2WinningDirection}"
+                                "Short circuit on col processing after right. task1: $gTask1WinningDirection task2: $gTask2WinningDirection"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -222,7 +222,7 @@ internal class FlickerEngine {
                         if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
-                                "Short circuit on col processing after left. task1: ${gTask1WinningDirection} task2: ${gTask2WinningDirection}"
+                                "Short circuit on col processing after left. task1: $gTask1WinningDirection task2: $gTask2WinningDirection"
                             )
                             direction = Direction.INCOMPLETE  // We should quit the current thread
                             return@repeatBlock
@@ -444,7 +444,7 @@ internal class FlickerEngine {
      * @param srcRow Source row
      * @param col Current column
      *
-     * @return Return the number of row it can move to. If it can not find any room, it will return -1
+     * @return Return row number of the ball it encounter. If it can not find any room, it will return -1
      */
     fun findTargetRowOnMoveUp(srcRow: Int, col: Int): Int {
         // If you are near the top of the grid, then you do not have any room to move up
@@ -480,7 +480,7 @@ internal class FlickerEngine {
      * @param srcRow Source row
      * @param col Current column
      *
-     * @return Return the number of row it can move to. If it can not find any room, it will return -1
+     * @return Return row number of the ball it encounter.  If it can not find any room, it will return -1
      */
     fun findTargetRowOnMoveDown(srcRow: Int, col: Int): Int {
         // If you are near the bottom of the grid, then you do not have any room to move down
@@ -516,7 +516,7 @@ internal class FlickerEngine {
      * @param row Current row
      * @param srcCol Source column
      *
-     * @return Return the number of column it can move to. If it can not find any room, it will return -1
+     * @return Return column number of the ball it encounter. If it can not find any room, it will return -1
      */
     fun findTargetColOnMoveRight(row: Int, srcCol: Int): Int {
         // If you are near the right of the grid, then you do not have any room to move right
@@ -552,7 +552,7 @@ internal class FlickerEngine {
      * @param row Current row
      * @param srcCol Source column
      *
-     * @return Return the number of column it can move to. If it can not find any room, it will return -1
+     * @return Return column number of the ball it encounter. If it can not find any room, it will return -1
      */
     fun findTargetColOnMoveLeft(row: Int, srcCol: Int): Int {
         // If you are near the left of the grid, then you do not have any room to move left
