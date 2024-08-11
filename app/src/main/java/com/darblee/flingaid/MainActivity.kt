@@ -487,7 +487,7 @@ private fun AboutDialogPopup(
                 Modifier.fillMaxWidth(),
             ) {
                 Row {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).align(Alignment.CenterVertically)) {
                         Image(
                             painter = painterResource(id = R.drawable.ball),
                             contentDescription = "Game",
