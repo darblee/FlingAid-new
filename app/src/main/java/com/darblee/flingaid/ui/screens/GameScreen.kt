@@ -249,7 +249,7 @@ private fun HandleBackPressKeyForGameScreen(
         if (announceVictory) return
         if (mode == GameUIState.GameMode.LookingForHint) return
 
-        // TODO : Stop any existing threads before exiting
+        // NOTE: There is no thread to kill for game screen
 
         navController.popBackStack()
         return

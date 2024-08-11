@@ -1091,7 +1091,10 @@ internal class FlickerEngine {
             if (numSpaceForActionBall == 1) {
                 Pos((actionBallTargetRow + 1), actionBallTargetCol)
             } else {
-                Pos((actionBallTargetRow + (Random.nextInt(numSpaceForActionBall) + 1)), actionBallTargetCol)
+                val rand1 = Random.nextInt(numSpaceForActionBall)
+                val rand2 = Random.nextInt(numSpaceForActionBall)
+                val r =  if (rand1 > rand2)  rand2 else rand1
+                Pos((actionBallTargetRow + (r + 1)), actionBallTargetCol)
             }
 
         move.addPosList.add(actionBallSrcUpPos)
@@ -1172,7 +1175,10 @@ internal class FlickerEngine {
             if (numSpaceForActionBall == 1) {
                  Pos((actionBallTargetRow - 1), actionBallTargetCol)
             } else {
-                 Pos((actionBallTargetRow - (Random.nextInt(numSpaceForActionBall) + 1)), actionBallTargetCol)
+                val rand1 = Random.nextInt(numSpaceForActionBall)
+                val rand2 = Random.nextInt(numSpaceForActionBall)
+                val r =  if (rand1 > rand2)  rand2 else rand1
+                 Pos((actionBallTargetRow - (r + 1)), actionBallTargetCol)
             }
 
         move.addPosList.add(actionBallSrcDownPos)
@@ -1254,7 +1260,10 @@ internal class FlickerEngine {
             if (numSpaceForActionBall == 1) {
                 Pos(actionBallTargetRow, (actionBallTargetCol + 1))
             } else {
-                Pos(actionBallTargetRow, (actionBallTargetCol + Random.nextInt(numSpaceForActionBall) + 1))
+                val rand1 = Random.nextInt(numSpaceForActionBall)
+                val rand2 = Random.nextInt(numSpaceForActionBall)
+                val r =  if (rand1 > rand2)  rand2 else rand1
+                Pos(actionBallTargetRow, (actionBallTargetCol + r + 1))
             }
 
         move.addPosList.add(departBallLeftPos)
@@ -1335,7 +1344,10 @@ internal class FlickerEngine {
             if (numSpaceForActionBall == 1) {
                 Pos(actionBallTargetRow, (actionBallTargetCol - 1))
             } else {
-                Pos(actionBallTargetRow, (actionBallTargetCol - Random.nextInt(numSpaceForActionBall)-1))
+                val rand1 = Random.nextInt(numSpaceForActionBall)
+                val rand2 = Random.nextInt(numSpaceForActionBall)
+                val r =  if (rand1 > rand2)  rand2 else rand1
+                Pos(actionBallTargetRow, (actionBallTargetCol - r -1))
             }
 
         move.addPosList.add(departBallRightPos)
@@ -1345,4 +1357,3 @@ internal class FlickerEngine {
         return (move)
     }
 }
-

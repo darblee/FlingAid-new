@@ -348,7 +348,7 @@ private fun FlingAidTopAppBar(
                             Global.DEBUG_PREFIX,
                             "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}"
                         )
-                        // TODO: Clean-up any existing thread in Game Screen before existing
+                        // NOTE: FOr Game Screen, there is no thread to kill
                         navController.popBackStack()
                     }
                     ) {
@@ -795,5 +795,5 @@ private fun setGameMusic(on: Boolean) {
 @Composable
 @Preview(showBackground = true)
 private fun ScreenPreview() {
-    //   ExitAlertDialog(onDismiss = { /* TODO */ }, onExit = { /* TODO */ })
+
 }
