@@ -53,6 +53,7 @@ object GameViewModel : ViewModel() {
     /********************************* BALL MANAGEMENT ****************************/
 
     private var _gameBallPos = FlickerBoard()
+    private var _gameLevel = 1
 
     /**
      * Get the list of balls and its position.
@@ -88,6 +89,19 @@ object GameViewModel : ViewModel() {
     fun loadGameFile(file: File) {
         _gameBallPos.setGameFile(file)
         _gameBallPos.loadBallListFromFile()
+    }
+
+    /**
+     * Set the game level
+     *
+     * @param newLevel The new game level
+     */
+    fun setGameLevel(newLevel: Int)
+    {
+        _gameLevel = if (newLevel > Global.MAX_GAME_LEVEL)
+            Global.MAX_GAME_LEVEL
+        else
+            newLevel
     }
 
     /********************************* SOLVER GAME MANAGEMENT ****************************/
@@ -144,7 +158,7 @@ object GameViewModel : ViewModel() {
      *
      * It will add balls to the ball list
      */
-    fun generateNewGame(level: Int) {
+    fun generateNewGame() {
         val tempBoard = FlickerBoard()
 
         val curRow = Random.nextInt(1, (Global.MAX_ROW_SIZE - 1))
@@ -155,7 +169,7 @@ object GameViewModel : ViewModel() {
         val game = FlickerEngine()
         game.populateGrid(tempBoard.ballList)
 
-        repeat(level) {
+        repeat(_gameLevel) {
             game.moveBack()
         }
 

@@ -2,6 +2,7 @@ package com.darblee.flingaid.ui.screens
 
 import android.graphics.Bitmap
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -30,6 +31,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +56,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -69,6 +72,7 @@ import androidx.navigation.NavHostController
 import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
+import com.darblee.flingaid.PreferenceStore
 import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_doink
 import com.darblee.flingaid.ui.GameUIState
@@ -84,10 +88,14 @@ import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
 import com.darblee.flingaid.utilities.animateVictoryMsgPerform
 import com.darblee.flingaid.utilities.generateExplosionParticles
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  *  **The main Game Screen**
@@ -257,7 +265,11 @@ private fun HandleBackPressKeyForGameScreen(
  */
 @Composable
 private fun GameInstructionLogo() {
+    val view = LocalView.current
+    val preference = PreferenceStore(LocalContext.current)
     val logoSize = 125.dp
+    var loadGameLevelSetting by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -288,6 +300,7 @@ private fun GameInstructionLogo() {
                 "Select \"undo\" : Undo the most recent move",
             )
             val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 10.sp))
+
             Text(
                 text =
                 buildAnnotatedString {
@@ -300,6 +313,46 @@ private fun GameInstructionLogo() {
                     }
                 },
                 style = MaterialTheme.typography.bodySmall
+            )
+
+            var gameLevelInt = 1
+            if (!loadGameLevelSetting) {
+                Log.i(Global.DEBUG_PREFIX, "LOad game setting from file")
+                runBlocking {
+                    gameLevelInt = preference.readGameLevelFromSetting()
+                    GameViewModel.setGameLevel(gameLevelInt)
+                }
+                loadGameLevelSetting = true
+            }
+            var gameLevel by remember { mutableFloatStateOf(gameLevelInt.toFloat()) }
+
+            val levelString = gameLevel.roundToInt().toString()
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center)
+            {
+                Text(
+                    text = "Level: $levelString",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 5.dp, bottom = 0.dp),
+                )
+            }
+            Slider(
+                value = gameLevel,
+                onValueChange =
+                {
+                    view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                    gameLevel = it
+                },
+                valueRange = 1f..Global.MAX_GAME_LEVEL.toFloat(),
+                steps = 13,
+                modifier = Modifier.padding(0.dp),
+                onValueChangeFinished = {
+                    val gameLevelAsInteger = gameLevel.roundToInt()
+                    GameViewModel.setGameLevel(gameLevelAsInteger)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        preference.saveGameLevelToSetting(gameLevelAsInteger)
+                    }
+                }
             )
         }
     }
@@ -319,6 +372,7 @@ private fun GameActionButtons(
 )
 {
     val iconWidth = Icons.Filled.Refresh.defaultWidth
+    val view = LocalView.current
 
     Row(
         modifier = Modifier
@@ -330,8 +384,9 @@ private fun GameActionButtons(
         Button(
             onClick =
             {
+                view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
                 resetWinnableMove.invoke()
-                GameViewModel.generateNewGame(10)
+                GameViewModel.generateNewGame()
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -352,6 +407,7 @@ private fun GameActionButtons(
 
         Button(
             onClick = {
+                view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
                 resetWinnableMove.invoke()
             },
             shape = RoundedCornerShape(5.dp),
@@ -372,7 +428,11 @@ private fun GameActionButtons(
         }
 
         Button(
-            onClick = { GameViewModel.getHint() },
+            onClick =
+            {
+                view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                GameViewModel.getHint()
+            },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
             colors = ButtonDefaults.buttonColors(
@@ -540,22 +600,34 @@ private fun DrawGameBoard(
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
                                     if (allowSwipe)
-                                    GameViewModel.setupNextMove(dragRow, dragCol, Direction.LEFT)
+                                        GameViewModel.setupNextMove(
+                                            dragRow,
+                                            dragCol,
+                                            Direction.LEFT
+                                        )
                                 }
 
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
                                     if (allowSwipe)
-                                    GameViewModel.setupNextMove(dragRow, dragCol, Direction.RIGHT)
+                                        GameViewModel.setupNextMove(
+                                            dragRow,
+                                            dragCol,
+                                            Direction.RIGHT
+                                        )
                                 }
 
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
                                     if (allowSwipe)
-                                    GameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
+                                        GameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
                                 }
 
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
                                     if (allowSwipe)
-                                    GameViewModel.setupNextMove(dragRow, dragCol, Direction.DOWN)
+                                        GameViewModel.setupNextMove(
+                                            dragRow,
+                                            dragCol,
+                                            Direction.DOWN
+                                        )
                                 }
                             }
                             offsetX = 0F

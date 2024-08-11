@@ -33,5 +33,6 @@ internal object Global {
     const val DEBUG_PREFIX = "Flicker:"
     const val SOLVER_BOARD_FILENAME = "SolverBoard.txt"
     const val GAME_BOARD_FILENAME = "MainBoard.txt"
+    const val MAX_GAME_LEVEL = 15
     val TopAppBarHeight = 48.0.dp
 }

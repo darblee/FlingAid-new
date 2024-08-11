@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.darblee.flingaid.ui.theme.ColorThemeOption
@@ -17,6 +18,7 @@ internal class PreferenceStore(private val context: Context) {
         private val GAME_MUSIC_KEY = booleanPreferencesKey("gameMusicFlag")
         private val COLOR_MODE_KEY = stringPreferencesKey("ColorMode")
         private val PLAYER_NAME_KEY = stringPreferencesKey("PlayerName")
+        private val GAME_LEVEL_KEY = intPreferencesKey( "gameLevel")
     }
 
     // 'suspend' will pause the co-routine thread to allow other thread to perform task
@@ -65,5 +67,22 @@ internal class PreferenceStore(private val context: Context) {
     suspend fun readPlayerNameFomSetting(): String {
         val preferences = context.datastore.data.first()
         return preferences[PLAYER_NAME_KEY] ?: ""
+    }
+
+    /**
+     * Save game level to preference setting
+     */
+    suspend fun saveGameLevelToSetting(gameLevel: Int) {
+        context.datastore.edit { pref ->
+            pref[GAME_LEVEL_KEY] = gameLevel
+        }
+    }
+
+    /**
+     * Read game level from preference setting
+     */
+    suspend fun readGameLevelFromSetting(): Int {
+        val preferences = context.datastore.data.first()
+        return preferences[GAME_LEVEL_KEY] ?: 1
     }
 }
