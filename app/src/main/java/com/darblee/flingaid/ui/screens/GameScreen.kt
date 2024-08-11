@@ -181,7 +181,6 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        GameInstructionLogo()
         GameActionButtons(hintBallRec = hintBallRec,
             moveBallRec = moveBallRec,
             announceVictory = announceVictory,
@@ -258,13 +257,19 @@ private fun HandleBackPressKeyForGameScreen(
 }
 
 /**
- * Provide instruction on how to play Game Screen.
- *
- * Display the game logo. Game logo also change to animation
- * when it is searching for the solution.
+ * Show all the control buttons on top of the screen. These buttons
+ * are "find the solution" button and "reset" button
  */
 @Composable
-private fun GameInstructionLogo() {
+private fun GameActionButtons(
+    hintBallRec: GameUIState.GameMode.ShowHint?,
+    moveBallRec: GameUIState.GameMode.MoveBall?,
+    announceVictory: Boolean,
+    resetWinnableMove: () -> Unit,
+    noWinnableMove: Boolean
+)
+{
+    val iconWidth = Icons.Filled.Refresh.defaultWidth
     val view = LocalView.current
     val preference = PreferenceStore(LocalContext.current)
     val logoSize = 125.dp
@@ -356,23 +361,6 @@ private fun GameInstructionLogo() {
             )
         }
     }
-}
-
-/**
- * Show all the control buttons on top of the screen. These buttons
- * are "find the solution" button and "reset" button
- */
-@Composable
-private fun GameActionButtons(
-    hintBallRec: GameUIState.GameMode.ShowHint?,
-    moveBallRec: GameUIState.GameMode.MoveBall?,
-    announceVictory: Boolean,
-    resetWinnableMove: () -> Unit,
-    noWinnableMove: Boolean
-)
-{
-    val iconWidth = Icons.Filled.Refresh.defaultWidth
-    val view = LocalView.current
 
     Row(
         modifier = Modifier
@@ -395,13 +383,9 @@ private fun GameActionButtons(
                 contentColor = MaterialTheme.colorScheme.primaryContainer
             ),
             modifier = Modifier
-                .weight(5F)
-                .padding(2.dp)
+                .weight(6F)
+                .padding(4.dp)
         ) {
-            Icon(
-                imageVector = Icons.Filled.Create, contentDescription = "New Game",
-                modifier = Modifier.size(iconWidth)
-            )
             Text(text = stringResource(R.string.new_game))
         }
 
@@ -417,14 +401,14 @@ private fun GameActionButtons(
                 contentColor = MaterialTheme.colorScheme.secondaryContainer
             ),
             modifier = Modifier
-                .weight(4F)
-                .padding(2.dp),
+                .weight(5F)
+                .padding(1.dp),
         ) {
             Icon(
                 imageVector = Icons.Filled.Refresh, contentDescription = "Undo",
                 modifier = Modifier.size(iconWidth)
             )
-            Text("Undo")
+            Text("Undo", style = MaterialTheme.typography.titleSmall)
         }
 
         Button(
@@ -440,8 +424,8 @@ private fun GameActionButtons(
                 contentColor = MaterialTheme.colorScheme.tertiaryContainer
             ),
             modifier = Modifier
-                .weight(4F)
-                .padding(2.dp),
+                .weight(5F)
+                .padding(4.dp),
             enabled = (hintBallRec == null) && (moveBallRec == null ) &&
                     (!announceVictory) && (GameViewModel.ballCount() > 1) && (!noWinnableMove)
 
@@ -450,7 +434,7 @@ private fun GameActionButtons(
                 imageVector = Icons.Filled.Info, contentDescription = "Hint",
                 modifier = Modifier.size(iconWidth)
             )
-            Text("Hint")
+            Text("Hint", style = MaterialTheme.typography.titleSmall)
         }
 
     }

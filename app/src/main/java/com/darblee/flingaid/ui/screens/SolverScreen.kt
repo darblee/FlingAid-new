@@ -57,6 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -319,9 +320,9 @@ private fun SolverInstructionLogo(
 
             val bullet = "\u2022"
             val messages = listOf(
-                "Clear the board with \"Reset\" button",
-                "Add new balls on the grid",
-                "Solve the game with \"Find next\" button"
+                stringResource(R.string.clear_the_board_with_reset_button),
+                stringResource(R.string.add_new_balls_on_the_grid),
+                stringResource(R.string.solve_the_game_with_find_next_button)
             )
             val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 10.sp))
             Text(

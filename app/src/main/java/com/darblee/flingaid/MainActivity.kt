@@ -301,13 +301,18 @@ private fun FlingAidTopAppBar(
     var showAboutDialogBox by remember { mutableStateOf(false) }
     var showSettingDialogBox by remember { mutableStateOf(false) }
     var currentPlayerName by remember { mutableStateOf("") }
+    var loadPlayerNameOnce by remember { mutableStateOf( false) }
 
     val screenTitle = stringResource(id = currentScreen.value.stringTitleResourceID)
 
     val context = LocalContext.current
     val preference = PreferenceStore(context)
-    LaunchedEffect(key1 = true) {
-        currentPlayerName = preference.readPlayerNameFomSetting()
+
+    if (!loadPlayerNameOnce) {
+        LaunchedEffect(key1 = true) {
+            currentPlayerName = preference.readPlayerNameFomSetting()
+        }
+        loadPlayerNameOnce = true
     }
 
     CenterAlignedTopAppBar(
