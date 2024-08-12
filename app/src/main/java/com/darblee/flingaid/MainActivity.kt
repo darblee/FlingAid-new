@@ -91,7 +91,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.darblee.flingaid.ui.SolverUIState
+import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.SolverViewModel
 import com.darblee.flingaid.ui.theme.SetColorTheme
 import com.darblee.flingaid.ui.theme.ColorThemeOption
@@ -330,8 +330,7 @@ private fun FlingAidTopAppBar(
                             Global.DEBUG_PREFIX,
                             "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}"
                         )
-                        if (SolverViewModel.uiState.value.mode == SolverUIState.SolverMode.Thinking) SolverViewModel.stopThinking()
-                        navController.popBackStack()
+                        if (SolverViewModel.cleanup()) navController.popBackStack()
                     }
                     ) {
                         Icon(
@@ -348,8 +347,7 @@ private fun FlingAidTopAppBar(
                             Global.DEBUG_PREFIX,
                             "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}"
                         )
-                        // NOTE: FOr Game Screen, there is no thread to kill
-                        navController.popBackStack()
+                        if (GameViewModel.cleanup()) navController.popBackStack()
                     }
                     ) {
                         Icon(

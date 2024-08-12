@@ -148,6 +148,28 @@ object SolverViewModel : ViewModel() {
     }
 
     /**
+     * Clean-up routine before exiting the SolverVIewModel
+     *
+     * @return
+     * - true Clean-up is done. It is safe to exit the view model
+     * - false Unable to clean-up or in a middle of doing something. Do not exit the view model
+     */
+    fun cleanup(): Boolean {
+        when (_uiSolverState.value.mode) {
+            SolverUIState.SolverMode.AnnounceNoPossibleSolution -> { return true }
+            SolverUIState.SolverMode.AnnounceVictory -> { return false }  // Let it finish announce victory
+            SolverUIState.SolverMode.HasWinningMoveWaitingToMove -> { return true }
+            SolverUIState.SolverMode.MoveBall -> { return false } // Let it finish to move the ball
+            SolverUIState.SolverMode.NoMoveAvailable -> { return true }
+            SolverUIState.SolverMode.ReadyToFindSolution -> { return true }
+            SolverUIState.SolverMode.Thinking -> {
+                stopThinking()
+                return true
+            }
+        }
+    }
+
+    /**
      * Reset the entire solver game
      * - Clear the board
      * - Remove any saved game file
@@ -612,7 +634,7 @@ object SolverViewModel : ViewModel() {
                     // did not trigger a composition
                     currentState.copy(
                         _mode = thinkingRec,
-                        _recomposeFlag = !_uiSolverState.value._recomposeFlag
+                        recomposeFlag = !_uiSolverState.value.recomposeFlag
                     )
                 }
             }

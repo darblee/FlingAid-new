@@ -169,7 +169,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     // Need special handling of back key press events. Do not navigate when:
     // - It is in middle of thinking
     // - It is middle of announce victory message
-    HandleBackPressKeyForSolverScreen(solverUIState.mode, navController, announceVictory)
+    HandleBackPressKeyForSolverScreen(navController)
 
     if (showNoWinnableMoveDialogBox) {
         NoWinnableMoveDialog(
@@ -235,28 +235,18 @@ private fun LoadSolverFileOnlyOnce() {
  *  - It is middle of thinking
  *  - It is in middle of announcing victory message
  *
- *  @param mode Current Solver mode
  *  @param navController Use to navigate to the previous screen
- *  @param announceVictory Determine whether we are in middle of announcing victory message
  */
 @Composable
 private fun HandleBackPressKeyForSolverScreen(
-    mode: SolverUIState.SolverMode,
     navController: NavHostController,
-    announceVictory: Boolean,
 ) {
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
         backPressed = false
 
-        if (announceVictory) return
-
-        if (mode == SolverUIState.SolverMode.Thinking) {
-            SolverViewModel.stopThinking()
-        }
-
-        navController.popBackStack()
+        if (SolverViewModel.cleanup())  navController.popBackStack()
     }
 }
 

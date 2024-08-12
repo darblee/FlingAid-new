@@ -126,7 +126,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         }
 
         GameUIState.GameMode.UpdatedGameBoard -> {
-            Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
+            Log.i("Game Recompose: ", "${gameUIState.mode} :")
             noWinnableMove = false
         }
 
@@ -159,13 +159,9 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             }
             Log.i(Global.DEBUG_PREFIX, "Show hint rec: ${hintBallRec.shadowMovingChain}, ${hintBallRec.shadowMoveDirection}")
         }
-
-        GameUIState.GameMode.LookingForHint -> {
-            Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
-        }
     }
 
-    HandleBackPressKeyForGameScreen(gameUIState.mode, navController, announceVictory)
+    HandleBackPressKeyForGameScreen(navController)
 
     if (showNoWinnableMoveDialogBox) {
         NoWinnableMoveDialog(
@@ -231,26 +227,19 @@ private fun LoadGameFileOnlyOnce() {
  *  - It is middle of thinking for hint
  *  - It is in middle of announcing victory message
  *
- *  @param mode Current Game mode
  *  @param navController Use to navigate to the previous screen
- *  @param announceVictory Determine whether we are in middle of announcing victory message
  */
 @Composable
 private fun HandleBackPressKeyForGameScreen(
-    mode: GameUIState.GameMode,
-    navController: NavHostController,
-    announceVictory: Boolean
+    navController: NavHostController
 ) {
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
         backPressed = false
-        if (announceVictory) return
-        if (mode == GameUIState.GameMode.LookingForHint) return
-
-        // TODO: Need to kill active co-routine, such as the "hint movement" animation
-
-        navController.popBackStack()
+        if (GameViewModel.cleanup()) {
+            navController.popBackStack()
+        }
         return
     }
 }
@@ -479,7 +468,7 @@ private fun DrawGameBoard(
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            { GameViewModel.gameSetModeNewGame() },
+            { GameViewModel.setModeUpdatedGameBoard() },
             animateCtl = animateVictoryMessage
         )
     } else {
@@ -771,7 +760,7 @@ fun GameAnimateShadowBallMovementSetup(
                 )
                 animateCtl.stop()
                 animateCtl.snapTo(0f)
-                GameViewModel.gameSetModeNewGame()
+                GameViewModel.setModeUpdatedGameBoard()
             }  // launch
 
             launch {

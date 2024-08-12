@@ -144,6 +144,28 @@ object GameViewModel : ViewModel() {
     }
 
     /**
+     * Clean-up routine before exiting the GameViewModel
+     *
+     * @return
+     * - true Clean-up is done. It is safe to exit the view model
+     * - false Unable to clean-up or in a middle of doing something. Do not exit the view model
+     */
+    fun cleanup(): Boolean {
+        when (gameUIState.value.mode) {
+            GameUIState.GameMode.WonGame -> return false
+            GameUIState.GameMode.UpdatedGameBoard -> return true
+            GameUIState.GameMode.NoWinnnableMoveWithDiaglog -> return false
+            GameUIState.GameMode.NoWinnableMove -> return true
+            GameUIState.GameMode.MoveBall -> return true
+            GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove -> return false
+            GameUIState.GameMode.ShowHint -> {
+                setModeUpdatedGameBoard()
+                return true
+            }
+        }
+    }
+
+    /**
      * Reset the entire solver game
      * - Clear the board
      * - Remove any saved game file
@@ -152,7 +174,7 @@ object GameViewModel : ViewModel() {
         _gameBallPos.ballList.clear()
         _gameBallPos.removeGameFile()
 
-        gameSetModeNewGame()
+        setModeUpdatedGameBoard()
     }
 
     /**
@@ -181,15 +203,7 @@ object GameViewModel : ViewModel() {
         _gameBallPos.addSnapshotToHistory()
         _gameBallPos.saveBallListToFile()
 
-        gameSetModeNewGame()
-    }
-
-    fun gameSetModeNewGame() {
-        _uiGameState.update { curState ->
-            curState.copy(
-                _mode = GameUIState.GameMode.UpdatedGameBoard
-            )
-        }
+        setModeUpdatedGameBoard()
     }
 
     enum class MoveResult {
@@ -414,6 +428,17 @@ object GameViewModel : ViewModel() {
     /******************  Set mode routines ******************************************/
 
     /**
+     * Set mode to "Updated Game Board"
+     */
+    fun setModeUpdatedGameBoard() {
+        _uiGameState.update { curState ->
+            curState.copy(
+                _mode = GameUIState.GameMode.UpdatedGameBoard
+            )
+        }
+    }
+
+    /**
      * Set mode to "Show Hint"
      *
      * Update the [_uiGameState] state flow with this "Show Hint" mode information
@@ -455,7 +480,6 @@ object GameViewModel : ViewModel() {
             )
         }
     }
-
 
     /**
      * Set mode to "No Winnable Move". Basically, to indicate the game could no longer be winnable

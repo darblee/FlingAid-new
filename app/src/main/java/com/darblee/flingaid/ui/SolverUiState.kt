@@ -27,14 +27,14 @@ data class MovingRec(
  *
  * @param _mode The public field is [mode] (read-only access). The current game mode. Possible game
  * mode is defined at [SolverMode]
- * @param _recomposeFlag Flag used to trigger a recomposition. A change in item's property
+ * @param recomposeFlag Flag used to trigger a recomposition. A change in item's property
  * (e.g. progress field) did not trigger a recomposition. (Could this be a Jetpack compose bug?)
  * So this field is used to workaround this bug by manually trigger recompose by changing the
- * value of [_recomposeFlag]
+ * value of [recomposeFlag]
  */
 data class SolverUIState(
     private var _mode: SolverMode = SolverMode.NoMoveAvailable,
-    var _recomposeFlag: Boolean = false
+    var recomposeFlag: Boolean = false
 ) {
     var mode = _mode
         private set
