@@ -89,6 +89,8 @@ object GameViewModel : ViewModel() {
     fun loadGameFile(file: File) {
         _gameBallPos.setGameFile(file)
         _gameBallPos.loadBallListFromFile()
+        _gameBallPos.clearMoveHistory()
+        _gameBallPos.addSnapshotToHistory()
     }
 
     /**
@@ -175,6 +177,8 @@ object GameViewModel : ViewModel() {
 
         _gameBallPos.ballList.clear()
         _gameBallPos.ballList = game.updateBallList()
+        _gameBallPos.clearMoveHistory()
+        _gameBallPos.addSnapshotToHistory()
         _gameBallPos.saveBallListToFile()
 
         gameSetModeNewGame()
@@ -183,7 +187,7 @@ object GameViewModel : ViewModel() {
     fun gameSetModeNewGame() {
         _uiGameState.update { curState ->
             curState.copy(
-                _mode = GameUIState.GameMode.NewGame
+                _mode = GameUIState.GameMode.UpdatedGameBoard
             )
         }
     }
@@ -247,6 +251,27 @@ object GameViewModel : ViewModel() {
     }
 
     /**
+     * Indicate whether it can do undo operation or not
+     */
+    fun canUndo(): Boolean
+    {
+        return (_gameBallPos.canPerformUndo())
+    }
+
+    /**
+     * Perform the actual undo
+     * - Do the undo operation
+     * - Save the snapshot to file
+     * - Notify Game Screen there is a updated game board
+     */
+    fun undo()
+    {
+        _gameBallPos.undo()
+        _gameBallPos.saveBallListToFile()
+        _uiGameState.update { it.copy(_mode = GameUIState.GameMode.UpdatedGameBoard) }
+    }
+
+    /**
      * Move the ball.
      * - Save the ball position to file.
      * - After ball movement, change the state to no direction.
@@ -289,6 +314,7 @@ object GameViewModel : ViewModel() {
             _gameBallPos.ballList = game.updateBallList()
         }
 
+        _gameBallPos.addSnapshotToHistory()
         _gameBallPos.saveBallListToFile()
 
         _uiGameState.update { curState ->
@@ -296,7 +322,7 @@ object GameViewModel : ViewModel() {
                 _mode = if (ballCount() == 1) {
                     GameUIState.GameMode.WonGame
                 } else {
-                    GameUIState.GameMode.NewGame
+                    GameUIState.GameMode.UpdatedGameBoard
                 }
             )
         }

@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -126,7 +125,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             announceVictory = true
         }
 
-        GameUIState.GameMode.NewGame -> {
+        GameUIState.GameMode.UpdatedGameBoard -> {
             Log.i("Game Recompose: ", "${gameUIState.mode} : Do nothing")
             noWinnableMove = false
         }
@@ -249,7 +248,7 @@ private fun HandleBackPressKeyForGameScreen(
         if (announceVictory) return
         if (mode == GameUIState.GameMode.LookingForHint) return
 
-        // NOTE: There is no thread to kill for game screen
+        // TODO: Need to kill active co-routine, such as the "hint movement" animation
 
         navController.popBackStack()
         return
@@ -392,6 +391,7 @@ private fun GameActionButtons(
         Button(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                GameViewModel.undo()
                 resetWinnableMove.invoke()
             },
             shape = RoundedCornerShape(5.dp),
@@ -403,6 +403,7 @@ private fun GameActionButtons(
             modifier = Modifier
                 .weight(5F)
                 .padding(1.dp),
+            enabled = GameViewModel.canUndo()
         ) {
             Icon(
                 imageVector = Icons.Filled.Refresh, contentDescription = "Undo",

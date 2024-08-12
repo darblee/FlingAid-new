@@ -88,6 +88,8 @@ data class Pos(
     val col: Int,
 )
 
+typealias boardSnapshot = MutableList<Pos>
+
 /**
  * Ball Position Management
  *
@@ -365,6 +367,69 @@ class FlickerBoard {
 
             if (!skipDraw) drawBallOnGrid(drawScope, gridSize, pos, displayBallImage)
         }
+    }
+
+    /********************************* Board history management *****************/
+
+    /**
+     * [_moveHistory] data structure to keep history of all recent moves for the entire game
+     */
+    private var _moveHistory: MutableList<boardSnapshot> = mutableListOf()
+
+    /**
+     * Make a snapshot copy of the board
+     *
+     * @return Board snapshot, which is a list of ball positions
+     */
+    private fun createBoardSnapshot(): boardSnapshot {
+        val s: MutableList<Pos> = mutableListOf()
+        ballList.forEach { curPos ->
+            s.add(curPos)
+        }
+        return s
+    }
+
+    /**
+     * Clear the move history
+     */
+    fun clearMoveHistory()
+    {
+        _moveHistory.clear()
+    }
+
+    /**
+     * Create a new snapshot based on current state of the board, then add it to the
+     * history records.
+     */
+    fun addSnapshotToHistory() {
+        val curSnapshot = createBoardSnapshot()
+        _moveHistory.add(curSnapshot)
+    }
+
+    /**
+     * Perform the actual undo.
+     * - Remove the move recent entry of snapshot and throw it away
+     * - Take the second most recent snapshot and activate it
+     */
+    fun undo() {
+        if (_moveHistory.isEmpty()) return
+
+        _moveHistory.removeLast()
+
+        val i = _moveHistory.size
+        val snapshot = _moveHistory[i - 1]
+        ballList.clear()
+        snapshot.forEach { curPos ->
+            ballList.add(curPos)
+        }
+    }
+
+    /**
+     * Indicate whether there is enough history to do undo operation
+     */
+    fun canPerformUndo(): Boolean
+    {
+        return (_moveHistory.size > 1)
     }
 }
 
@@ -735,7 +800,7 @@ fun animateBallMovementsPerform(
         var xOffset: Float
         var yOffset: Float
 
-// Ball movements including multiple ball movements (if there is multiple balls in the chain)
+        // Ball movements including multiple ball movements (if there is multiple balls in the chain)
         for ((index, currentMovement) in movingChain.withIndex()) {
             movingSourcePos = currentMovement.pos
 
@@ -743,8 +808,8 @@ fun animateBallMovementsPerform(
             xOffset = offset.first
             yOffset = offset.second
 
-// Perform animation by adjusting both the xOffset and yOffset amount respectively
-// to move the ball
+            // Perform animation by adjusting both the xOffset and yOffset amount respectively
+            // to move the ball
             translate(
                 (xOffset) * ((animateBallMovementChainCtlList[index]).value),
                 (yOffset) * ((animateBallMovementChainCtlList[index]).value)
@@ -753,7 +818,7 @@ fun animateBallMovementsPerform(
             } // translate
         }  // for
 
-// Particle explosion effect
+        // Particle explosion effect
         particles.forEach { curParticle ->
             curParticle.updateProgress(animateParticleExplosionCtl.value, gridSize)
             drawCircle(
@@ -928,4 +993,8 @@ fun NoWinnableMoveDialog(
             }
         }
     }
+
 }
+
+
+

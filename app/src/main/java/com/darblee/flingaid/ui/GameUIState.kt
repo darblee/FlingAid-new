@@ -12,7 +12,7 @@ import com.darblee.flingaid.Direction
  * mode is defined at [GameMode]
  */
 data class GameUIState(
-    private var _mode: GameMode = GameMode.NewGame,
+    private var _mode: GameMode = GameMode.UpdatedGameBoard,
 ) {
     var mode = _mode
         private set
@@ -20,7 +20,8 @@ data class GameUIState(
     /**
      * Various game modes for UI state
      *
-     * @property NewGame Waiting for user next move
+     * @property UpdatedGameBoard There is an updated (or new) game board. Now waiting for user to
+     * make a move
      * @property MoveBall Processing ball movement
      * @property IndicateInvalidMoveByShowingShadowMove Processing the ball shadow movement
      * @property LookingForHint Computer to look for solution and provide it to user
@@ -30,7 +31,7 @@ data class GameUIState(
      * game or when user undo a move
      */
     sealed class GameMode {
-        data object NewGame : GameMode()
+        data object UpdatedGameBoard : GameMode()
         data object MoveBall : GameMode() {
             var moveDirection: Direction = Direction.NO_WINNING_DIRECTION
             var movingChain: BallMoveSet = listOf()

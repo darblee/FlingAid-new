@@ -961,7 +961,8 @@ internal class FlickerEngine {
     )
 
     /**
-     * Move back one move
+     * Move back one move. Randomly pick a move.
+     * The net results is that there is one more ball added to the game board.
      */
     fun moveBack() {
 
