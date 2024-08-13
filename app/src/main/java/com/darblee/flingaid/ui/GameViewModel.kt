@@ -236,7 +236,6 @@ object GameViewModel : ViewModel() {
         if (!(_gameBallPos.ballList.contains(Pos(initialRow, initialCol))))
             return MoveResult.InvalidNoBall
 
-        Log.i(Global.DEBUG_PREFIX, "Initiate ball movement from $initialRow, $initialCol")
         val movingChain = _gameBallPos.buildMovingChain(initialRow, initialCol, direction)
 
         if (movingChain.isEmpty())
@@ -382,7 +381,6 @@ object GameViewModel : ViewModel() {
             gTask2WinningDirection = Direction.INCOMPLETE
             gThinkingProgress = 0
 
-            Log.i("${Global.DEBUG_PREFIX} Task:", "Task has started")
             val game = FlickerEngine()
             game.populateGrid(_gameBallPos.ballList)
 

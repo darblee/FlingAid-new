@@ -126,14 +126,14 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         }
 
         GameUIState.GameMode.UpdatedGameBoard -> {
-            Log.i("Game Recompose: ", "${gameUIState.mode} :")
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Board has been modified. Typically start a new user move.")
             noWinnableMove = false
         }
 
         GameUIState.GameMode.NoWinnnableMoveWithDiaglog -> {
             noWinnableMove = true
             showNoWinnableMoveDialogBox = true
-            Log.i("Game Recompose: ", "${gameUIState.mode} : send dialog box indicating there is no winnable move")
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Send dialog box indicating there is no winnable move")
         }
 
         GameUIState.GameMode.NoWinnableMove -> {
@@ -624,7 +624,7 @@ private fun DrawGameBoard(
             val drawScope = this   // DrawScope of this grid
             drawGridForGame(drawScope, gridSize, lineColor)
 
-            val ballSize = (gridSize * 1.10).toInt()
+            val ballSize = (gridSize * 1.2).toInt()
             val displayBallImage = Bitmap.createScaledBitmap(
                 ballImage.asAndroidBitmap(),
                 ballSize, ballSize, false
@@ -690,6 +690,15 @@ private fun DrawGameBoard(
     }
 }
 
+/**
+ * Draw Grid.
+ * - Drawl all the line
+ * - Draw the circle in the center of the board grid
+ *
+ * @param drawScope Area to draw on
+ * @param gridSize Size of each grid
+ * @param lineColor Color of the line
+ */
 private fun drawGridForGame(
     drawScope: DrawScope,
     gridSize: Float,

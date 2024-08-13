@@ -589,7 +589,7 @@ internal class FlickerEngine {
      * @param targetRow Target row to move to
      * @param col column involved
      *
-     * @return Return the number of column it can move to. If it can not find any room, it will return -1
+     * @return Return the number of rows it can move to. If it can not find any room, it will return -1
      */
     fun moveUp(srcRow: Int, targetRow: Int, col: Int) {
         // Do the first move
@@ -675,6 +675,16 @@ internal class FlickerEngine {
         return
     }
 
+    /**
+     * Move the ball downward from the source row to the target row
+     * Bump adjacent balls as needed
+     *
+     * @param srcRow Row position of the ball to move from
+     * @param targetRow Target row to move to
+     * @param col column involved
+     *
+     * @return Return the number of rows it can move to. If it can not find any room, it will return -1
+     */
     fun moveDown(srcRow: Int, targetRow: Int, col: Int) {
         // Do the first move
         if (!flickerGrid[srcRow][col]) error("Unexpected ball status. row=$srcRow, col=$col should be true")
@@ -761,6 +771,16 @@ internal class FlickerEngine {
         return
     }
 
+    /**
+     * Move the ball toward the right from the source row to the target column
+     * Bump adjacent balls as needed
+     *
+     * @param srcCol Column position of the ball to move from
+     * @param targetCol Target column to move to
+     * @param row Row involved
+     *
+     * @return Return the number of columns it can move to. If it can not find any room, it will return -1
+     */
     fun moveRight(srcCol: Int, targetCol: Int, row: Int) {
         // Do the first move
         if (!flickerGrid[row][srcCol]) error("Unexpected ball status. row=$row, col=$srcCol should be true")
@@ -851,6 +871,16 @@ internal class FlickerEngine {
         return
     }
 
+    /**
+     * Move the ball toward the left from the source row to the target column
+     * Bump adjacent balls as needed
+     *
+     * @param srcCol Column position of the ball to move from
+     * @param targetCol Target column to move to
+     * @param row Row involved
+     *
+     * @return Return the number of columns it can move to. If it can not find any room, it will return -1
+     */
     fun moveLeft(srcCol: Int, targetCol: Int, row: Int) {
         // Do the first move
         if (!flickerGrid[row][srcCol]) error("Unexpected ball status. row=$row, col=$srcCol should be true")
@@ -939,6 +969,9 @@ internal class FlickerEngine {
         return
     }
 
+    /**
+     * Build a snapshot list of ball positions
+     */
     fun updateBallList(): SnapshotStateList<Pos> {
         val ballList: SnapshotStateList<Pos> = SnapshotStateList<Pos>().apply {
 
@@ -955,6 +988,9 @@ internal class FlickerEngine {
         return ballList
     }
 
+    /**
+     * After a move will results in net addition and deletion of balls
+     */
      data class ValidMove(
          var addPosList : MutableList<Pos> = mutableListOf(),
          var delPosList : MutableList<Pos> = mutableListOf()

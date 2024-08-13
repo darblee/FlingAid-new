@@ -166,9 +166,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         }
     }
 
-    // Need special handling of back key press events. Do not navigate when:
-    // - It is in middle of thinking
-    // - It is middle of announce victory message
+    // Need special handling of back key press events.
     HandleBackPressKeyForSolverScreen(navController)
 
     if (showNoWinnableMoveDialogBox) {

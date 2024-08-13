@@ -26,15 +26,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,13 +69,12 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController
 ) {
-    // Intercept backPress key while on Game Solver screen..
-    //
-    // When doing back press on the current screen, confirm with the user whether
-    // it should exit this screen or not if it is middle of thinking.
-    // Do not exit this screen when:
-    // - It is middle of thinking
-    // - It is in middle of announcing victory message
+    /**
+     * Intercept backPress key while on Home screen.
+     *
+     * When doing back press on the current screen, confirm with the user whether it should exit
+     * this screen or not.
+     */
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
@@ -231,7 +227,6 @@ private fun MyDialogUIPreview() {
  * @param onDismiss lambda function to cancel the exit
  * @param onExit lambda function to perform the exit
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
     Dialog(
@@ -294,54 +289,46 @@ private fun ExitAlertDialog(onDismiss: () -> Unit, onExit: () -> Unit) {
                     color = MaterialTheme.colorScheme.outline
                 )
                 Row(Modifier.padding(top = 0.dp)) {
-                    CompositionLocalProvider(
-                        LocalMinimumInteractiveComponentEnforcement provides false,
+                    TextButton(
+                        onClick = { onDismiss() },
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp)
+                            .weight(1F)
+                            .border(0.dp, Color.Transparent)
+                            .height(48.dp),
+                        elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
+                        shape = RoundedCornerShape(0.dp),
+                        contentPadding = PaddingValues(0.dp)
                     ) {
-                        TextButton(
-                            onClick = { onDismiss() },
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp)
-                                .weight(1F)
-                                .border(0.dp, Color.Transparent)
-                                .height(48.dp),
-                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
-                            shape = RoundedCornerShape(0.dp),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.not_now),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.not_now),
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                     HorizontalDivider(
                         modifier = Modifier
                             .fillMaxHeight()
                             .width(1.dp), color = MaterialTheme.colorScheme.outline
                     )
-                    CompositionLocalProvider(
-                        LocalMinimumInteractiveComponentEnforcement provides false,
+                    TextButton(
+                        onClick = {
+                            onExit.invoke()
+                        },
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp)
+                            .weight(1F)
+                            .border(0.dp, color = Color.Transparent)
+                            .height(48.dp),
+                        elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
+                        shape = RoundedCornerShape(0.dp),
+                        contentPadding = PaddingValues()
                     ) {
-                        TextButton(
-                            onClick = {
-                                onExit.invoke()
-                            },
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp)
-                                .weight(1F)
-                                .border(0.dp, color = Color.Transparent)
-                                .height(48.dp),
-                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
-                            shape = RoundedCornerShape(0.dp),
-                            contentPadding = PaddingValues()
-                        ) {
-                            Text(
-                                text = stringResource(R.string.exit),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.exit),
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
