@@ -126,6 +126,9 @@ class FlickerBoard {
         return ballList.count()
     }
 
+    /**
+     * File pointer to game file
+     */
     private var _gameFile: File? = null
 
     /**
@@ -148,6 +151,9 @@ class FlickerBoard {
      * Save the game board to a file
      */
     fun saveBallListToFile() {
+
+        if (_gameFile == null) return
+
         val format = Json { prettyPrint = true }
         val ballList = mutableListOf<Pos>()
 
@@ -161,7 +167,7 @@ class FlickerBoard {
             writer.write(output)
             writer.close()
         } catch (e: Exception) {
-            Log.i(Global.DEBUG_PREFIX, "${e.message}")
+            Log.i(Global.DEBUG_PREFIX, "Unable to save to game file. Reason: ${e.message}")
         }
     }
 
@@ -169,6 +175,9 @@ class FlickerBoard {
      * Load the saved game board from file
      **/
     fun loadBallListFromFile() {
+
+        if (_gameFile == null) return
+
         try {
             val reader = FileReader(_gameFile)
             val data = reader.readText()
@@ -404,6 +413,8 @@ class FlickerBoard {
     fun addSnapshotToHistory() {
         val curSnapshot = createBoardSnapshot()
         _moveHistory.add(curSnapshot)
+
+        saveHistoryToFile()
     }
 
     /**
@@ -430,6 +441,72 @@ class FlickerBoard {
     fun canPerformUndo(): Boolean
     {
         return (_moveHistory.size > 1)
+    }
+
+    /**
+     * File pointer to game history file
+     */
+    private var _historyFile: File? = null
+
+    /**
+     * Set the history file
+     */
+    fun setHistoryFile(file: File)
+    {
+        _historyFile = file
+    }
+
+    /**
+     * Save the history to file
+     */
+    fun saveHistoryToFile()
+    {
+        if (_historyFile == null) return
+
+        val format = Json { prettyPrint = true }
+        val output = format.encodeToString(_moveHistory)
+
+        try {
+            val writer = FileWriter(_historyFile)
+            writer.write(output)
+            writer.close()
+        } catch (e: Exception) {
+            Log.i(Global.DEBUG_PREFIX, "Unable to save history to file. Reason: ${e.message}")
+        }
+    }
+
+    /**
+     * Load the history from file
+     */
+    fun loadHistoryFromFile()
+    {
+        if (_historyFile == null) return
+
+        try {
+            val reader = FileReader(_historyFile)
+            val data = reader.readText()
+            reader.close()
+
+            val historyList = Json.decodeFromString<List<List<Pos>>>(data)
+            _moveHistory.clear()
+
+            historyList.forEach{ curSnapshot ->
+                val newSnapshot : boardSnapshot = mutableListOf()
+                curSnapshot.forEach { curPos ->
+                    newSnapshot.add(curPos)
+                }
+                _moveHistory.add(newSnapshot)
+            }
+        } catch (e: Exception) {
+            Log.i(Global.DEBUG_PREFIX, "Unable to load history from file. Reason: ${e.message}")
+        }
+    }
+
+    /**
+     * Delete the history file
+     */
+    fun removeHistoryFile() {
+        _historyFile?.delete()
     }
 }
 
@@ -463,9 +540,9 @@ fun drawBallOnGrid(
     }
 }
 
-/*************************** Animation Routines ************************************************/
+/****************************** Animation Routines ************************************************/
 
-/*************** Shadow Ball Movement *******************************/
+/******************* Shadow Ball Movement Animation Routines **************************************/
 
 /* The set-up routine is done on each screen - GameScreen & SolverScreen */
 
@@ -525,7 +602,7 @@ fun animateShadowBallMovementsPerform(
     }
 }
 
-/*************** Ball Movement ************************************/
+/*************************** Ball Movement Animation Routines *************************************/
 
 /* The set-up routine is done on each screen - GameScreen & SolverScreen */
 
@@ -831,7 +908,7 @@ fun animateBallMovementsPerform(
     }   // drawScope
 }
 
-/*************** Victory Announcement ************************************/
+/************************ Victory Announcement Animation Routines *********************************/
 
 /**
  * Perform the actual victory message animation

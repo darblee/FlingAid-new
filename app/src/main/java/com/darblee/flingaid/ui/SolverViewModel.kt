@@ -68,8 +68,11 @@ object SolverViewModel : ViewModel() {
      */
     private var _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
 
-    /********************************* BALL MANAGEMENT ****************************/
+    /********************************* BALL MANAGEMENT ********************************************/
 
+    /**
+     * Board, represented as a list of ball positions
+     */
     private var _solverBallPos = FlickerBoard()
 
     /**
@@ -110,7 +113,7 @@ object SolverViewModel : ViewModel() {
         setModeBaseOnBoard()
     }
 
-    /********************************* SOLVER GAME MANAGEMENT ****************************/
+    /********************************* SOLVER GAME MANAGEMENT *************************************/
 
     /**
      * Contain the UI state of the solver game. This is used by the game screens to display
@@ -227,7 +230,8 @@ object SolverViewModel : ViewModel() {
         }
     }
 
-    /******************  Set mode routines ********************************/
+    /********************************  Set mode routines ******************************************/
+
     /**
      * Set UI state to "Announce Victory" mode
      */
@@ -279,7 +283,7 @@ object SolverViewModel : ViewModel() {
         }
     }
 
-    /************************* Thinking routines ****************/
+    /****************************** Thinking routines *********************************************/
 
     /**
      * Volatile is used to ensure each thread is reading exact same [gMultipleThread] value
@@ -288,8 +292,20 @@ object SolverViewModel : ViewModel() {
     @Volatile
     private var gMultipleThread = false
 
+    /**
+     * First thread to search for solution
+     */
     private lateinit var gThinkingThread1: Thread
+
+    /**
+     * Second thread to search for solution. This thread is used when we exceeded number of balls
+     * on the board
+     */
     private lateinit var gThinkingThread2: Thread
+
+    /**
+     * Thread to update the progress of thinking process
+     */
     private lateinit var gShowProgressThread: Thread
 
     private var task1WinningRow = -1

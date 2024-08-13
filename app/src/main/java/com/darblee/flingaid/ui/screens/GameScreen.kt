@@ -212,8 +212,9 @@ private fun LoadGameFileOnlyOnce() {
     // Loading game file will trigger non-stop recomposition.
     // Also need to minimize the need to do expensive time consuming file i/o operation.
     val gameBoardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
+    val historyFile = File(LocalContext.current.filesDir, Global.GAME_HISTORY_FILENAME)
     if (needToLoadGameFile) {
-        GameViewModel.loadGameFile(gameBoardFile)
+        GameViewModel.loadGameFiles(gameBoardFile, historyFile)
         Log.i(Global.DEBUG_PREFIX, "Loading from game file")
         needToLoadGameFile = false
     }
@@ -310,7 +311,7 @@ private fun GameActionButtons(
 
             var gameLevelInt = 1
             if (!loadGameLevelSetting) {
-                Log.i(Global.DEBUG_PREFIX, "LOad game setting from file")
+                Log.i(Global.DEBUG_PREFIX, "Load game setting from file")
                 runBlocking {
                     gameLevelInt = preference.readGameLevelFromSetting()
                     GameViewModel.setGameLevel(gameLevelInt)

@@ -40,7 +40,7 @@ import kotlin.random.Random
  * **Ball Management**
  *
  * Managing the ball on the game board
- * - [loadGameFile] : Define the file to store the ball position information
+ * - [loadGameFiles] : Define the file to store the ball position information
  * - [ballCount]
  * - [ballPositionList]
  * - [printBalls] Print all the ball positions. Used for debugging purposes.
@@ -50,7 +50,7 @@ import kotlin.random.Random
  */
 object GameViewModel : ViewModel() {
 
-    /********************************* BALL MANAGEMENT ****************************/
+    /********************************* BALL MANAGEMENT ********************************************/
 
     private var _gameBallPos = FlickerBoard()
     private var _gameLevel = 1
@@ -82,15 +82,17 @@ object GameViewModel : ViewModel() {
     }
 
     /**
-     * Load the game file
+     * Load the game files - Game file and history file
      *
-     * @param file game file
+     * @param gameFile File that contain the board ball positions
+     * @param historyFile File to contain history list of moves
      */
-    fun loadGameFile(file: File) {
-        _gameBallPos.setGameFile(file)
+    fun loadGameFiles(gameFile: File, historyFile: File) {
+        _gameBallPos.setGameFile(gameFile)
         _gameBallPos.loadBallListFromFile()
-        _gameBallPos.clearMoveHistory()
-        _gameBallPos.addSnapshotToHistory()
+
+        _gameBallPos.setHistoryFile(historyFile)
+        _gameBallPos.loadHistoryFromFile()
     }
 
     /**
@@ -106,7 +108,7 @@ object GameViewModel : ViewModel() {
             newLevel
     }
 
-    /********************************* SOLVER GAME MANAGEMENT ****************************/
+    /********************************* GAME MANAGEMENT ********************************************/
 
     /**
      * Contain the UI state of the solver game. This is used by the game screens to display
@@ -168,11 +170,12 @@ object GameViewModel : ViewModel() {
     /**
      * Reset the entire solver game
      * - Clear the board
-     * - Remove any saved game file
+     * - Remove any saved game files
      */
     private fun reset() {
         _gameBallPos.ballList.clear()
         _gameBallPos.removeGameFile()
+        _gameBallPos.removeHistoryFile()
 
         setModeUpdatedGameBoard()
     }
@@ -281,6 +284,7 @@ object GameViewModel : ViewModel() {
     fun undo()
     {
         _gameBallPos.undo()
+        _gameBallPos.saveHistoryToFile()
         _gameBallPos.saveBallListToFile()
         _uiGameState.update { it.copy(_mode = GameUIState.GameMode.UpdatedGameBoard) }
     }
@@ -425,7 +429,7 @@ object GameViewModel : ViewModel() {
         }
     }
 
-    /******************  Set mode routines ******************************************/
+    /********************************  Set mode routines ******************************************/
 
     /**
      * Set mode to "Updated Game Board"
