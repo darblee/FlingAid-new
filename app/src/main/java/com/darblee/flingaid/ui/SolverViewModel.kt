@@ -11,6 +11,7 @@ import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.utilities.FlickerBoard
 import com.darblee.flingaid.utilities.Pos
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -107,10 +108,12 @@ object SolverViewModel : ViewModel() {
      * @param file game file
      */
     fun loadGameFile(file: File) {
-        _solverBallPos.setGameFile(file)
-        _solverBallPos.loadBallListFromFile()
+        viewModelScope.launch {
+            _solverBallPos.setGameFile(file)
+            _solverBallPos.loadBallListFromFile()
 
-        setModeBaseOnBoard()
+            setModeBaseOnBoard()
+        }
     }
 
     /********************************* SOLVER GAME MANAGEMENT *************************************/
@@ -181,10 +184,7 @@ object SolverViewModel : ViewModel() {
         Log.i(Global.DEBUG_PREFIX, "SolverViewModel reset")
 
         gThinkingProgress = 0
-
-        _solverBallPos.ballList.clear()
-        _solverBallPos.removeGameFile()
-
+        _solverBallPos.clearGame()
         setModeBaseOnBoard()
     }
 
@@ -207,9 +207,11 @@ object SolverViewModel : ViewModel() {
             _solverBallPos.ballList.add(solverGridPos)
         }
 
-        _solverBallPos.saveBallListToFile()
+        viewModelScope.launch {
+            _solverBallPos.saveBallListToFile()
 
-        setModeBaseOnBoard()
+            setModeBaseOnBoard()
+        }
     }
 
     /**
@@ -326,7 +328,7 @@ object SolverViewModel : ViewModel() {
                 _mode = thinkingRec,
             )
         }
-        viewModelScope.launch {
+        viewModelScope.launch (Dispatchers.Default) {
 
             // For explanation on the formula, see the description for _totalProcessCount
             _totalProcessCount =
@@ -753,16 +755,18 @@ object SolverViewModel : ViewModel() {
             _solverBallPos.ballList = game.updateBallList()
         }
 
-        _solverBallPos.saveBallListToFile()
+        viewModelScope.launch {
+            _solverBallPos.saveBallListToFile()
 
-        // If there is more ball, then automatically look for the next winnable move
-        if (ballCount() > 1) {
-            findWinningMove()
-        } else {
-            if (ballCount() == 1) {
-                setModeToAnnounceVictory()
+            // If there is more ball, then automatically look for the next winnable move
+            if (ballCount() > 1) {
+                findWinningMove()
             } else {
-                assert(true) { "Got unexpected ball count state." }
+                if (ballCount() == 1) {
+                    setModeToAnnounceVictory()
+                } else {
+                    assert(true) { "Got unexpected ball count state." }
+                }
             }
         }
     }

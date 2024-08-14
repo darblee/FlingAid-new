@@ -11,6 +11,7 @@ import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.utilities.FlickerBoard
 import com.darblee.flingaid.utilities.Pos
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -88,11 +89,14 @@ object GameViewModel : ViewModel() {
      * @param historyFile File to contain history list of moves
      */
     fun loadGameFiles(gameFile: File, historyFile: File) {
-        _gameBallPos.setGameFile(gameFile)
-        _gameBallPos.loadBallListFromFile()
+        viewModelScope.launch(Dispatchers.IO) {
+            _gameBallPos.setGameFile(gameFile)
+            _gameBallPos.loadBallListFromFile()
 
-        _gameBallPos.setHistoryFile(historyFile)
-        _gameBallPos.loadHistoryFromFile()
+            _gameBallPos.setHistoryFile(historyFile)
+            _gameBallPos.loadHistoryFromFile()
+            setModeUpdatedGameBoard()
+        }
     }
 
     /**
@@ -173,9 +177,8 @@ object GameViewModel : ViewModel() {
      * - Remove any saved game files
      */
     private fun reset() {
-        _gameBallPos.ballList.clear()
-        _gameBallPos.removeGameFile()
-        _gameBallPos.removeHistoryFile()
+        _gameBallPos.clearGame()
+        _gameBallPos.clearMoveHistory()
 
         setModeUpdatedGameBoard()
     }
@@ -200,13 +203,15 @@ object GameViewModel : ViewModel() {
             game.moveBack()
         }
 
-        _gameBallPos.ballList.clear()
-        _gameBallPos.ballList = game.updateBallList()
-        _gameBallPos.clearMoveHistory()
-        _gameBallPos.addSnapshotToHistory()
-        _gameBallPos.saveBallListToFile()
+        viewModelScope.launch(Dispatchers.IO) {
+            _gameBallPos.ballList.clear()
+            _gameBallPos.ballList = game.updateBallList()
+            _gameBallPos.clearMoveHistory()
+            _gameBallPos.addSnapshotToHistory()
+            _gameBallPos.saveBallListToFile()
 
-        setModeUpdatedGameBoard()
+            setModeUpdatedGameBoard()
+        }
     }
 
     enum class MoveResult {
@@ -283,9 +288,12 @@ object GameViewModel : ViewModel() {
     fun undo()
     {
         _gameBallPos.undo()
-        _gameBallPos.saveHistoryToFile()
-        _gameBallPos.saveBallListToFile()
-        _uiGameState.update { it.copy(_mode = GameUIState.GameMode.UpdatedGameBoard) }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _gameBallPos.saveHistoryToFile()
+            _gameBallPos.saveBallListToFile()
+            _uiGameState.update { it.copy(_mode = GameUIState.GameMode.UpdatedGameBoard) }
+        }
     }
 
     /**
@@ -332,16 +340,19 @@ object GameViewModel : ViewModel() {
         }
 
         _gameBallPos.addSnapshotToHistory()
-        _gameBallPos.saveBallListToFile()
 
-        _uiGameState.update { curState ->
-            curState.copy(
-                _mode = if (ballCount() == 1) {
-                    GameUIState.GameMode.WonGame
-                } else {
-                    GameUIState.GameMode.UpdatedGameBoard
-                }
-            )
+        viewModelScope.launch(Dispatchers.IO) {
+            _gameBallPos.saveBallListToFile()
+
+            _uiGameState.update { curState ->
+                curState.copy(
+                    _mode = if (ballCount() == 1) {
+                        GameUIState.GameMode.WonGame
+                    } else {
+                        GameUIState.GameMode.UpdatedGameBoard
+                    }
+                )
+            }
         }
     }
 
@@ -376,7 +387,7 @@ object GameViewModel : ViewModel() {
      * Find hint
      */
     fun getHint() {
-        viewModelScope.launch {
+        viewModelScope.launch (Dispatchers.Default) {
             gTask1WinningDirection = Direction.INCOMPLETE
             gTask2WinningDirection = Direction.INCOMPLETE
             gThinkingProgress = 0

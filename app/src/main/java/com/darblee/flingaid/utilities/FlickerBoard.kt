@@ -67,6 +67,7 @@ import com.darblee.flingaid.gAudio_swish
 import com.darblee.flingaid.gAudio_victory
 import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -100,7 +101,6 @@ typealias boardSnapshot = MutableList<Pos>
  *
  * [getBallCount] Get the number of active balls in the grid
  * [setGameFile] Setup file pointer file
- * [removeGameFile] Delete the file
  * [saveBallListToFile]  Save the list of position in the file
  * [loadBallListFromFile] Load the list of ball positions from the file
  * [printPositions] Print all the ball positions. It is intended for debugging purposes.
@@ -141,10 +141,12 @@ class FlickerBoard {
     }
 
     /**
+     * Reset the game
      * Delete the game file
      */
-    fun removeGameFile() {
+    fun clearGame() {
         _gameFile?.delete()
+        ballList.clear()
     }
 
     /**
@@ -403,6 +405,7 @@ class FlickerBoard {
      */
     fun clearMoveHistory()
     {
+        _historyFile?.delete()
         _moveHistory.clear()
     }
 
@@ -500,13 +503,6 @@ class FlickerBoard {
         } catch (e: Exception) {
             Log.i(Global.DEBUG_PREFIX, "Unable to load history from file. Reason: ${e.message}")
         }
-    }
-
-    /**
-     * Delete the history file
-     */
-    fun removeHistoryFile() {
-        _historyFile?.delete()
     }
 }
 
@@ -795,7 +791,7 @@ fun AnimateBallMovementsSetup(
     LaunchedEffect(Unit) {
         // Use coroutine to ensure both launch animation get completed in the same co-routine scope
         coroutineScope {
-            launch { // One or more ball movements in serial fashion
+            launch(Dispatchers.Main) { // One or more ball movements in serial fashion
                 movingChain.forEachIndexed { index, currentMovingRec ->
                     if (currentMovingRec.distance > 0) {
                         val totalTimeLength = (currentMovingRec.distance * 100) + overtime
@@ -821,7 +817,7 @@ fun AnimateBallMovementsSetup(
 
             } // Launch
 
-            launch {  // Animate explosion on the first ball only
+            launch(Dispatchers.Main) {  // Animate explosion on the first ball only
                 val totalTimeLength = (movingChain[0].distance * 100) + overtime
                 animateParticleExplosionCtl.animateTo(
                     targetValue = 0.5f,
@@ -834,7 +830,7 @@ fun AnimateBallMovementsSetup(
 
             } // launch
 
-            launch {
+            launch (Dispatchers.Main){
                 val totalTimeLength = (movingChain[0].distance * 100)
                 delay((totalTimeLength * whenBallMakeContactRatio).toLong())
                 gAudio_swish.start()
@@ -963,9 +959,9 @@ fun AnimateVictoryMessageSetup(
     animateCtl: Animatable<Float, AnimationVector1D>,
 ) {
     LaunchedEffect(Unit) {
-// Use coroutine to ensure both animation and sound happen in parallel
+        // Use coroutine to ensure both animation and sound happen in parallel
         coroutineScope {
-            launch {
+            launch (Dispatchers.Main) {
                 animateCtl.snapTo(0f)
                 animateCtl.animateTo(
                     targetValue = 1f,
@@ -982,7 +978,7 @@ fun AnimateVictoryMessageSetup(
 
             }  // launch
 
-            launch {
+            launch (Dispatchers.Main){
                 gAudio_victory.start()
             }
         }  // coroutineScope

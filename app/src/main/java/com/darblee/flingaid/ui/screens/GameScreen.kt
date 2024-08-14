@@ -758,9 +758,9 @@ fun GameAnimateShadowBallMovementSetup(
     animateCtl: Animatable<Float, AnimationVector1D>,
 ) {
     LaunchedEffect(Unit) {
-        // Use coroutine to ensure both animation and sound happen in parallel
+        // Use coroutineScope to control both animation task and sound task happen in parallel
         coroutineScope {
-            launch {
+            launch (Dispatchers.Main) {
                 animateCtl.animateTo(
                     targetValue = 1f,
                     animationSpec = repeatable(
@@ -773,7 +773,7 @@ fun GameAnimateShadowBallMovementSetup(
                 GameViewModel.setModeUpdatedGameBoard()
             }  // launch
 
-            launch {
+            launch (Dispatchers.Main) {
                 gAudio_doink.start()
             }
         } // coroutine scope
