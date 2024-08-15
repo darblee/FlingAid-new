@@ -25,13 +25,28 @@ fun Float.mapInRange(inMin: Float, inMax: Float, outMin: Float, outMax: Float): 
     return outMin + (((this - inMin) / (inMax - inMin)) * (outMax - outMin))
 }
 
+/**
+ * Convert from dp to Px
+ */
 fun Dp.toPx() = value.dpToPx()
 
+/**
+ * Convert float to Px
+ */
 fun Float.dpToPx() = this * Resources.getSystem().displayMetrics.density
 
 
 private val random = Random
 fun Float.randomTillZero() = this * random.nextFloat()
+
+/**
+ * Generate a random float number between [min] and [max]
+ *
+ * @param min
+ * @param max
+ *
+ * @return Random number between  [min] and [max]
+ */
 fun randomInRange(min: Float, max: Float) = min + (max - min).randomTillZero()
 
 /**

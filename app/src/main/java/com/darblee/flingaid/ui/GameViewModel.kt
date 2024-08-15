@@ -384,6 +384,31 @@ object GameViewModel : ViewModel() {
     }
 
     /**
+     * Check if there is a winnable move or not
+     */
+    fun hasWinnableMove() : Boolean
+    {
+
+        var winningDirection: Direction = Direction.NO_WINNING_DIRECTION
+
+        viewModelScope.launch (Dispatchers.Default) {
+            gTask1WinningDirection = Direction.INCOMPLETE
+            gTask2WinningDirection = Direction.INCOMPLETE
+            gThinkingProgress = 0
+
+            val game = FlickerEngine()
+            game.populateGrid(_gameBallPos.ballList)
+
+            val (direction, _, _) = game.foundWinningMove(
+                _gameBallPos.ballList.size, 1, 1
+            )
+            winningDirection = direction
+        }
+
+        return !((winningDirection == Direction.INCOMPLETE) || (winningDirection == Direction.NO_WINNING_DIRECTION))
+    }
+
+    /**
      * Find hint
      */
     fun getHint() {

@@ -89,6 +89,7 @@ import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
 import com.darblee.flingaid.utilities.animateVictoryMsgPerform
 import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.generateExplosionParticles
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.Locale
 import kotlin.math.abs
@@ -104,7 +105,7 @@ import kotlin.math.abs
 @Composable
 fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController) {
 
-    LoadSolverFileOnlyOnce()
+    LoadSolverFileOnlyOnce() // TODO: Load the file asynchronous
 
     var announceVictory = false
     var readyToFindSolution = false
@@ -219,9 +220,11 @@ private fun LoadSolverFileOnlyOnce() {
     // Also need to minimize the need to do expensive time consuming file i/o operation.
     val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
     if (needToLoadSolverFile) {
-        SolverViewModel.loadGameFile(solverBoardFile)
-        Log.i(Global.DEBUG_PREFIX, "Loading from solver file")
-        needToLoadSolverFile = false
+        runBlocking {
+            SolverViewModel.loadGameFile(solverBoardFile)
+            Log.i(Global.DEBUG_PREFIX, "Loading from solver file")
+            needToLoadSolverFile = false
+        }
     }
 }
 

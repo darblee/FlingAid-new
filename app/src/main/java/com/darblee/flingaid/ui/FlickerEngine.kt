@@ -14,7 +14,7 @@ import kotlin.random.Random
  * is a set of Kotlin files that are compiled together e.g. a library or application. It provides real
  * encapsulation for the implementation details. In this case, it is shared wit the SolverEngine class.
  */
-internal var gThinkingProgress = 0
+internal var gThinkingProgress: Int = 0
 
 /**
  * Store the winning direction for each corresponding task. Only 1 task will have the winning move
@@ -29,14 +29,15 @@ internal var gTask2WinningDirection = Direction.NO_WINNING_DIRECTION
  * Engine that look for winnable move based on game layout information
  */
 internal class FlickerEngine {
+    /**
+     * Actual board grid
+     */
     private var flickerGrid = Array(Global.MAX_ROW_SIZE) { BooleanArray(Global.MAX_COL_SIZE) }
 
     /**
      * Initialize SolverEngine class
      */
-    init {
-        clearGameBoard()
-    }
+    init { clearGameBoard() }
 
     /**
      * Clear the entire game board.

@@ -113,7 +113,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     var noWinnableMove by remember {  mutableStateOf( false ) }
     var showNoWinnableMoveDialogBox by remember { mutableStateOf(false) }
 
-    LoadGameFileOnlyOnce()
+    LoadGameFileOnlyOnce() // TODO: Load the file asynchronous
 
     var announceVictory = false
 
@@ -214,9 +214,11 @@ private fun LoadGameFileOnlyOnce() {
     val gameBoardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
     val historyFile = File(LocalContext.current.filesDir, Global.GAME_HISTORY_FILENAME)
     if (needToLoadGameFile) {
-        GameViewModel.loadGameFiles(gameBoardFile, historyFile)
-        Log.i(Global.DEBUG_PREFIX, "Loading from game file")
-        needToLoadGameFile = false
+        runBlocking {
+            GameViewModel.loadGameFiles(gameBoardFile, historyFile)
+            Log.i(Global.DEBUG_PREFIX, "Loading from game file")
+            needToLoadGameFile = false
+        }
     }
 }
 
@@ -419,7 +421,6 @@ private fun GameActionButtons(
                 .padding(4.dp),
             enabled = (hintBallRec == null) && (moveBallRec == null ) &&
                     (!announceVictory) && (GameViewModel.ballCount() > 1) && (!noWinnableMove)
-
         ) {
             Icon(
                 imageVector = Icons.Filled.Info, contentDescription = "Hint",

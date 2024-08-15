@@ -48,6 +48,13 @@ class Particle(
         randomInRange(1.dp.toPx(), startRadius)
     }
 
+    /**
+     * Update [currentXPosition] and [currentYPosition] randomly guided by particle direction and distance
+     * The particle's [alpha] and [currentRadius] value is also generated
+     *
+     * @param explosionProgress The progress value between 0 and 1. Used by animation routine
+     * @param gridSize The gridsize, used to  determine the position of particle on the overall board.
+     */
     fun updateProgress(explosionProgress: Float, gridSize: Float) {
         val trajectoryProgress =
             if (explosionProgress < visibilityThresholdLow || (explosionProgress > (1 - visibilityThresholdHigh))) {

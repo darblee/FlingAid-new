@@ -522,6 +522,10 @@ object SolverViewModel : ViewModel() {
 
                 Direction.NO_WINNING_DIRECTION -> {
                     Log.i(Global.DEBUG_PREFIX, "Task #1 concluded there is no winning move")
+
+                    // Mark this thread with "interrupt" status. The thread still need to check
+                    // if it receive "interrupt" status via the "interrupted()" call. It does
+                    // not get cancelled automatically.
                     if (gMultipleThread) gThinkingThread2.interrupt()
                 }
 
