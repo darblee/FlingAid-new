@@ -130,7 +130,12 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             noWinnableMove = false
         }
 
-        GameUIState.GameMode.NoWinnnableMoveWithDiaglog -> {
+        GameUIState.GameMode.UpdateGameBoardWithNoSolution -> {
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Board has been modified. Typically start a new user move.")
+            noWinnableMove = true
+        }
+
+        GameUIState.GameMode.NoWinnnableMoveWithDialog -> {
             noWinnableMove = true
             showNoWinnableMoveDialogBox = true
             Log.i("Game Recompose: ", "${gameUIState.mode} : Send dialog box indicating there is no winnable move")
@@ -240,7 +245,7 @@ private fun HandleBackPressKeyForGameScreen(
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
         backPressed = false
-        if (GameViewModel.cleanup()) {
+        if (GameViewModel.canExitGameScreen()) {
             navController.popBackStack()
         }
         return

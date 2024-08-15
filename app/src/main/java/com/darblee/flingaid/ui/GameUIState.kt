@@ -22,15 +22,20 @@ data class GameUIState(
      *
      * @property UpdatedGameBoard There is an updated (or new) game board. Now waiting for user to
      * make a move
+     * @property UpdateGameBoardWithNoSolution There is an updated game board, which we know there
+     * is a known winnable move for it. NOw waiting for user to make a move. AT the same time, we can
+     * inform user there is a hint available
      * @property MoveBall Processing ball movement
      * @property IndicateInvalidMoveByShowingShadowMove Processing the ball shadow movement
      * @property ShowHint Find a hint and now need to show the user with animation
      * @property WonGame One ball remaining. User has won the game
-     * @property NoWinnnableMoveWithDiaglog There is no winning move. It will remain this way until there is a new
+     * @property NoWinnnableMoveWithDialog There is no winning move. It will remain this way until there is a new
      * game or when user undo a move
      */
     sealed class GameMode {
         data object UpdatedGameBoard : GameMode()
+
+        data object UpdateGameBoardWithNoSolution : GameMode()
 
         data object MoveBall : GameMode() {
             var moveDirection: Direction = Direction.NO_WINNING_DIRECTION
@@ -48,7 +53,7 @@ data class GameUIState(
         }
         data object WonGame : GameMode()
 
-        data object NoWinnnableMoveWithDiaglog : GameMode()
+        data object NoWinnnableMoveWithDialog : GameMode()
 
         data object  NoWinnableMove : GameMode()
     }

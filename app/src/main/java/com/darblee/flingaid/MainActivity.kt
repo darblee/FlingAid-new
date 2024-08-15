@@ -347,7 +347,7 @@ private fun FlingAidTopAppBar(
                             Global.DEBUG_PREFIX,
                             "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}"
                         )
-                        if (GameViewModel.cleanup()) navController.popBackStack()
+                        if (GameViewModel.canExitGameScreen()) navController.popBackStack()
                     }
                     ) {
                         Icon(
