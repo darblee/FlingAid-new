@@ -57,5 +57,4 @@ data class GameUIState(
 
         data object  NoWinnableMove : GameMode()
     }
-
 }

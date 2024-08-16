@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.random.Random
 
@@ -254,22 +253,14 @@ object GameViewModel : ViewModel() {
             val shadowMoveBallRec = GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove
             shadowMoveBallRec.shadowMoveDirection = direction
             shadowMoveBallRec.shadowMovingChain = movingChain
-            _uiGameState.update { curState ->
-                curState.copy(
-                    _mode = shadowMoveBallRec
-                )
-            }
+            setMode(shadowMoveBallRec)
             return MoveResult.InvalidNoBump
         }
 
         val moveBallRec = GameUIState.GameMode.MoveBall
         moveBallRec.moveDirection = direction
         moveBallRec.movingChain = movingChain
-        _uiGameState.update { curState ->
-            curState.copy(
-                _mode = moveBallRec
-            )
-        }
+        setMode(moveBallRec)
         return MoveResult.Valid
     }
 
@@ -291,31 +282,10 @@ object GameViewModel : ViewModel() {
     {
         _gameBallPos.undo()
 
-        viewModelScope.launch(Dispatchers.Main) {
-
-            // Now that board got updated, check to see if there is a winnable move. This will help
-            // us determine what mode to set to.
-            gTask1WinningDirection = Direction.INCOMPLETE
-            gTask2WinningDirection = Direction.INCOMPLETE
-            gThinkingProgress = 0
-
-            val game = FlickerEngine()
-            game.populateGrid(_gameBallPos.ballList)
-
-            val (direction, _, _) = game.foundWinningMove(
-                _gameBallPos.ballList.size, 1, 1
-            )
-
-            if ((direction == Direction.INCOMPLETE) || (direction == Direction.NO_WINNING_DIRECTION)) {
-                setModeUpdatedGameBoardWIthNoSolution()
-            } else {
-                setModeUpdatedGameBoard()
-            }
-
-            withContext(Dispatchers.IO) {
-                _gameBallPos.saveHistoryToFile()
-                _gameBallPos.saveBallListToFile()
-            }
+        viewModelScope.launch(Dispatchers.IO) {
+            _gameBallPos.saveHistoryToFile()
+            _gameBallPos.saveBallListToFile()
+            setModeUpdatedGameBoard()
         }
     }
 
@@ -366,16 +336,12 @@ object GameViewModel : ViewModel() {
 
         viewModelScope.launch(Dispatchers.IO) {
             _gameBallPos.saveBallListToFile()
+        }
 
-            _uiGameState.update { curState ->
-                curState.copy(
-                    _mode = if (ballCount() == 1) {
-                        GameUIState.GameMode.WonGame
-                    } else {
-                        GameUIState.GameMode.UpdatedGameBoard
-                    }
-                )
-            }
+        if (ballCount() == 1) {
+            setMode(GameUIState.GameMode.WonGame)
+        } else {
+            setModeUpdatedGameBoard()
         }
     }
 
@@ -407,31 +373,6 @@ object GameViewModel : ViewModel() {
     }
 
     /**
-     * Check if there is a winnable move or not
-     */
-    fun hasWinnableMove() : Boolean
-    {
-
-        var winningDirection: Direction = Direction.NO_WINNING_DIRECTION
-
-        viewModelScope.launch (Dispatchers.Default) {
-            gTask1WinningDirection = Direction.INCOMPLETE
-            gTask2WinningDirection = Direction.INCOMPLETE
-            gThinkingProgress = 0
-
-            val game = FlickerEngine()
-            game.populateGrid(_gameBallPos.ballList)
-
-            val (direction, _, _) = game.foundWinningMove(
-                _gameBallPos.ballList.size, 1, 1
-            )
-            winningDirection = direction
-        }
-
-        return !((winningDirection == Direction.INCOMPLETE) || (winningDirection == Direction.NO_WINNING_DIRECTION))
-    }
-
-    /**
      * Find hint
      */
     fun getHint() {
@@ -454,7 +395,7 @@ object GameViewModel : ViewModel() {
 
             if ((direction == Direction.INCOMPLETE) || (direction == Direction.NO_WINNING_DIRECTION)) {
                 Log.i(Global.DEBUG_PREFIX, "No winnable move found.")
-                setModeToNoWinnableMoveWithDialog()
+                setMode(GameUIState.GameMode.NoWinnnableMoveWithDialog)
                 return@launch
             }
 
@@ -488,25 +429,32 @@ object GameViewModel : ViewModel() {
 
     /********************************  Set mode routines ******************************************/
 
+    private fun setMode(mode: GameUIState.GameMode) {
+        _uiGameState.update { curState -> curState.copy(_mode = mode) }
+    }
+
     /**
      * Set mode to "Updated Game Board"
      */
     fun setModeUpdatedGameBoard() {
-        _uiGameState.update { curState ->
-            curState.copy(
-                _mode = GameUIState.GameMode.UpdatedGameBoard
-            )
-        }
-    }
+        // Now that we have a updated board, check to see if there is a winnable move.
+        viewModelScope.launch (Dispatchers.Default){
+            gTask1WinningDirection = Direction.INCOMPLETE
+            gTask2WinningDirection = Direction.INCOMPLETE
+            gThinkingProgress = 0
 
-    /**
-     * Set mode to "Updated Game Board with no solution"
-     */
-    private fun setModeUpdatedGameBoardWIthNoSolution() {
-        _uiGameState.update { curState ->
-            curState.copy(
-                _mode = GameUIState.GameMode.UpdateGameBoardWithNoSolution
+            val game = FlickerEngine()
+            game.populateGrid(_gameBallPos.ballList)
+
+            val (direction, _, _) = game.foundWinningMove(
+                _gameBallPos.ballList.size, 1, 1
             )
+
+            if ((direction == Direction.INCOMPLETE) || (direction == Direction.NO_WINNING_DIRECTION)) {
+                setMode(GameUIState.GameMode.UpdateGameBoardWithNoSolution)
+            } else {
+                setMode(GameUIState.GameMode.UpdatedGameBoard)
+            }
         }
     }
 
@@ -529,28 +477,7 @@ object GameViewModel : ViewModel() {
         showHintRec.shadowMovingChain = movingChain
         showHintRec.shadowMoveDirection = direction
 
-        _uiGameState.update { curState ->
-            curState.copy(
-                _mode = showHintRec
-            )
-        }
-    }
-
-    /**
-     * Set mode to "No Winnable Move with dialog". Basically, to indicate the game could no longer be winnable
-     * without reset or ga back to previous moves. ALso informing game screen to show the dialog informing
-     * user there is no winnable move
-     *
-     * Update the [_uiGameState] state flow with this "Show Hint" mode information
-     * and send it to Game Screen
-     *
-     */
-    private fun setModeToNoWinnableMoveWithDialog() {
-        _uiGameState.update { curState ->
-            curState.copy(
-                _mode = GameUIState.GameMode.NoWinnnableMoveWithDialog
-            )
-        }
+        setMode(showHintRec)
     }
 
     /**
@@ -562,10 +489,6 @@ object GameViewModel : ViewModel() {
      *
      */
     fun setModeToNoWinnableMove() {
-        _uiGameState.update { curState ->
-            curState.copy(
-                _mode = GameUIState.GameMode.NoWinnableMove
-            )
-        }
+        setMode(GameUIState.GameMode.NoWinnableMove)
     }
 }

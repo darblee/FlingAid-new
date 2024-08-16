@@ -17,4 +17,7 @@
     <string name="clear_the_board_with_reset_button">Clear the board with \"Reset\" button</string>
     <string name="add_new_balls_on_the_grid">Add new balls on the grid</string>
     <string name="solve_the_game_with_find_next_button">Solve the game with \"Find next\" button</string>
+    <string name="start_game">Start game</string>
+    <string name="if_solution_is_available_you_can_get_a_hint">If solution is available, you can get a hint</string>
+    <string name="instruction">Instruction:</string>
 </resources>

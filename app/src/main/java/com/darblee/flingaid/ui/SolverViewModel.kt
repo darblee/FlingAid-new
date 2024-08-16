@@ -228,43 +228,21 @@ object SolverViewModel : ViewModel() {
             setModeToNoMoveAvailable()
         } else {
             // There is more than one ball on board. User can start looking for a possible solution
-            setModeToReadyToFindSolution()
+            setMode(SolverUIState.SolverMode.ReadyToFindSolution)
         }
     }
 
     /********************************  Set mode routines ******************************************/
 
-    /**
-     * Set UI state to "Announce Victory" mode
-     */
-    private fun setModeToAnnounceVictory() {
-        _uiSolverState.update { currentState ->
-            currentState.copy(
-                _mode = SolverUIState.SolverMode.AnnounceVictory,
-            )
-        }
+    private fun setMode(mode: SolverUIState.SolverMode) {
+        _uiSolverState.update { curState -> curState.copy(_mode = mode) }
     }
 
     /**
      * Set UI state to "One Ball Left" mode
      */
     fun setModeToNoMoveAvailable() {
-        _uiSolverState.update { currentState ->
-            currentState.copy(
-                _mode = SolverUIState.SolverMode.NoMoveAvailable,
-            )
-        }
-    }
-
-    /**
-     * Set UI state to "Waiting on User Next Move
-     */
-    private fun setModeToReadyToFindSolution() {
-        _uiSolverState.update { currentState ->
-            currentState.copy(
-                _mode = SolverUIState.SolverMode.ReadyToFindSolution,
-            )
-        }
+        setMode(SolverUIState.SolverMode.NoMoveAvailable)
     }
 
     /**
@@ -281,6 +259,28 @@ object SolverViewModel : ViewModel() {
         _uiSolverState.update { curState ->
             curState.copy(
                 _mode = moveBallRec
+            )
+        }
+    }
+
+    /**
+     * Update [SolverUIState] to "ReadyToMove" mode. Provide the associated information such
+     * winning direction and winning moving chain
+     *
+     * @param winningDirection Direction of the move
+     * @param winningMovingChain MovingCHain of the move
+     */
+    private fun setModeToReadyToMove(
+        winningDirection: Direction,
+        winningMovingChain: BallMoveSet
+    ) {
+        val readyToMoveRec = SolverUIState.SolverMode.HasWinningMoveWaitingToMove
+        readyToMoveRec.winingMovingChainPreview = winningMovingChain
+        readyToMoveRec.winningDirectionPreview = winningDirection
+
+        _uiSolverState.update { curState ->
+            curState.copy(
+                _mode = readyToMoveRec
             )
         }
     }
@@ -463,28 +463,6 @@ object SolverViewModel : ViewModel() {
         task1WinningCol = -1
         task2WinningRow = -1
         task2WinningCol = -1
-    }
-
-    /**
-     * Update [SolverUIState] to "ReadyToMove" mode. Provide the associated information such
-     * winning direction and winning moving chain
-     *
-     * @param winningDirection Direction of the move
-     * @param winningMovingChain MovingCHain of the move
-     */
-    private fun setModeToReadyToMove(
-        winningDirection: Direction,
-        winningMovingChain: BallMoveSet
-    ) {
-        val readyToMoveRec = SolverUIState.SolverMode.HasWinningMoveWaitingToMove
-        readyToMoveRec.winingMovingChainPreview = winningMovingChain
-        readyToMoveRec.winningDirectionPreview = winningDirection
-
-        _uiSolverState.update { curState ->
-            curState.copy(
-                _mode = readyToMoveRec
-            )
-        }
     }
 
     /**
@@ -767,7 +745,7 @@ object SolverViewModel : ViewModel() {
                 findWinningMove()
             } else {
                 if (ballCount() == 1) {
-                    setModeToAnnounceVictory()
+                    setMode(SolverUIState.SolverMode.AnnounceVictory)
                 } else {
                     assert(true) { "Got unexpected ball count state." }
                 }

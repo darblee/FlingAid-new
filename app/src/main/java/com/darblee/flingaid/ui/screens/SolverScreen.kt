@@ -498,7 +498,6 @@ private fun DrawSolverBoard(
             )
         }.toMutableList()
 
-
         /**
          * The following lambda functions are used in [AnimateBallMovementsSetup] routine
          */

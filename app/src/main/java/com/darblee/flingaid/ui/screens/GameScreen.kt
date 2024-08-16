@@ -291,14 +291,14 @@ private fun GameActionButtons(
         }
         Column(Modifier.padding(5.dp)) {
             Text(
-                text = "Instruction:",
+                text = stringResource(R.string.instruction),
                 style = MaterialTheme.typography.titleSmall
             )
 
             val bullet = "\u2022"
             val messages = listOf(
-                "Start game",
-                "Select \"undo\" : Undo the most recent move",
+                stringResource(R.string.start_game),
+                stringResource(R.string.if_solution_is_available_you_can_get_a_hint)
             )
             val paragraphStyle = ParagraphStyle(textIndent = TextIndent(restLine = 10.sp))
 
@@ -691,7 +691,6 @@ private fun DrawGameBoard(
                     textMeasurer, victoryMsgColor
                 )
             }
-
         }
     }
 }
