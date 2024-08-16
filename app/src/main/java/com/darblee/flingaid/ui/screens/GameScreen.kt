@@ -74,9 +74,9 @@ import com.darblee.flingaid.Global
 import com.darblee.flingaid.PreferenceStore
 import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_doink
+import com.darblee.flingaid.gGameViewModel
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
-import com.darblee.flingaid.ui.GameViewModel.setModeToNoWinnableMove
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.utilities.AnimateBallMovementsSetup
 import com.darblee.flingaid.utilities.AnimateShadowBallMovementSetup
@@ -86,6 +86,7 @@ import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
 import com.darblee.flingaid.utilities.animateVictoryMsgPerform
+import com.darblee.flingaid.utilities.displayLoadingMessage
 import com.darblee.flingaid.utilities.generateExplosionParticles
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -112,14 +113,27 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     var hintBallRec : GameUIState.GameMode.ShowHint ?= null
     var noWinnableMove by remember {  mutableStateOf( false ) }
     var showNoWinnableMoveDialogBox by remember { mutableStateOf(false) }
-
-    LoadGameFileOnlyOnce() // TODO: Load the file asynchronous
+    var initializing = false
 
     var announceVictory = false
 
-    val gameUIState by GameViewModel.gameUIState.collectAsStateWithLifecycle()
+    val gameBoardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
+    val historyFile = File(LocalContext.current.filesDir, Global.GAME_HISTORY_FILENAME)
+
+    gGameViewModel = GameViewModel.getInstance(gameBoardFile, historyFile)
+
+    val gameUIState by gGameViewModel.gameUIState.collectAsStateWithLifecycle()
 
     when (gameUIState.mode) {
+
+        // Because "initial data loading" mode is only set at initialization, this is only called once.
+        // WHen singleton object class GameViewModel get instantiated, it will load the game files
+        // AAfter the completion of file loading, it will set to "UpdatedGameBoard" mode.
+        GameUIState.GameMode.Initialization -> {
+            Log.i("Game Recompose: ", "${gameUIState.mode} : Initializing...")
+            initializing = true
+        }
+
         GameUIState.GameMode.WonGame -> {
             Log.i("Game Recompose: ", "${gameUIState.mode} : Announce Victory")
             announceVictory = true
@@ -173,7 +187,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             onDismissRequest = { showNoWinnableMoveDialogBox = false },
             onConfirmation = { showNoWinnableMoveDialogBox = false }
         )
-        setModeToNoWinnableMove()
+        gGameViewModel.setModeToNoWinnableMove()
     }
 
     Column(
@@ -193,37 +207,10 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             announceVictory = announceVictory,
             moveBallRec = moveBallRec,
             shadowBallRec = shadowBallRec,
-            hintBallRec = hintBallRec
+            hintBallRec = hintBallRec,
+            initializing = initializing
+
         )
-    }
-}
-
-/**
- * Populate the solver board by loading content from the solver game file
- */
-@Composable
-private fun LoadGameFileOnlyOnce() {
-    /**
-     * Need to ensure we only load the file once when we start the the solver game screen.
-     * If we load the file everytime we go down this path during recompose, it will trigger more
-     * recompose. This will cause unnecessary performance overload.
-     *
-     * __Developer's Note:__  Use [rememberSaveable] instead of [remember] because we want to
-     * preserve this even after config change (e.g. screen rotation)
-     */
-    var needToLoadGameFile by remember { mutableStateOf(true) }
-
-    // Load the game file only once. This is done primarily for performance reason.
-    // Loading game file will trigger non-stop recomposition.
-    // Also need to minimize the need to do expensive time consuming file i/o operation.
-    val gameBoardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
-    val historyFile = File(LocalContext.current.filesDir, Global.GAME_HISTORY_FILENAME)
-    if (needToLoadGameFile) {
-        runBlocking {
-            GameViewModel.loadGameFiles(gameBoardFile, historyFile)
-            Log.i(Global.DEBUG_PREFIX, "Loading from game file")
-            needToLoadGameFile = false
-        }
     }
 }
 
@@ -245,7 +232,7 @@ private fun HandleBackPressKeyForGameScreen(
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
         backPressed = false
-        if (GameViewModel.canExitGameScreen()) {
+        if (gGameViewModel.canExitGameScreen()) {
             navController.popBackStack()
         }
         return
@@ -321,7 +308,7 @@ private fun GameActionButtons(
                 Log.i(Global.DEBUG_PREFIX, "Load game setting from file")
                 runBlocking {
                     gameLevelInt = preference.readGameLevelFromSetting()
-                    GameViewModel.setGameLevel(gameLevelInt)
+                    gGameViewModel.setGameLevel(gameLevelInt)
                 }
                 loadGameLevelSetting = true
             }
@@ -349,7 +336,7 @@ private fun GameActionButtons(
                 modifier = Modifier.padding(0.dp),
                 onValueChangeFinished = {
                     val gameLevelAsInteger = gameLevel.roundToInt()
-                    GameViewModel.setGameLevel(gameLevelAsInteger)
+                    gGameViewModel.setGameLevel(gameLevelAsInteger)
                     CoroutineScope(Dispatchers.IO).launch {
                         preference.saveGameLevelToSetting(gameLevelAsInteger)
                     }
@@ -370,7 +357,7 @@ private fun GameActionButtons(
             {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
                 resetWinnableMove.invoke()
-                GameViewModel.generateNewGame()
+                gGameViewModel.generateNewGame()
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -388,7 +375,7 @@ private fun GameActionButtons(
         Button(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                GameViewModel.undo()
+                gGameViewModel.undo()
                 resetWinnableMove.invoke()
             },
             shape = RoundedCornerShape(5.dp),
@@ -400,7 +387,7 @@ private fun GameActionButtons(
             modifier = Modifier
                 .weight(5F)
                 .padding(1.dp),
-            enabled = GameViewModel.canUndo()
+            enabled = gGameViewModel.canUndo()
         ) {
             Icon(
                 imageVector = Icons.Filled.Refresh, contentDescription = "Undo",
@@ -413,7 +400,7 @@ private fun GameActionButtons(
             onClick =
             {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-                GameViewModel.getHint()
+                gGameViewModel.getHint()
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -425,7 +412,7 @@ private fun GameActionButtons(
                 .weight(5F)
                 .padding(4.dp),
             enabled = (hintBallRec == null) && (moveBallRec == null ) &&
-                    (!announceVictory) && (GameViewModel.ballCount() > 1) && (!noWinnableMove)
+                    (!announceVictory) && (gGameViewModel.ballCount() > 1) && (!noWinnableMove)
         ) {
             Icon(
                 imageVector = Icons.Filled.Info, contentDescription = "Hint",
@@ -455,8 +442,9 @@ private fun DrawGameBoard(
     moveBallRec: GameUIState.GameMode.MoveBall?,
     shadowBallRec: GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove?,
     hintBallRec: GameUIState.GameMode.ShowHint?,
+    initializing: Boolean,
 ) {
-    val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
+    val displayMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
     /**
      * Create textMeasurer instance, which is responsible for measuring a text in its entirety so
@@ -475,7 +463,7 @@ private fun DrawGameBoard(
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            { GameViewModel.setModeUpdatedGameBoard() },
+            { gGameViewModel.setModeUpdatedGameBoard() },
             animateCtl = animateVictoryMessage
         )
     } else {
@@ -504,7 +492,7 @@ private fun DrawGameBoard(
          * The following lambda functions are used in [AnimateBallMovementsSetup] routine
          */
         val gameMoveBallTask =
-            { pos: Pos, direction: Direction -> GameViewModel.moveBall(pos, direction) }
+            { pos: Pos, direction: Direction -> gGameViewModel.moveBall(pos, direction) }
 
         AnimateBallMovementsSetup(
             movingChain = moveBallRec.movingChain,
@@ -581,7 +569,7 @@ private fun DrawGameBoard(
                             when {
                                 (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
                                     if (allowSwipe)
-                                        GameViewModel.setupNextMove(
+                                        gGameViewModel.setupNextMove(
                                             dragRow,
                                             dragCol,
                                             Direction.LEFT
@@ -590,7 +578,7 @@ private fun DrawGameBoard(
 
                                 (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
                                     if (allowSwipe)
-                                        GameViewModel.setupNextMove(
+                                        gGameViewModel.setupNextMove(
                                             dragRow,
                                             dragCol,
                                             Direction.RIGHT
@@ -599,12 +587,12 @@ private fun DrawGameBoard(
 
                                 (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
                                     if (allowSwipe)
-                                        GameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
+                                        gGameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
                                 }
 
                                 (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
                                     if (allowSwipe)
-                                        GameViewModel.setupNextMove(
+                                        gGameViewModel.setupNextMove(
                                             dragRow,
                                             dragCol,
                                             Direction.DOWN
@@ -653,7 +641,7 @@ private fun DrawGameBoard(
             if (moveBallRec != null) {
                 val ballsToErase = moveBallRec.movingChain
 
-                GameViewModel.drawGameBallsOnGrid(
+                gGameViewModel.drawGameBallsOnGrid(
                     drawScope,
                     gridSize,
                     displayBallImage,
@@ -670,7 +658,7 @@ private fun DrawGameBoard(
                     movingChain = moveBallRec.movingChain
                 )
             } else {
-                GameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage)
+                gGameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage)
 
                 if (shadowBallRec != null) {
                     animateShadowBallMovementsPerform(
@@ -688,12 +676,15 @@ private fun DrawGameBoard(
             if (announceVictory) {
                 animateVictoryMsgPerform(
                     drawScope, animateVictoryMessage,
-                    textMeasurer, victoryMsgColor
+                    textMeasurer, displayMsgColor
                 )
             }
+
+            if (initializing) { displayLoadingMessage(drawScope, textMeasurer, displayMsgColor) }
         }
     }
 }
+
 
 /**
  * Draw Grid.
@@ -775,7 +766,7 @@ fun GameAnimateShadowBallMovementSetup(
                 )
                 animateCtl.stop()
                 animateCtl.snapTo(0f)
-                GameViewModel.setModeUpdatedGameBoard()
+                gGameViewModel.setModeUpdatedGameBoard()
             }  // launch
 
             launch (Dispatchers.Main) {

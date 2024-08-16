@@ -76,6 +76,7 @@ import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
+import com.darblee.flingaid.gSolverViewModel
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUIState
 import com.darblee.flingaid.ui.SolverViewModel
@@ -87,9 +88,9 @@ import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
 import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
 import com.darblee.flingaid.utilities.animateVictoryMsgPerform
+import com.darblee.flingaid.utilities.displayLoadingMessage
 import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.generateExplosionParticles
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.Locale
 import kotlin.math.abs
@@ -105,10 +106,12 @@ import kotlin.math.abs
 @Composable
 fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController) {
 
-    LoadSolverFileOnlyOnce() // TODO: Load the file asynchronous
-
     var announceVictory = false
     var readyToFindSolution = false
+    var initializing = false
+
+    val gameBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
+    gSolverViewModel = SolverViewModel.getInstance(gameBoardFile)
 
     var showNoWinnableMoveDialogBox by remember { mutableStateOf(false) }
 
@@ -117,9 +120,14 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var moveBallRec: SolverUIState.SolverMode.MoveBall? = null
     var readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove? = null
 
-    val solverUIState by SolverViewModel.uiState.collectAsStateWithLifecycle()
+    val solverUIState by gSolverViewModel.uiState.collectAsStateWithLifecycle()
 
     when (solverUIState.mode) {
+        SolverUIState.SolverMode.Initialization -> {
+            Log.i("Solver Recompose:", "${solverUIState.mode} : Initialization")
+            initializing = true
+        }
+
         SolverUIState.SolverMode.Thinking -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Show Thinking Progress")
 
@@ -175,7 +183,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             onDismissRequest = { showNoWinnableMoveDialogBox = false },
             onConfirmation = { showNoWinnableMoveDialogBox = false }
         )
-        SolverViewModel.setModeToNoMoveAvailable()
+        gSolverViewModel.setModeToNoMoveAvailable()
     }
 
     Column(
@@ -195,36 +203,9 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             announceVictory = announceVictory,
             moveBallInfo = moveBallRec,
             currentlyThinking = (curThinkingLvl != null),
-            readyToMoveRec = readyToMoveRec
+            readyToMoveRec = readyToMoveRec,
+            initializing
         )
-    }
-}
-
-/**
- * Populate the solver board by loading content from the solver game file
- */
-@Composable
-private fun LoadSolverFileOnlyOnce() {
-    /**
-     * Need to ensure we only load the file once when we start the the solver game screen.
-     * If we load the file everytime we go down this path during recompose, it will trigger more
-     * recompose. This will cause unnecessary performance overload.
-     *
-     * __Developer's Note:__  Use [rememberSaveable] instead of [remember] because we want to
-     * preserve this even after config change (e.g. screen rotation)
-     */
-    var needToLoadSolverFile by rememberSaveable { mutableStateOf(true) }
-
-    // Load the game file only once. This is done primarily for performance reason.
-    // Loading game file will trigger non-stop recomposition.
-    // Also need to minimize the need to do expensive time consuming file i/o operation.
-    val solverBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
-    if (needToLoadSolverFile) {
-        runBlocking {
-            SolverViewModel.loadGameFile(solverBoardFile)
-            Log.i(Global.DEBUG_PREFIX, "Loading from solver file")
-            needToLoadSolverFile = false
-        }
     }
 }
 
@@ -247,7 +228,9 @@ private fun HandleBackPressKeyForSolverScreen(
     if (backPressed) {
         backPressed = false
 
-        if (SolverViewModel.cleanup())  navController.popBackStack()
+        if (gSolverViewModel.canExitSolverScreen()) {
+            navController.popBackStack()
+        }
     }
 }
 
@@ -363,14 +346,14 @@ private fun SolverActionButtons(
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
                 if (readyToMove) {
 
-                    SolverViewModel.setModeToShowBallMovement(
+                    gSolverViewModel.setModeToShowBallMovement(
                         readyToMoveRec!!.winningDirectionPreview,
                         readyToMoveRec.winingMovingChainPreview
                     )
                 }
 
                 if (readyToFindSolution) {
-                    SolverViewModel.findWinningMove()
+                    gSolverViewModel.findWinningMove()
                 }
             }, // OnClick
             shape = RoundedCornerShape(5.dp),
@@ -401,10 +384,10 @@ private fun SolverActionButtons(
             onClick = {
                 view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
-                if (currentlyThinking) SolverViewModel.stopThinking()
+                if (currentlyThinking) gSolverViewModel.stopThinking()
 
                 // Reset the board game and set it back to idle state
-                SolverViewModel.reset()
+                gSolverViewModel.reset()
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -445,7 +428,8 @@ private fun DrawSolverBoard(
     announceVictory: Boolean,
     moveBallInfo: SolverUIState.SolverMode.MoveBall?,
     currentlyThinking: Boolean,
-    readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?
+    readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?,
+    initializing: Boolean
 ) {
 
     val showBallMovementAnimation = (moveBallInfo != null)
@@ -453,7 +437,7 @@ private fun DrawSolverBoard(
 
     val context = LocalContext.current
 
-    val victoryMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
+    val displayMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
     /**
      * Create textMeasurer instance, which is responsible for measuring a text in its entirety so
@@ -477,7 +461,7 @@ private fun DrawSolverBoard(
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            { SolverViewModel.setModeToNoMoveAvailable() },
+            { gSolverViewModel.setModeToNoMoveAvailable() },
             animateCtl = animateVictoryMessage,
         )
     } else {
@@ -502,7 +486,7 @@ private fun DrawSolverBoard(
          * The following lambda functions are used in [AnimateBallMovementsSetup] routine
          */
         val solverMoveBallTask =
-            { pos: Pos, direction: Direction -> SolverViewModel.moveBallToWin(pos, direction) }
+            { pos: Pos, direction: Direction -> gSolverViewModel.moveBallToWin(pos, direction) }
 
         AnimateBallMovementsSetup(
             movingChain = moveBallInfo!!.winingMovingChainMoveBall,
@@ -556,9 +540,9 @@ private fun DrawSolverBoard(
 
                             view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
 
-                            if (currentlyThinking) SolverViewModel.stopThinking()
+                            if (currentlyThinking) gSolverViewModel.stopThinking()
 
-                            SolverViewModel.toggleBallPosition(Pos(row, col))
+                            gSolverViewModel.toggleBallPosition(Pos(row, col))
                             view.playSoundEffect(SoundEffectConstants.CLICK)
 
                         }, // onTap
@@ -584,7 +568,7 @@ private fun DrawSolverBoard(
                             if ((abs(dragXOffset) > minSwipeOffset) ||
                                 (abs(dragYOffset) > minSwipeOffset)
                             ) {
-                                if (SolverViewModel.ballCount() > 1) {
+                                if (gSolverViewModel.ballCount() > 1) {
                                     gameToast(context, "Use \"Find next\" button to move the ball")
                                 } else {
                                     gameToast(context, "No need to move the last ball")
@@ -616,7 +600,7 @@ private fun DrawSolverBoard(
                 // The animation routine already show the ball in its starting position. We need
                 // to erase it from normal draw ball
                 val ballsToErase = moveBallInfo!!.winingMovingChainMoveBall
-                SolverViewModel.drawSolverBallsOnGrid(
+                gSolverViewModel.drawSolverBallsOnGrid(
                     drawScope,
                     gridSize,
                     displayBallImage,
@@ -625,13 +609,13 @@ private fun DrawSolverBoard(
             } else {
                 // No need to animate ball movement, but now need to check if we need to show
                 // preview of next winning ball movement
-                SolverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage)
+                gSolverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage)
 
                 if (showPreviewMovementAnimation) {
 
                     if (readyToMoveRec!!.winingMovingChainPreview.isNotEmpty()) {
 
-                        val moveCount = SolverViewModel.getWinningMoveCount(
+                        val moveCount = gSolverViewModel.getWinningMoveCount(
                             pos = readyToMoveRec.winingMovingChainPreview[0].pos,
                             direction = readyToMoveRec.winningDirectionPreview,
                         )
@@ -665,9 +649,12 @@ private fun DrawSolverBoard(
             if (announceVictory) {
                 animateVictoryMsgPerform(
                     drawScope, animateVictoryMessage,
-                    textMeasurer, victoryMsgColor
+                    textMeasurer, displayMsgColor
                 )
             }
+
+            if (initializing) { displayLoadingMessage(drawScope, textMeasurer, displayMsgColor) }
+
         } // Canvas
     } // Box
 }

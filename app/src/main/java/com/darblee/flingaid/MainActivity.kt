@@ -3,7 +3,6 @@ package com.darblee.flingaid
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.ActivityInfo
-import android.content.res.Configuration
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -91,8 +90,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.darblee.flingaid.ui.GameViewModel
-import com.darblee.flingaid.ui.SolverViewModel
 import com.darblee.flingaid.ui.theme.SetColorTheme
 import com.darblee.flingaid.ui.theme.ColorThemeOption
 import kotlinx.coroutines.CoroutineScope
@@ -167,21 +164,6 @@ class MainActivity : ComponentActivity() {
                     )  // MainViewImplementation
                 }  // Surface
             }  // SetColorTheme()
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        // Jetpack compose does not change theme for status bar
-        when (this.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)) {
-            Configuration.UI_MODE_NIGHT_NO -> {
-                window.statusBarColor = resources.getColor(R.color.white, null)
-            }
-
-            else -> {
-                window.statusBarColor = resources.getColor(R.color.black, null)
-            }
         }
     }
 
@@ -328,9 +310,9 @@ private fun FlingAidTopAppBar(
                     {
                         Log.i(
                             Global.DEBUG_PREFIX,
-                            "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}"
+                            "Detect back-press in Solver Screen. Mode is ${gSolverViewModel.uiState.value.mode}"
                         )
-                        if (SolverViewModel.cleanup()) navController.popBackStack()
+                        if (gSolverViewModel.canExitSolverScreen()) navController.popBackStack()
                     }
                     ) {
                         Icon(
@@ -345,9 +327,9 @@ private fun FlingAidTopAppBar(
                     {
                         Log.i(
                             Global.DEBUG_PREFIX,
-                            "Detect back-press in Solver Screen. Mode is ${SolverViewModel.uiState.value.mode}"
+                            "Detect back-press in Game Screen. Mode is ${gGameViewModel.gameUIState.value.mode}"
                         )
-                        if (GameViewModel.canExitGameScreen()) navController.popBackStack()
+                        if (gGameViewModel.canExitGameScreen()) navController.popBackStack()
                     }
                     ) {
                         Icon(

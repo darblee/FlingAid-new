@@ -33,7 +33,7 @@ data class MovingRec(
  * value of [recomposeFlag]
  */
 data class SolverUIState(
-    private var _mode: SolverMode = SolverMode.NoMoveAvailable,
+    private var _mode: SolverMode = SolverMode.Initialization,
     var recomposeFlag: Boolean = false
 ) {
     var mode = _mode
@@ -52,7 +52,9 @@ data class SolverUIState(
      * @property MoveBall Process moving the ball
      */
     sealed class SolverMode {
+        data object Initialization : SolverMode()
         data object NoMoveAvailable : SolverMode()   // Equivalent to game won condition
+
         data object Thinking : SolverMode() {
             var progress: Float = 0.0f
         }

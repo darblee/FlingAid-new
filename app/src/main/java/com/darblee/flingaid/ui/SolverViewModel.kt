@@ -11,6 +11,7 @@ import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.utilities.FlickerBoard
 import com.darblee.flingaid.utilities.Pos
+import com.darblee.flingaid.utilities.SingleArgSingletonHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,8 +31,8 @@ import java.util.concurrent.CyclicBarrier
  * - All fields in UI state [SolverUIState] is stateless. It can be re-created after reading the game board ball
  * positions. The application can survive process death. No need to save state to persistent
  * storage.
- * - There can only be one [SolverViewModel] instance. Hence, use the singleton class (object)
- * - There is only one instance of this object.
+ * - There can only be one [SolverViewModel] instance as it use the companion object
+ *
  * - Here is the overall state machine:
  * [State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
  *
@@ -50,7 +51,8 @@ import java.util.concurrent.CyclicBarrier
  * - [getWinningMoveCount]
  * - [moveBallToWin]
  */
-object SolverViewModel : ViewModel() {
+class SolverViewModel(gGameFile: File) : ViewModel() {
+    companion object : SingleArgSingletonHolder<SolverViewModel, File>(::SolverViewModel)
 
     /**
      * [_totalProcessCount] is the total amount of thinking process involved in the current move.
@@ -108,7 +110,8 @@ object SolverViewModel : ViewModel() {
      * @param file game file
      */
     fun loadGameFile(file: File) {
-        viewModelScope.launch {
+        viewModelScope.launch (Dispatchers.IO){
+            Log.i(Global.DEBUG_PREFIX, "Solver: Loading Game file")
             _solverBallPos.setGameFile(file)
             _solverBallPos.loadBallListFromFile()
 
@@ -150,7 +153,11 @@ object SolverViewModel : ViewModel() {
      * Initialize the SolverViewModel
      */
     init {
-        reset()
+        Log.i(Global.DEBUG_PREFIX, "SolverViewModel initialization")
+
+        gThinkingProgress = 0
+        _solverBallPos.clearGame()
+        loadGameFile(gGameFile)
     }
 
     /**
@@ -160,8 +167,9 @@ object SolverViewModel : ViewModel() {
      * - true Clean-up is done. It is safe to exit the view model
      * - false Unable to clean-up or in a middle of doing something. Do not exit the view model
      */
-    fun cleanup(): Boolean {
+    fun canExitSolverScreen(): Boolean {
         when (_uiSolverState.value.mode) {
+            SolverUIState.SolverMode.Initialization -> { return false }
             SolverUIState.SolverMode.AnnounceNoPossibleSolution -> { return true }
             SolverUIState.SolverMode.AnnounceVictory -> { return false }  // Let it finish announce victory
             SolverUIState.SolverMode.HasWinningMoveWaitingToMove -> { return true }

@@ -10,6 +10,7 @@ import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.utilities.FlickerBoard
+import com.darblee.flingaid.utilities.PairArgsSingletonHolder
 import com.darblee.flingaid.utilities.Pos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,8 +31,7 @@ import kotlin.random.Random
  * - All fields in UI state [GameUIState] is stateless. It can be re-created after reading the game board ball
  * positions. The application can survive process death. No need to save state to persistent
  * storage.
- * - There can only be one [GameViewModel] instance. Hence, use the singleton class (object)
- * - There is only one instance of this object.
+ * - There can only be one [GameViewModel] instance as it use the companion object
  *
  * - Here is the overall state machine:
  * [State Machine](https://github.com/darblee/FlingAid-new/blob/master/README.md)
@@ -49,7 +49,8 @@ import kotlin.random.Random
  * **Game Play Functions**
  * - [generateNewGame]  Generate a new game based on provided level
  */
-object GameViewModel : ViewModel() {
+class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
+    companion object :  PairArgsSingletonHolder<GameViewModel, File, File>(::GameViewModel)
 
     /********************************* BALL MANAGEMENT ********************************************/
 
@@ -88,13 +89,14 @@ object GameViewModel : ViewModel() {
      * @param gameFile File that contain the board ball positions
      * @param historyFile File to contain history list of moves
      */
-    fun loadGameFiles(gameFile: File, historyFile: File) {
+    private fun loadGameFiles(gameFile: File, historyFile: File) {
         viewModelScope.launch(Dispatchers.IO) {
             _gameBallPos.setGameFile(gameFile)
             _gameBallPos.loadBallListFromFile()
 
             _gameBallPos.setHistoryFile(historyFile)
             _gameBallPos.loadHistoryFromFile()
+
             setModeUpdatedGameBoard()
         }
     }
@@ -146,7 +148,9 @@ object GameViewModel : ViewModel() {
      * Initialize the SolverViewModel
      */
     init {
-        reset()
+        _gameBallPos.clearGame()
+        _gameBallPos.clearMoveHistory()
+        loadGameFiles(gGameFile, gHistFile)
     }
 
     /**
@@ -158,6 +162,7 @@ object GameViewModel : ViewModel() {
      */
     fun canExitGameScreen(): Boolean {
         when (gameUIState.value.mode) {
+            GameUIState.GameMode.Initialization -> return false
             GameUIState.GameMode.WonGame -> return false
             GameUIState.GameMode.UpdatedGameBoard -> return true
             GameUIState.GameMode.UpdateGameBoardWithNoSolution -> return true
@@ -170,18 +175,6 @@ object GameViewModel : ViewModel() {
                 return true
             }
         }
-    }
-
-    /**
-     * Reset the entire solver game
-     * - Clear the board
-     * - Remove any saved game files
-     */
-    private fun reset() {
-        _gameBallPos.clearGame()
-        _gameBallPos.clearMoveHistory()
-
-        setModeUpdatedGameBoard()
     }
 
     /**

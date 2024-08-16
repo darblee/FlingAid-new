@@ -1065,7 +1065,45 @@ fun NoWinnableMoveDialog(
             }
         }
     }
+}
 
+/**
+ * Display "Loading data..." message on the board grid
+ *
+ * It is very unlikely user will see this display as app will load the data very quickly
+ *
+ *  @param drawScope Canvas to draw the text on
+ *  @param textMeasurer Responsible for measuring a text in its entirety so that it can be drawn
+ *  on the canvas (drawScope).
+ *  @param msgColor Color of the message. Color will differ depending on the current theme
+ */
+fun displayLoadingMessage(
+    drawScope: DrawScope,
+    textMeasurer: TextMeasurer,
+    msgColor: Color
+) {
+    with(drawScope) {
+        val canvasWidth = size.width
+        val canvasHeight = size.height
+
+        val text = "Loading data ...."
+        val textStyle = TextStyle(
+            color = msgColor,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp
+        )
+        val textLayoutResult: TextLayoutResult =
+            textMeasurer.measure(text = AnnotatedString(text), style = textStyle)
+        val textSize = textLayoutResult.size
+        drawText(
+            textMeasurer = textMeasurer, text = text,
+            topLeft = Offset(
+                x = (canvasWidth - textSize.width) * 0.5f,  // in center
+                y = (canvasHeight * 0.25f)
+            ),
+            style = textStyle
+        )
+    }
 }
 
 
