@@ -87,6 +87,7 @@ import java.io.FileWriter
 data class Pos(
     val row: Int,
     val col: Int,
+    val direction : Direction = Direction.NO_WINNING_DIRECTION
 )
 
 typealias boardSnapshot = MutableList<Pos>

@@ -13,6 +13,8 @@ import com.darblee.flingaid.utilities.FlickerBoard
 import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.SingleArgSingletonHolder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -109,7 +111,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      *
      * @param file game file
      */
-    fun loadGameFile(file: File) {
+    private fun loadGameFile(file: File) {
         viewModelScope.launch (Dispatchers.IO){
             Log.i(Global.DEBUG_PREFIX, "Solver: Loading Game file")
             _solverBallPos.setGameFile(file)
@@ -306,17 +308,16 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      * First thread to search for solution
      */
     private lateinit var gThinkingThread1: Thread
+    private lateinit var job1: Job
 
     /**
      * Second thread to search for solution. This thread is used when we exceeded number of balls
      * on the board
      */
     private lateinit var gThinkingThread2: Thread
+    private lateinit var job2: Job
 
-    /**
-     * Thread to update the progress of thinking process
-     */
-    private lateinit var gShowProgressThread: Thread
+
 
     private var task1WinningRow = -1
     private var task1WinningCol = -1
@@ -391,11 +392,8 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
                 cyclicBarrier.await()
             }
 
-            gShowProgressThread = Thread {
-                showProcessingActivity()
-            }
+            launch { showProcessingActivity() }
 
-            gShowProgressThread.start()
             gThinkingThread1.start()
 
             if (gMultipleThread) {
@@ -621,7 +619,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      * Update the [uiState] to latest accurate progress level while it is still searching for
      * winnable move.
      */
-    private fun showProcessingActivity() {
+    private suspend fun showProcessingActivity() {
         var currentValue = 0.0F
         _totalProcessCount =
             (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
@@ -649,9 +647,9 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
             // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner
             // loop breakout when it has finished thinking
-            if (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) Thread.sleep(500)
-            if (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) Thread.sleep(500)
-            if (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) Thread.sleep(500)
+            if (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) delay(500)
+            if (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) delay(500)
+            if (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) delay(500)
         }
         Log.i(Global.DEBUG_PREFIX, "Finished thinking")
     }
