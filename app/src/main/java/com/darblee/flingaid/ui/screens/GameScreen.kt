@@ -2,7 +2,6 @@ package com.darblee.flingaid.ui.screens
 
 import android.graphics.Bitmap
 import android.util.Log
-import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -24,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -31,6 +31,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -86,6 +87,7 @@ import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
 import com.darblee.flingaid.utilities.animateVictoryMsgPerform
+import com.darblee.flingaid.utilities.click
 import com.darblee.flingaid.utilities.displayLoadingMessage
 import com.darblee.flingaid.utilities.generateExplosionParticles
 import kotlinx.coroutines.CoroutineScope
@@ -328,7 +330,7 @@ private fun GameActionButtons(
                 value = gameLevel,
                 onValueChange =
                 {
-                    view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                    view.click()
                     gameLevel = it
                 },
                 valueRange = 1f..Global.MAX_GAME_LEVEL.toFloat(),
@@ -355,7 +357,7 @@ private fun GameActionButtons(
         Button(
             onClick =
             {
-                view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                view.click()
                 resetWinnableMove.invoke()
                 gGameViewModel.generateNewGame()
             },
@@ -374,7 +376,7 @@ private fun GameActionButtons(
 
         Button(
             onClick = {
-                view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                view.click()
                 gGameViewModel.undo()
                 resetWinnableMove.invoke()
             },
@@ -390,8 +392,9 @@ private fun GameActionButtons(
             enabled = gGameViewModel.canUndo()
         ) {
             Icon(
-                imageVector = Icons.Filled.Refresh, contentDescription = "Undo",
-                modifier = Modifier.size(iconWidth)
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Undo",
+                modifier = Modifier.size(SwitchDefaults.IconSize)
             )
             Text("Undo", style = MaterialTheme.typography.titleSmall)
         }
@@ -399,7 +402,7 @@ private fun GameActionButtons(
         Button(
             onClick =
             {
-                view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                view.click()
                 gGameViewModel.getHint()
             },
             shape = RoundedCornerShape(5.dp),

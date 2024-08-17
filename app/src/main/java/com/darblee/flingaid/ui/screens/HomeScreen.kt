@@ -54,6 +54,7 @@ import androidx.navigation.NavHostController
 import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.R
 import com.darblee.flingaid.Screen
+import com.darblee.flingaid.utilities.click
 import kotlin.system.exitProcess
 
 /**
@@ -97,7 +98,7 @@ fun HomeScreen(
                 .align(alignment = Alignment.CenterHorizontally)
                 .defaultMinSize(minWidth = 200.dp)
                 .clickable {
-                    view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                    view.click()
                     navController.navigate(Screen.Game)
                 },
             elevation = CardDefaults.cardElevation(10.dp),
@@ -126,7 +127,7 @@ fun HomeScreen(
                 .defaultMinSize(minWidth = 200.dp)
                 .align(alignment = Alignment.CenterHorizontally)
                 .clickable {
-                    view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                    view.click()
                     navController.navigate(Screen.Solver)
                 },
             elevation = CardDefaults.cardElevation(10.dp),

@@ -20,4 +20,5 @@
     <string name="start_game">Start game</string>
     <string name="if_solution_is_available_you_can_get_a_hint">If solution is available, you can get a hint</string>
     <string name="instruction">Instruction:</string>
+    <string name="music">Music</string>
 </resources>

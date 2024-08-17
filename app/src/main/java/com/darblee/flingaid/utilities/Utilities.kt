@@ -2,6 +2,8 @@ package com.darblee.flingaid.utilities
 
 import android.content.Context
 import android.content.res.Resources
+import android.view.HapticFeedbackConstants
+import android.view.View
 import android.widget.Toast
 import androidx.compose.ui.unit.Dp
 import kotlin.random.Random
@@ -112,3 +114,8 @@ open class PairArgsSingletonHolder<out T : Any, in A, in B>(creator: (A, B) -> T
 
     fun getInstance(arg1: A, arg2: B) = getInstanceInternal(Pair(arg1, arg2))
 }
+
+/**
+ * Perform haptic feedback.
+ */
+fun View.click() = run { this.let { this.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)} }

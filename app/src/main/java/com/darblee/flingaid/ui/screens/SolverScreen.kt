@@ -88,6 +88,7 @@ import com.darblee.flingaid.utilities.Pos
 import com.darblee.flingaid.utilities.animateBallMovementsPerform
 import com.darblee.flingaid.utilities.animateShadowBallMovementsPerform
 import com.darblee.flingaid.utilities.animateVictoryMsgPerform
+import com.darblee.flingaid.utilities.click
 import com.darblee.flingaid.utilities.displayLoadingMessage
 import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.generateExplosionParticles
@@ -343,7 +344,7 @@ private fun SolverActionButtons(
     ) {
         Button(
             onClick = {
-                view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                view.click()
                 if (readyToMove) {
 
                     gSolverViewModel.setModeToShowBallMovement(
@@ -382,8 +383,7 @@ private fun SolverActionButtons(
 
         Button(
             onClick = {
-                view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
-
+                view.click()
                 if (currentlyThinking) gSolverViewModel.stopThinking()
 
                 // Reset the board game and set it back to idle state
@@ -538,7 +538,7 @@ private fun DrawSolverBoard(
                             val col = (tapOffset.x / gridSize).toInt()
                             if ((row >= Global.MAX_ROW_SIZE) || (col >= Global.MAX_COL_SIZE)) return@detectTapGestures
 
-                            view.let { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+                            view.click()
 
                             if (currentlyThinking) gSolverViewModel.stopThinking()
 

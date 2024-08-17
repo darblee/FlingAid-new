@@ -2,8 +2,10 @@ package com.darblee.flingaid
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context.AUDIO_SERVICE
 import android.content.pm.ActivityInfo
 import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
@@ -36,6 +38,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
@@ -76,6 +80,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -92,6 +97,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.darblee.flingaid.ui.theme.SetColorTheme
 import com.darblee.flingaid.ui.theme.ColorThemeOption
+import com.darblee.flingaid.utilities.click
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -467,7 +473,10 @@ private fun AboutDialogPopup(
                 Modifier.fillMaxWidth(),
             ) {
                 Row {
-                    Column(Modifier.weight(1f).align(Alignment.CenterVertically)) {
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .align(Alignment.CenterVertically)) {
                         Image(
                             painter = painterResource(id = R.drawable.ball),
                             contentDescription = "Game",
@@ -645,22 +654,31 @@ private fun MusicSetting(
     onSoundSettingUpdated: (soundOn: Boolean) -> Unit,
     currentSoundSetting: Boolean
 ) {
+    val view = LocalView.current
+
+    // Declare an audio manager
+    val audioManager = LocalContext.current.getSystemService(AUDIO_SERVICE) as AudioManager
+
+    var musicSwitch by remember {
+        mutableStateOf(currentSoundSetting)
+    }
+
     Row(
-        modifier = Modifier.wrapContentWidth(),
+        modifier = Modifier.
+            wrapContentWidth()
+            .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        Text("Music")
+        Text(stringResource(R.string.music),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(10.dp))
 
         // add weight modifier to the row composable to ensure
         // that the composable is measured after the other
         // composable is measured. This create space between
         // first item (left side) and second item (right side)
         Spacer(modifier = Modifier.weight(1f))
-
-        var musicSwitch by remember {
-            mutableStateOf(currentSoundSetting)
-        }
 
         val icon: (@Composable () -> Unit)? = if (gSoundOn) {
             {
@@ -676,11 +694,46 @@ private fun MusicSetting(
             modifier = Modifier.padding(8.dp),
             checked = musicSwitch,
             onCheckedChange = { isCheckStatus ->
+                view.click()
                 musicSwitch = isCheckStatus
                 onSoundSettingUpdated(isCheckStatus)
             },
             thumbContent = icon
         )
+    }
+    Row(
+        modifier = Modifier
+            .wrapContentWidth()
+            .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp)),
+        verticalAlignment = Alignment.CenterVertically,
+        )
+    {
+        val color = if (musicSwitch) MaterialTheme.typography.bodyMedium.color else Color.Gray
+        Text("Volume",
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleMedium,
+            color = color,
+            modifier = Modifier.padding(10.dp))
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(
+            onClick = {
+                view.click()
+                audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_PLAY_SOUND) },
+            enabled = musicSwitch,
+            modifier = Modifier.padding(5.dp)
+            )
+        {
+            Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Increase volume")
+        }
+        IconButton(
+            onClick = {
+                view.click()
+                audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_PLAY_SOUND) },
+            enabled = musicSwitch
+        )
+        {
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Decrease volume")
+        }
     }
 }
 
@@ -689,6 +742,8 @@ private fun ColorThemeSetting(
     onColorThemeUpdated: (colorThemeType: ColorThemeOption) -> Unit,
     currentTheme: ColorThemeOption
 ) {
+    val view = LocalView.current
+
     Row(
         modifier = Modifier
             .border(1.dp, colorScheme.outline, shape = RoundedCornerShape(5.dp))
@@ -707,7 +762,9 @@ private fun ColorThemeSetting(
             mutableStateOf(currentTheme.toString())
         }
         Text(
-            text = "Color Theme", modifier = Modifier
+            text = "Color Theme",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier
                 .padding(5.dp)
                 .wrapContentWidth()
         )
@@ -730,6 +787,7 @@ private fun ColorThemeSetting(
                         .selectable(
                             selected = (curColorString == selectedOption),
                             onClick = {
+                                view.click()
                                 onOptionSelected(curColorString)  // This make this button get selected
                                 val newSelectedTheme =
                                     when (curColorString) {
@@ -751,7 +809,7 @@ private fun ColorThemeSetting(
                     )
                     Text(
                         text = curColorString,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier
                             .padding(start = 8.dp)
                             .wrapContentWidth()
@@ -775,5 +833,9 @@ private fun setGameMusic(on: Boolean) {
 @Composable
 @Preview(showBackground = true)
 private fun ScreenPreview() {
+    SettingPopup(
+        onDismissRequest = { /* TODO */ }, { }, {},
+        ColorThemeOption.Dark, {}, "David", {}, true
+        )
 
 }
