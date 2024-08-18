@@ -71,7 +71,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
     /**
      * The direction of the winning move obtained from the tasks calculation
      */
-    private var _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
+    private var _winningDirectionFromTasks = Direction.NO_WINNING_DIRECTION
 
     /********************************* BALL MANAGEMENT ********************************************/
 
@@ -295,6 +295,65 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
         }
     }
 
+    /**
+     * Update [SolverUIState] to "Thinking" mode.
+     */
+    private fun setModeToThinking(thinkingRec: SolverUIState.SolverMode.Thinking)
+    {
+        _uiSolverState.update { currentStatus ->
+            currentStatus.copy(
+                _mode = thinkingRec,
+
+                // _recomposeFlag is used to trigger recomposition manually as changing the progress
+                // did not trigger a composition
+                recomposeFlag = !_uiSolverState.value.recomposeFlag
+            )
+        }
+
+    }
+
+    /**
+     * Update [SolverUIState] to "Thinking" mode. This is the initial state
+     */
+    private fun setModeToThinkingInitialState()
+    {
+        val thinkingRec: SolverUIState.SolverMode.Thinking = SolverUIState.SolverMode.Thinking
+        thinkingRec.progress = 0.0f
+        thinkingRec.rejectedBalls = listOf()
+
+        setModeToThinking(thinkingRec)
+    }
+
+    /**
+     *  Update "Thinking" mode with updated progress
+     */
+    private fun setModeThinkingWithUpdatedProgressLevel(newProgressLvl : Float)
+    {
+        val thinkingRec: SolverUIState.SolverMode.Thinking =
+            SolverUIState.SolverMode.Thinking
+        thinkingRec.progress = newProgressLvl
+
+        setModeToThinking(thinkingRec)
+    }
+
+    /**
+     * Update "Thinking" mode with one more  reject ball
+     */
+    private fun setModeThinkingWithRejectBallAddition(row: Int, col: Int)
+    {
+        val thinkingRec: SolverUIState.SolverMode.Thinking =
+            SolverUIState.SolverMode.Thinking
+
+        val newRejects = thinkingRec.rejectedBalls.toMutableList()
+
+        newRejects.add(Pos(row, col))
+
+        thinkingRec.rejectedBalls = newRejects
+
+        setModeToThinking(thinkingRec)
+    }
+
+
     /****************************** Thinking routines *********************************************/
 
     /**
@@ -317,33 +376,26 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
     private lateinit var gThinkingThread2: Thread
     private lateinit var job2: Job
 
-
-
     private var task1WinningRow = -1
     private var task1WinningCol = -1
     private var task2WinningRow = -1
     private var task2WinningCol = -1
 
     /**
-     * Find the winning move.*
+     * Find the winning move.
      */
     fun findWinningMove() {
         gThinkingProgress = 0
-        val thinkingRec: SolverUIState.SolverMode.Thinking = SolverUIState.SolverMode.Thinking
-        thinkingRec.progress = 0.0f
 
-        _uiSolverState.update { currentStatus ->
-            currentStatus.copy(
-                _mode = thinkingRec,
-            )
-        }
+        setModeToThinkingInitialState()
+
         viewModelScope.launch (Dispatchers.Default) {
 
             // For explanation on the formula, see the description for _totalProcessCount
             _totalProcessCount =
                 (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
 
-            _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
+            _winningDirectionFromTasks = Direction.NO_WINNING_DIRECTION
             val gTotalBallCount = ballCount()
 
             gTask1WinningDirection = Direction.INCOMPLETE
@@ -417,7 +469,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             val winningSolverGridPos = Pos(task1WinningRow, task1WinningCol)
             val winningDir = gTask1WinningDirection
 
-            _winningDirection_from_tasks = gTask1WinningDirection
+            _winningDirectionFromTasks = gTask1WinningDirection
 
             val movingChain = _solverBallPos.buildMovingChain(
                 winningSolverGridPos.row,
@@ -441,7 +493,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
                 val winningSolverGridPos = Pos(task2WinningRow, task2WinningCol)
                 val winningDir = gTask2WinningDirection
 
-                _winningDirection_from_tasks = gTask2WinningDirection
+                _winningDirectionFromTasks = gTask2WinningDirection
 
                 val movingChain = _solverBallPos.buildMovingChain(
                     winningSolverGridPos.row,
@@ -454,7 +506,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             } else {
 
                 // Neither Task #1 nor Task #2 has winning result
-                _winningDirection_from_tasks = Direction.NO_WINNING_DIRECTION
+                _winningDirectionFromTasks = Direction.NO_WINNING_DIRECTION
 
                 _uiSolverState.update { currentState ->
                     currentState.copy(
@@ -485,7 +537,8 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             game1.populateGrid(_solverBallPos.ballList)
 
             val (direction, finalRow, finalCol) = game1.foundWinningMove(
-                totalBallCnt, 1, 1
+                totalBallCnt, 1, 1,
+                onBallReject =  { row, col -> setModeThinkingWithRejectBallAddition(row, col) }
             )
 
             Log.i(
@@ -529,40 +582,6 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
     }
 
     /**
-     * Quickly stop thinking progress threads.
-     *
-     * Make sure all threads has completed before this function exits.
-     */
-    fun stopThinking() {
-        if (!gMultipleThread) return
-
-        if (gThinkingThread1.isAlive) {
-            Log.i(
-                Global.DEBUG_PREFIX,
-                "Thread 1 is alive, make it end quickly by setting direction to \"No Winning Direction\""
-            )
-            gTask1WinningDirection = Direction.NO_WINNING_DIRECTION
-        }
-
-        if (gThinkingThread2.isAlive) {
-            Log.i(
-                Global.DEBUG_PREFIX,
-                "Thread 2 is alive, make it end quickly by setting direction to \"No Winning Direction\""
-            )
-            gTask2WinningDirection = Direction.NO_WINNING_DIRECTION
-        }
-
-        while (gThinkingThread1.isAlive || gThinkingThread2.isAlive) {
-            Thread.sleep(250)
-        }
-        gThinkingProgress = 0
-        task1WinningRow = -1
-        task1WinningCol = -1
-        task2WinningRow = -1
-        task2WinningCol = -1
-    }
-
-    /**
      * Process the 2nd task.
      *
      * It is tracked using the hardcoded task #2 meta data
@@ -576,7 +595,8 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             game2.populateGrid(_solverBallPos.ballList)
             gTask2WinningDirection = Direction.INCOMPLETE
             val (direction, finalRow, finalCol) = game2.foundWinningMove(
-                totalBallCnt, 1, -1
+                totalBallCnt, 1, -1,
+                onBallReject =  { row, col -> setModeThinkingWithRejectBallAddition(row, col) }
             )
 
             Log.i(
@@ -616,13 +636,47 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
     }
 
     /**
+     * Quickly stop thinking progress threads.
+     *
+     * Make sure all threads has completed before this function exits.
+     */
+    fun stopThinking() {
+        if (!gMultipleThread) return
+
+        if (gThinkingThread1.isAlive) {
+            Log.i(
+                Global.DEBUG_PREFIX,
+                "Thread 1 is alive, make it end quickly by setting direction to \"No Winning Direction\""
+            )
+            gTask1WinningDirection = Direction.NO_WINNING_DIRECTION
+        }
+
+        if (gThinkingThread2.isAlive) {
+            Log.i(
+                Global.DEBUG_PREFIX,
+                "Thread 2 is alive, make it end quickly by setting direction to \"No Winning Direction\""
+            )
+            gTask2WinningDirection = Direction.NO_WINNING_DIRECTION
+        }
+
+        while (gThinkingThread1.isAlive || gThinkingThread2.isAlive) {
+            Thread.sleep(250)
+        }
+        gThinkingProgress = 0
+        task1WinningRow = -1
+        task1WinningCol = -1
+        task2WinningRow = -1
+        task2WinningCol = -1
+    }
+
+    /**
      * Update the [uiState] to latest accurate progress level while it is still searching for
      * winnable move.
      */
     private suspend fun showProcessingActivity() {
-        var currentValue = 0.0F
+        val currentValue = 0.0F
         _totalProcessCount =
-            (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
+           ((_totalBallInCurrentMove * 4)* ((_totalBallInCurrentMove-1) * 4)).toFloat()
 
         while (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) {
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
@@ -630,19 +684,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
                 (gThinkingProgress.toFloat() / (_totalProcessCount) * 100.0).toFloat()
 
             if (newValue > currentValue) {
-                currentValue = newValue
-                val thinkingRec: SolverUIState.SolverMode.Thinking =
-                    SolverUIState.SolverMode.Thinking
-                thinkingRec.progress = currentValue
-                _uiSolverState.update { currentState ->
-
-                    // _recomposeFlag is used to trigger recomposition manual as changing the progress
-                    // did not trigger a composition
-                    currentState.copy(
-                        _mode = thinkingRec,
-                        recomposeFlag = !_uiSolverState.value.recomposeFlag
-                    )
-                }
+                setModeThinkingWithUpdatedProgressLevel(newValue)
             }
 
             // Wait 1.5 seconds. The reason why we split into three 500ms calls is to allow sooner

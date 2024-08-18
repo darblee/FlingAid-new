@@ -2,7 +2,6 @@ package com.darblee.flingaid.ui.screens
 
 import android.graphics.Bitmap
 import android.util.Log
-import android.view.HapticFeedbackConstants
 import android.view.SoundEffectConstants
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
@@ -23,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -45,12 +45,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.vector.VectorPainter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -120,6 +124,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var curThinkingLvl: Float? = null
     var moveBallRec: SolverUIState.SolverMode.MoveBall? = null
     var readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove? = null
+    var rejectedBalls: List<Pos> = emptyList()
 
     val solverUIState by gSolverViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -131,21 +136,19 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
         SolverUIState.SolverMode.Thinking -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Show Thinking Progress")
-
             val thinkingRec: SolverUIState.SolverMode.Thinking =
                 solverUIState.mode.let { SolverUIState.SolverMode.Thinking }
             curThinkingLvl = thinkingRec.progress
+            rejectedBalls = thinkingRec.rejectedBalls
         }
 
         SolverUIState.SolverMode.ReadyToFindSolution -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Enable \"Find Solution\" button")
-
             readyToFindSolution = true
         }
 
         SolverUIState.SolverMode.HasWinningMoveWaitingToMove -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Enable \"Move Ball\" button")
-
             readyToMoveRec =
                 solverUIState.mode.let { SolverUIState.SolverMode.HasWinningMoveWaitingToMove }
         }
@@ -153,7 +156,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         SolverUIState.SolverMode.AnnounceNoPossibleSolution -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Send message no winnable move")
             showNoWinnableMoveDialogBox = true
-
         }
 
         SolverUIState.SolverMode.AnnounceVictory -> {
@@ -171,7 +173,6 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 
         SolverUIState.SolverMode.MoveBall -> {
             Log.i("Solver Recompose:", "${solverUIState.mode} : Move the ball")
-
             moveBallRec = solverUIState.mode.let { SolverUIState.SolverMode.MoveBall }
         }
     }
@@ -205,7 +206,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
             moveBallInfo = moveBallRec,
             currentlyThinking = (curThinkingLvl != null),
             readyToMoveRec = readyToMoveRec,
-            initializing
+            initializing,
+            rejectedBalls
         )
     }
 }
@@ -429,7 +431,8 @@ private fun DrawSolverBoard(
     moveBallInfo: SolverUIState.SolverMode.MoveBall?,
     currentlyThinking: Boolean,
     readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?,
-    initializing: Boolean
+    initializing: Boolean,
+    rejectedBalls: List<Pos>
 ) {
 
     val showBallMovementAnimation = (moveBallInfo != null)
@@ -525,6 +528,8 @@ private fun DrawSolverBoard(
         var dragCol by remember { mutableIntStateOf(-1) }
 
         val minSwipeOffset = gridSize
+
+        val rejectCrossImage = rememberVectorPainter(image = Icons.Filled.Clear)
 
         Canvas(
             modifier = modifier
@@ -633,6 +638,8 @@ private fun DrawSolverBoard(
                 }
             }
 
+            markRejectedBalls(rejectedBalls, drawScope, gridSize, rejectCrossImage)
+
             if (showBallMovementAnimation) {
                 animateBallMovementsPerform(
                     drawScope = drawScope,
@@ -657,6 +664,38 @@ private fun DrawSolverBoard(
 
         } // Canvas
     } // Box
+}
+
+/**
+ * Mark all the rejected balls on the grid
+ *
+ * @param rejectedBalls List of positions of each rejected ball
+ * @param drawScope Draws cope of the canvas
+ * @param gridSize Size of grid
+ * @param rejectCrossImage Vector image of the cross mark picture
+ */
+private fun markRejectedBalls(
+    rejectedBalls: List<Pos>,
+    drawScope: DrawScope,
+    gridSize: Float,
+    rejectCrossImage: VectorPainter,
+)
+{
+    if (rejectedBalls.isEmpty()) return
+
+    val offsetAdjustment = (gridSize / 4)
+
+    rejectedBalls.forEach { curBall ->
+        with (drawScope) {
+            val x = (curBall.col * gridSize) + offsetAdjustment
+            val y = (curBall.row * gridSize) + offsetAdjustment
+            translate (left = x, top = y) {
+                with(rejectCrossImage) {
+                    draw(size = Size(gridSize / 2, gridSize / 2))
+                }
+            }
+        }
+    }
 }
 
 /**

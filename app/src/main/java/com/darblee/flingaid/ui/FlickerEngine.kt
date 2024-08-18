@@ -96,7 +96,8 @@ internal class FlickerEngine {
     fun foundWinningMove(
         totalBallCnt: Int,
         curSearchLevel: Int,
-        thinkingDirectionOffset: Int
+        thinkingDirectionOffset: Int,
+        onBallReject: (Int, Int) -> Unit = { _, _ -> }
     ): Triple<Direction, Int, Int> {
         var direction = Direction.NO_WINNING_DIRECTION
         var winningRow = -1
@@ -121,7 +122,7 @@ internal class FlickerEngine {
             exceededCol = -1
         }
         var curRow = startRow
-        var currentCol: Int
+        var curCol: Int
 
         run repeatBlock@{
             while (curRow != exceededRow) {
@@ -133,21 +134,13 @@ internal class FlickerEngine {
                     )
                     direction = Direction.INCOMPLETE  // We should quit the current thread
                     return@repeatBlock
-
                 }
 
-                currentCol = startColumn
+                curCol = startColumn
 
-                var curCol: Int
-                while (currentCol != exceededCol) {
-
-                    curCol = currentCol
+                while (curCol != exceededCol) {
 
                     if (flickerGrid[curRow][curCol]) {
-                        if (curSearchLevel == 1) Log.i(
-                            "${Global.DEBUG_PREFIX}: Top level",
-                            "Processing row=$curRow, col = $curCol"
-                        )
 
                         if (winnableByMovingUp(totalBallCnt, curSearchLevel, curRow, curCol)) {
                             direction = Direction.UP
@@ -230,7 +223,11 @@ internal class FlickerEngine {
                         }
                     }
 
-                    currentCol += thinkingDirectionOffset
+                    if ((curSearchLevel == 1) && (flickerGrid[curRow][curCol])) {
+                        onBallReject.invoke(curRow, curCol)
+                    }
+
+                    curCol += thinkingDirectionOffset
                 } // Completed processing current Col
 
                 curRow += thinkingDirectionOffset
@@ -240,8 +237,7 @@ internal class FlickerEngine {
         if (direction != Direction.NO_WINNING_DIRECTION)
             Log.d(
                 "${Global.DEBUG_PREFIX}:",
-                "Returning winning (or incomplete) result: Level #$curSearchLevel, Direction is $direction"
-            )
+                "Returning winning (or incomplete) result: Level #$curSearchLevel, Direction is $direction")
 
         return Triple(direction, winningRow, winningCol)
     }

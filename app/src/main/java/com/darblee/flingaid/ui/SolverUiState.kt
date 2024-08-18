@@ -57,19 +57,20 @@ data class SolverUIState(
 
         data object Thinking : SolverMode() {
             var progress: Float = 0.0f
+            var rejectedBalls: List<Pos> = emptyList()
         }
 
         data object ReadyToFindSolution : SolverMode()
         data object HasWinningMoveWaitingToMove : SolverMode() {
             var winningDirectionPreview: Direction = Direction.NO_WINNING_DIRECTION
-            var winingMovingChainPreview: BallMoveSet = listOf()
+            var winingMovingChainPreview: BallMoveSet = emptyList()
         }
 
         data object AnnounceNoPossibleSolution : SolverMode()
         data object AnnounceVictory : SolverMode()
         data object MoveBall : SolverMode() {
             var winningDirMoveBall: Direction = Direction.NO_WINNING_DIRECTION
-            var winingMovingChainMoveBall: BallMoveSet = listOf()
+            var winingMovingChainMoveBall: BallMoveSet = emptyList()
         }
     }
 }
