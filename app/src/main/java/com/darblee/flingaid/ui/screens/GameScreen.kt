@@ -151,7 +151,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             noWinnableMove = true
         }
 
-        GameUIState.GameMode.NoWinnnableMoveWithDialog -> {
+        GameUIState.GameMode.NoWinnableMoveWithDialog -> {
             noWinnableMove = true
             showNoWinnableMoveDialogBox = true
             Log.i("Game Recompose: ", "${gameUIState.mode} : Send dialog box indicating there is no winnable move")

@@ -304,8 +304,8 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             currentStatus.copy(
                 _mode = thinkingRec,
 
-                // _recomposeFlag is used to trigger recomposition manually as changing the progress
-                // did not trigger a composition
+                // _recomposeFlag is used to trigger recomposition manually as changing the thinkgingRec
+                // field value(s) did not trigger a composition
                 recomposeFlag = !_uiSolverState.value.recomposeFlag
             )
         }

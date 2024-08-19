@@ -224,6 +224,7 @@ internal class FlickerEngine {
                     }
 
                     if ((curSearchLevel == 1) && (flickerGrid[curRow][curCol])) {
+                        Log.i(Global.DEBUG_PREFIX, "gThinkingProgress: $gThinkingProgress")
                         onBallReject.invoke(curRow, curCol)
                     }
 
@@ -264,6 +265,7 @@ internal class FlickerEngine {
         val targetRow = findTargetRowOnMoveUp(srcRow, col)
 
         if (targetRow == -1) {
+            if (curSearchLevel == 1) gThinkingProgress += (4 * (totalBallCnt-1))
             return false
         }
 
@@ -312,6 +314,7 @@ internal class FlickerEngine {
         val targetRow = findTargetRowOnMoveDown(srcRow, col)
 
         if (targetRow == -1) {
+            if (curSearchLevel == 1) gThinkingProgress += (4 * (totalBallCnt-1))
             return false
         }
 
@@ -360,7 +363,7 @@ internal class FlickerEngine {
         val targetCol = findTargetColOnMoveRight(row, srcCol)
 
         if (targetCol == -1) {
-            // Log.d("GM: $curSearchLevel", "$debugIndentation $methodName: Could not find winnable move. No Target Col")
+            if (curSearchLevel == 1) gThinkingProgress += (4 * (totalBallCnt-1))
             return false
         }
 
@@ -409,6 +412,7 @@ internal class FlickerEngine {
         val targetCol = findTargetColOnMoveLeft(row, srcCol)
 
         if (targetCol == -1) {
+            if (curSearchLevel == 1) gThinkingProgress += (4 * (totalBallCnt-1))
             return false
         }
 

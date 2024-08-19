@@ -166,7 +166,7 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
             GameUIState.GameMode.WonGame -> return false
             GameUIState.GameMode.UpdatedGameBoard -> return true
             GameUIState.GameMode.UpdateGameBoardWithNoSolution -> return true
-            GameUIState.GameMode.NoWinnnableMoveWithDialog -> return false
+            GameUIState.GameMode.NoWinnableMoveWithDialog -> return false
             GameUIState.GameMode.NoWinnableMove -> return true
             GameUIState.GameMode.MoveBall -> return true
             GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove -> return false
@@ -208,13 +208,6 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
         }
     }
 
-    enum class MoveResult {
-        Valid,    // This is a valid move
-        InvalidNoBump,   // Not a valid move as move require you to bump the ball
-        InvalidNoBall,   // Not a valid move as there is no ball in the provided position
-        InvalidNoRoom,   // Not a valid move as there is no room to move the ball
-    }
-
     /**
      * Attempt to set up the ball move based on input, which is from user's swipe action.
      * If first check if the upcoming move is valid move or not. It will return the appropriate
@@ -224,21 +217,13 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
      * @param initialCol Column position to move the ball from
      * @param direction Direction of the ball movement
      *
-     * @return
-     * - [MoveResult.Valid] This is a valid move. Set to mode to [GameUIState.GameMode.MoveBall]
-     * - [MoveResult.InvalidNoRoom] This is not a valid move. There is no room to move the ball
-     * - [MoveResult.InvalidNoBall] This is not a valid move. There is no ball in the provided position
-     * - [MoveResult.InvalidNoBump] This is not a valid move as it moves the ball of the edge. It
-     * set the game mode to [GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove]
      */
-    fun setupNextMove(initialRow: Int, initialCol: Int, direction: Direction): MoveResult {
-        if (!(_gameBallPos.ballList.contains(Pos(initialRow, initialCol))))
-            return MoveResult.InvalidNoBall
+    fun setupNextMove(initialRow: Int, initialCol: Int, direction: Direction) {
+        if (!(_gameBallPos.ballList.contains(Pos(initialRow, initialCol)))) return
 
         val movingChain = _gameBallPos.buildMovingChain(initialRow, initialCol, direction)
 
-        if (movingChain.isEmpty())
-            return MoveResult.InvalidNoRoom
+        if (movingChain.isEmpty()) return
 
         // If only one ball is moving, then it did not bump another ball. Hence, this is
         // an invalid move. We need to inform user this is invalid by showing shadow move.
@@ -247,14 +232,14 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
             shadowMoveBallRec.shadowMoveDirection = direction
             shadowMoveBallRec.shadowMovingChain = movingChain
             setMode(shadowMoveBallRec)
-            return MoveResult.InvalidNoBump
+            return
         }
 
         val moveBallRec = GameUIState.GameMode.MoveBall
         moveBallRec.moveDirection = direction
         moveBallRec.movingChain = movingChain
         setMode(moveBallRec)
-        return MoveResult.Valid
+        return
     }
 
     /**
@@ -388,7 +373,7 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
 
             if ((direction == Direction.INCOMPLETE) || (direction == Direction.NO_WINNING_DIRECTION)) {
                 Log.i(Global.DEBUG_PREFIX, "No winnable move found.")
-                setMode(GameUIState.GameMode.NoWinnnableMoveWithDialog)
+                setMode(GameUIState.GameMode.NoWinnableMoveWithDialog)
                 return@launch
             }
 
@@ -422,6 +407,11 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
 
     /********************************  Set mode routines ******************************************/
 
+    /**
+     * Update [_uiGameState] to a specific mode.
+     *
+     * For more details about each mode, see [GameUIState]
+     */
     private fun setMode(mode: GameUIState.GameMode) {
         _uiGameState.update { curState -> curState.copy(_mode = mode) }
     }

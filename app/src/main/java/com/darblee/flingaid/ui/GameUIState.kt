@@ -30,7 +30,7 @@ data class GameUIState(
      * @property IndicateInvalidMoveByShowingShadowMove Processing the ball shadow movement
      * @property ShowHint Find a hint and now need to show the user with animation
      * @property WonGame One ball remaining. User has won the game
-     * @property NoWinnnableMoveWithDialog There is no winning move. It will remain this way until there is a new
+     * @property NoWinnableMoveWithDialog There is no winning move. It will remain this way until there is a new
      * game or when user undo a move
      */
     sealed class GameMode {
@@ -55,7 +55,7 @@ data class GameUIState(
         }
 
         data object WonGame : GameMode()
-        data object NoWinnnableMoveWithDialog : GameMode()
+        data object NoWinnableMoveWithDialog : GameMode()
         data object  NoWinnableMove : GameMode()
     }
 }
