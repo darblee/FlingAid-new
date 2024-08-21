@@ -19,9 +19,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.concurrent.CyclicBarrier
 
 /**
  * **View Model for the Solver Game**
@@ -58,7 +58,6 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
     /**
      * [_totalProcessCount] is the total amount of thinking process involved in the current move.
-     * [_totalBallInCurrentMove] total number of balls in the current move and current level
      *
      * The total is 2 levels of thinking.
      * Next level is (number of balls - 1) x 4 directions
@@ -66,7 +65,6 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      * Total = (Next level) x (current level)
      */
     private var _totalProcessCount: Float = 0.0F
-    private var _totalBallInCurrentMove = 0
 
     /**
      * The direction of the winning move obtained from the tasks calculation
@@ -313,7 +311,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
     }
 
     /**
-     * Update [SolverUIState] to "Thinking" mode. This is the initial state
+     * Update [SolverUIState] to "Thinking" mode. This is the initial thinking state
      */
     private fun setModeToThinkingInitialState()
     {
@@ -357,93 +355,127 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
     /****************************** Thinking routines *********************************************/
 
     /**
-     * Volatile is used to ensure each thread is reading exact same [gMultipleThread] value
-     * from memory instead of from cpu-cache.
-     */
-    @Volatile
-    private var gMultipleThread = false
-
-    /**
      * First thread to search for solution
      */
-    private lateinit var gThinkingThread1: Thread
-    private lateinit var job1: Job
+    @Volatile
+    private lateinit var gSearchJob1 : Job
 
-    /**
-     * Second thread to search for solution. This thread is used when we exceeded number of balls
-     * on the board
-     */
-    private lateinit var gThinkingThread2: Thread
-    private lateinit var job2: Job
+    @Volatile
+    private lateinit var gSearchJob2 : Job
 
     private var task1WinningRow = -1
     private var task1WinningCol = -1
     private var task2WinningRow = -1
     private var task2WinningCol = -1
 
-    /**
-     * Find the winning move.
-     */
-    fun findWinningMove() {
+    fun findWinningMove()
+    {
+        setModeToThinkingInitialState()
+        gTask1WinningDirection = Direction.INCOMPLETE
+        gTask2WinningDirection = Direction.INCOMPLETE
+
+        _winningDirectionFromTasks = Direction.INCOMPLETE
         gThinkingProgress = 0
 
-        setModeToThinkingInitialState()
-
-        viewModelScope.launch (Dispatchers.Default) {
-
-            _winningDirectionFromTasks = Direction.NO_WINNING_DIRECTION
+        viewModelScope.launch(Dispatchers.Default) {
             val gTotalBallCount = ballCount()
 
-            gTask1WinningDirection = Direction.INCOMPLETE
-            gTask2WinningDirection = Direction.INCOMPLETE
+            gSearchJob1 = launch (Dispatchers.Default) { searchAgent1(gTotalBallCount) }
+            gSearchJob2 = launch (Dispatchers.Default) { searchAgent2(gTotalBallCount) }
+            launch (Dispatchers.Default){ showProcessingActivity(gTotalBallCount) }
+            joinAll(gSearchJob1, gSearchJob2)
 
-            gThinkingProgress = 0
-            _totalBallInCurrentMove = ballCount()
+            recordThinkingResult()
+        }
+    }
 
-            lateinit var cyclicBarrier: CyclicBarrier
+    /**
+     * Search for solution starting from top. Called by first coroutine.
+     *
+     * @param totalBallCnt Total number of balls in the current move
+     */
+    private fun searchAgent1(totalBallCnt: Int) {
+        Log.i("${Global.DEBUG_PREFIX} Agent 1", "Agent 1 has started")
+        val game1 = FlickerEngine()
+        game1.populateGrid(_solverBallPos.ballList)
 
-            if (gTotalBallCount > 12) {
-                gMultipleThread = true
+        val (direction, finalRow, finalCol) = game1.foundWinningMove(
+            totalBallCnt, 1, 1,
+            onBallReject =  { row, col -> setModeThinkingWithRejectBallAddition(row, col) }
+        )
 
-                // 2 threads have invoke "await" and these two thread have completed
-                cyclicBarrier = CyclicBarrier(2) {
-                    gMultipleThread = false
-                    Log.i(Global.DEBUG_PREFIX, "Reached a converged point between 2 parallel tasks")
-                    recordThinkingResult()
-                }
-            } else {
+        Log.i(
+            "${Global.DEBUG_PREFIX} Finish Task #1",
+            "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol"
+        )
 
-                // 1 thread invoke "await" and this single thread have completed
-                cyclicBarrier = CyclicBarrier(1) {
-                    gMultipleThread = false
-                    Log.i(Global.DEBUG_PREFIX, "Reached a converged point. One thread")
-                    recordThinkingResult()
-                }
-            }
+        gTask1WinningDirection = direction
 
-            gThinkingThread1 = Thread {
-                processTask1(gTotalBallCount)
+        when (direction) {
+
+            Direction.INCOMPLETE -> {
                 Log.i(
-                    "${Global.DEBUG_PREFIX} Task 1",
-                    "Task #1 is completed. Now waiting for all threads to complete."
+                    Global.DEBUG_PREFIX,
+                    "Task #1 got incomplete. It expect task2 has deterministic result"
                 )
-                cyclicBarrier.await()
             }
-            gThinkingThread2 = Thread {
-                processTask2(gTotalBallCount)
+
+            Direction.NO_WINNING_DIRECTION -> {
+                Log.i(Global.DEBUG_PREFIX, "Task #1 concluded there is no winning move")
+            }
+
+            else -> {
+                // Task #1 got winning move
+                gTask1WinningDirection = direction
+                task1WinningRow = finalRow
+                task1WinningCol = finalCol
+            }
+        }
+    }
+
+    /**
+     * Search for solution starting from bottom. Called by second coroutine.
+     *
+     * @param totalBallCnt Total number of balls in the current move
+     */
+    private fun searchAgent2(totalBallCnt: Int) {
+        Log.i("${Global.DEBUG_PREFIX} Agent 2", "Agent 2 has started")
+        val game2 = FlickerEngine()
+        game2.populateGrid(_solverBallPos.ballList)
+
+        val (direction, finalRow, finalCol) = game2.foundWinningMove(
+            totalBallCnt, 1, -1,
+            onBallReject =  { row, col -> setModeThinkingWithRejectBallAddition(row, col) }
+        )
+
+        Log.i(
+            "${Global.DEBUG_PREFIX} Finish Task #2",
+            "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol"
+        )
+
+        gTask2WinningDirection = direction
+
+        when (direction) {
+
+            Direction.INCOMPLETE -> {
                 Log.i(
-                    "${Global.DEBUG_PREFIX}: Task 2",
-                    "Task #2 is completed. Now waiting for all threads to complete."
+                    Global.DEBUG_PREFIX,
+                    "Task #2 got incomplete. It expect task1 has deterministic result"
                 )
-                cyclicBarrier.await()
             }
 
-            launch { showProcessingActivity() }
+            Direction.NO_WINNING_DIRECTION -> {
+                Log.i(Global.DEBUG_PREFIX, "Task #2 concluded there is no winning move")
+            }
 
-            gThinkingThread1.start()
+            else -> {
+                // Task #2 got winning move
+                gTask2WinningDirection = direction
+                task2WinningRow = finalRow
+                task2WinningCol = finalCol
 
-            if (gMultipleThread) { gThinkingThread2.start() }
-        } // viewModelScope
+            }
+        }
     }
 
     /**
@@ -498,12 +530,27 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             } else {
 
                 // Neither Task #1 nor Task #2 has winning result
+                // However, we do not know if the tasks got cancelled or both tasks concluded
+                // there is no solution.
                 _winningDirectionFromTasks = Direction.NO_WINNING_DIRECTION
 
-                _uiSolverState.update { currentState ->
-                    currentState.copy(
-                        _mode = SolverUIState.SolverMode.AnnounceNoPossibleSolution
-                    )
+                // Need to check if any task got cancelled by checking if it got Direction.INCOMPLETE
+                // status
+
+                if ((gTask1WinningDirection == Direction.INCOMPLETE) ||
+                        (gTask2WinningDirection == Direction.INCOMPLETE))
+                {
+                    _uiSolverState.update { currentState ->
+                        currentState.copy(
+                            _mode = SolverUIState.SolverMode.ReadyToFindSolution
+                        )
+                    }
+                } else {
+                    _uiSolverState.update { currentState ->
+                        currentState.copy(
+                            _mode = SolverUIState.SolverMode.AnnounceNoPossibleSolution
+                        )
+                    }
                 }
             }
         }
@@ -516,126 +563,12 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
     }
 
     /**
-     * Process the first task.
-     *
-     * It is tracked using the hardcoded task #1 meta data
-     *
-     * @param totalBallCnt Used to determine whether it has winnable move or not
-     */
-    private fun processTask1(totalBallCnt: Int) {
-        try {
-            Log.i("${Global.DEBUG_PREFIX} Task 1", "Task 1 has started")
-            val game1 = FlickerEngine()
-            game1.populateGrid(_solverBallPos.ballList)
-
-            val (direction, finalRow, finalCol) = game1.foundWinningMove(
-                totalBallCnt, 1, 1,
-                onBallReject =  { row, col -> setModeThinkingWithRejectBallAddition(row, col) }
-            )
-
-            Log.i(
-                "${Global.DEBUG_PREFIX} Finish Task #1",
-                "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol"
-            )
-
-            gTask1WinningDirection = direction
-
-            when (direction) {
-
-                Direction.INCOMPLETE -> {
-                    Log.i(
-                        Global.DEBUG_PREFIX,
-                        "Task #1 got incomplete. It expect task2 has deterministic result"
-                    )
-                }
-
-                Direction.NO_WINNING_DIRECTION -> {
-                    Log.i(Global.DEBUG_PREFIX, "Task #1 concluded there is no winning move")
-
-                    // Mark this thread with "interrupt" status. The thread still need to check
-                    // if it receive "interrupt" status via the "interrupted()" call. It does
-                    // not get cancelled automatically.
-                    if (gMultipleThread) gThinkingThread2.interrupt()
-                }
-
-                else -> {
-                    // Task #1 got winning move
-                    gTask1WinningDirection = direction
-                    task1WinningRow = finalRow
-                    task1WinningCol = finalCol
-
-                    Log.i(Global.DEBUG_PREFIX, "Attempting to interrupt task #2")
-                    if (gMultipleThread) gThinkingThread2.interrupt()
-                }
-            }
-        } catch (e: InterruptedException) {
-            Log.i("${Global.DEBUG_PREFIX} 1", "Interruption detected")
-        }
-    }
-
-    /**
-     * Process the 2nd task.
-     *
-     * It is tracked using the hardcoded task #2 meta data
-     *
-     * @param totalBallCnt Used to determine whether it has winnable move or not
-     */
-    private fun processTask2(totalBallCnt: Int) {
-        try {
-            Log.i("${Global.DEBUG_PREFIX} Task 2", "Task 2 has started")
-            val game2 = FlickerEngine()
-            game2.populateGrid(_solverBallPos.ballList)
-            gTask2WinningDirection = Direction.INCOMPLETE
-            val (direction, finalRow, finalCol) = game2.foundWinningMove(
-                totalBallCnt, 1, -1,
-                onBallReject =  { row, col -> setModeThinkingWithRejectBallAddition(row, col) }
-            )
-
-            Log.i(
-                "${Global.DEBUG_PREFIX} Finish Task #2",
-                "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol"
-            )
-
-            gTask2WinningDirection = direction
-
-            when (direction) {
-
-                Direction.INCOMPLETE -> {
-                    Log.i(
-                        Global.DEBUG_PREFIX,
-                        "Task #2 got incomplete. It expect task1 has deterministic result"
-                    )
-                }
-
-                Direction.NO_WINNING_DIRECTION -> {
-                    Log.i(Global.DEBUG_PREFIX, "Task #2 concluded there is no winning move")
-                    gThinkingThread1.interrupt()
-                }
-
-                else -> {
-                    // Task #2 got the winning move
-                    gTask2WinningDirection = direction
-                    task2WinningRow = finalRow
-                    task2WinningCol = finalCol
-
-                    Log.i(Global.DEBUG_PREFIX, "Attempting to interrupt task #1")
-                    gThinkingThread1.interrupt()
-                }
-            }
-        } catch (e: InterruptedException) {
-            Log.i("${Global.DEBUG_PREFIX} Task 2", "Interruption detected")
-        }
-    }
-
-    /**
      * Quickly stop thinking progress threads.
      *
      * Make sure all threads has completed before this function exits.
      */
     fun stopThinking() {
-        if (!gMultipleThread) return
-
-        if (gThinkingThread1.isAlive) {
+        if (gSearchJob1.isActive) {
             Log.i(
                 Global.DEBUG_PREFIX,
                 "Thread 1 is alive, make it end quickly by setting direction to \"No Winning Direction\""
@@ -643,7 +576,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             gTask1WinningDirection = Direction.NO_WINNING_DIRECTION
         }
 
-        if (gThinkingThread2.isAlive) {
+        if (gSearchJob2.isActive) {
             Log.i(
                 Global.DEBUG_PREFIX,
                 "Thread 2 is alive, make it end quickly by setting direction to \"No Winning Direction\""
@@ -651,7 +584,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             gTask2WinningDirection = Direction.NO_WINNING_DIRECTION
         }
 
-        while (gThinkingThread1.isAlive || gThinkingThread2.isAlive) {
+        while (gSearchJob1.isActive || gSearchJob2.isActive) {
             Thread.sleep(250)
         }
         gThinkingProgress = 0
@@ -665,10 +598,10 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      * Update the [uiState] to latest accurate progress level while it is still searching for
      * winnable move.
      */
-    private suspend fun showProcessingActivity() {
+    private suspend fun showProcessingActivity(totalBallCount: Int) {
         val currentValue = 0.0F
         _totalProcessCount =
-           ((_totalBallInCurrentMove * 4)* ((_totalBallInCurrentMove-1) * 4)).toFloat()
+           ((totalBallCount * 4)* ((totalBallCount - 1) * 4)).toFloat()
 
         while (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) {
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16

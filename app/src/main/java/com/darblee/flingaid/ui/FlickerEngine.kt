@@ -127,7 +127,7 @@ internal class FlickerEngine {
         run repeatBlock@{
             while (curRow != exceededRow) {
 
-                if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
+                if ((gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                     Log.d(
                         "${Global.DEBUG_PREFIX}:",
                         "Short circuit on row processing. task1: $gTask1WinningDirection task2: $gTask2WinningDirection"
@@ -156,7 +156,7 @@ internal class FlickerEngine {
                         if (curSearchLevel == 2) {
                             gThinkingProgress++
                         }
-                        if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
+                        if ((gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
                                 "Short circuit on col processing after up. task1: $gTask1WinningDirection task2: $gTask2WinningDirection"
@@ -175,7 +175,7 @@ internal class FlickerEngine {
                         if (curSearchLevel == 2) {
                             gThinkingProgress++
                         }
-                        if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
+                        if ((gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
                                 "Short circuit on col processing after down. task1: $gTask1WinningDirection task2: $gTask2WinningDirection"
@@ -194,7 +194,7 @@ internal class FlickerEngine {
                         if (curSearchLevel == 2) {
                             gThinkingProgress++
                         }
-                        if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
+                        if ((gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
                                 "Short circuit on col processing after right. task1: $gTask1WinningDirection task2: $gTask2WinningDirection"
@@ -213,7 +213,7 @@ internal class FlickerEngine {
                         if (curSearchLevel == 2) {
                             gThinkingProgress++
                         }
-                        if (Thread.interrupted() || (gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
+                        if ((gTask1WinningDirection != Direction.INCOMPLETE) || (gTask2WinningDirection != Direction.INCOMPLETE)) {
                             Log.d(
                                 "${Global.DEBUG_PREFIX}:",
                                 "Short circuit on col processing after left. task1: $gTask1WinningDirection task2: $gTask2WinningDirection"
@@ -229,7 +229,7 @@ internal class FlickerEngine {
                         val thinkingRec: SolverUIState.SolverMode.Thinking =
                             SolverUIState.SolverMode.Thinking
                         val rejectBallCount = thinkingRec.rejectedBalls.size
-                        Log.i(Global.DEBUG_PREFIX, "# of reject: ${rejectBallCount} Total count : $totalBallCnt")
+                        Log.i(Global.DEBUG_PREFIX, "# of reject: $rejectBallCount Total count : $totalBallCnt")
 
                         if (rejectBallCount == totalBallCnt) {
                             gTask1WinningDirection = Direction.NO_WINNING_DIRECTION
