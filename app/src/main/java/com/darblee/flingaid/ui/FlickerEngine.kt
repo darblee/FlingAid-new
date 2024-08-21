@@ -226,6 +226,18 @@ internal class FlickerEngine {
                     if ((curSearchLevel == 1) && (flickerGrid[curRow][curCol])) {
                         Log.i(Global.DEBUG_PREFIX, "gThinkingProgress: $gThinkingProgress")
                         onBallReject.invoke(curRow, curCol)
+                        val thinkingRec: SolverUIState.SolverMode.Thinking =
+                            SolverUIState.SolverMode.Thinking
+                        val rejectBallCount = thinkingRec.rejectedBalls.size
+                        Log.i(Global.DEBUG_PREFIX, "# of reject: ${rejectBallCount} Total count : $totalBallCnt")
+
+                        if (rejectBallCount == totalBallCnt) {
+                            gTask1WinningDirection = Direction.NO_WINNING_DIRECTION
+                            gTask2WinningDirection = Direction.NO_WINNING_DIRECTION
+                            Log.i(Global.DEBUG_PREFIX, "TERMINATING")
+                            direction = Direction.NO_WINNING_DIRECTION
+                            return@repeatBlock
+                        }
                     }
 
                     curCol += thinkingDirectionOffset

@@ -391,10 +391,6 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
         viewModelScope.launch (Dispatchers.Default) {
 
-            // For explanation on the formula, see the description for _totalProcessCount
-            _totalProcessCount =
-                (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
-
             _winningDirectionFromTasks = Direction.NO_WINNING_DIRECTION
             val gTotalBallCount = ballCount()
 
@@ -408,8 +404,6 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
             if (gTotalBallCount > 12) {
                 gMultipleThread = true
-                _totalProcessCount =
-                    (((_totalBallInCurrentMove - 1) * 4) * (_totalBallInCurrentMove * 4)).toFloat()
 
                 // 2 threads have invoke "await" and these two thread have completed
                 cyclicBarrier = CyclicBarrier(2) {
@@ -448,9 +442,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
             gThinkingThread1.start()
 
-            if (gMultipleThread) {
-                gThinkingThread2.start()
-            }
+            if (gMultipleThread) { gThinkingThread2.start() }
         } // viewModelScope
     }
 
