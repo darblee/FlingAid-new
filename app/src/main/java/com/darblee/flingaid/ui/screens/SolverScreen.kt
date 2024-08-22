@@ -99,6 +99,10 @@ import com.darblee.flingaid.utilities.generateExplosionParticles
 import java.io.File
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.time.TimeSource
+
+val timeSource = TimeSource.Monotonic
+var gStartThinkingTime = timeSource.markNow()
 
 /**
  *  **The main Solver Game Screen**
@@ -148,7 +152,14 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         }
 
         SolverUIState.SolverMode.HasWinningMoveWaitingToMove -> {
-            Log.i("Solver Recompose:", "${solverUIState.mode} : Enable \"Move Ball\" button")
+            val now = timeSource.markNow()
+            val elapsedTimeOfSolution = (now - gStartThinkingTime).inWholeSeconds
+            if (elapsedTimeOfSolution.toInt() == 0) {
+                Log.i(Global.DEBUG_PREFIX, "Elapsed time to find solution: <1 seconds")
+            } else {
+                Log.i(Global.DEBUG_PREFIX, "Elapsed time to find solution: ~$elapsedTimeOfSolution seconds")
+            }
+            Log.i("Solver Recompose:", "${solverUIState.mode} : Found solution. Waiting for user to move the winning ball")
             readyToMoveRec =
                 solverUIState.mode.let { SolverUIState.SolverMode.HasWinningMoveWaitingToMove }
         }
@@ -346,9 +357,10 @@ private fun SolverActionButtons(
     ) {
         Button(
             onClick = {
+                gStartThinkingTime = timeSource.markNow()
+
                 view.click()
                 if (readyToMove) {
-
                     gSolverViewModel.setModeToShowBallMovement(
                         readyToMoveRec!!.winningDirectionPreview,
                         readyToMoveRec.winingMovingChainPreview
@@ -682,6 +694,11 @@ private fun markRejectedBalls(
 )
 {
     if (rejectedBalls.isEmpty()) return
+
+    // Do not show rejected ball(s) if this is less than 5 seconds from start of looking solution
+    val now = timeSource.markNow()
+    val elapsedTime = (now - gStartThinkingTime).inWholeSeconds
+    if (elapsedTime <  5) return
 
     val offsetAdjustment = (gridSize / 4)
 

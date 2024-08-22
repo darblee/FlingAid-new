@@ -342,6 +342,10 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
         val thinkingRec: SolverUIState.SolverMode.Thinking =
             SolverUIState.SolverMode.Thinking
 
+        // There is a remote chance that we try to add rejected ball that already exist.
+        // This can happen when 2 coroutine threads process the same ball
+        if (thinkingRec.rejectedBalls.contains(Pos(row,col))) return
+
         val newRejects = thinkingRec.rejectedBalls.toMutableList()
 
         newRejects.add(Pos(row, col))
@@ -382,7 +386,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
             gSearchJob1 = launch (Dispatchers.Default) { searchAgent1(gTotalBallCount) }
             gSearchJob2 = launch (Dispatchers.Default) { searchAgent2(gTotalBallCount) }
-            launch (Dispatchers.Default){ showProcessingActivity(gTotalBallCount) }
+            launch (Dispatchers.Default){ showSearchingProgress(gTotalBallCount) }
             joinAll(gSearchJob1, gSearchJob2)
 
             recordThinkingResult()
@@ -416,7 +420,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             Direction.INCOMPLETE -> {
                 Log.i(
                     Global.DEBUG_PREFIX,
-                    "Task #1 got incomplete. It expect task2 has deterministic result"
+                    "Task #1 got incomplete. It expect task2 to have solution or incomplete result"
                 )
             }
 
@@ -460,7 +464,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             Direction.INCOMPLETE -> {
                 Log.i(
                     Global.DEBUG_PREFIX,
-                    "Task #2 got incomplete. It expect task1 has deterministic result"
+                    "Task #2 got incomplete. It expect task1 to have solution or incomplete result"
                 )
             }
 
@@ -529,6 +533,9 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
             } else {
 
+                Log.i(Global.DEBUG_PREFIX, "We have no clear winner")
+                Log.i(Global.DEBUG_PREFIX, "Need to determine if we have no winnable move or incomplete")
+
                 // Neither Task #1 nor Task #2 has winning result
                 // However, we do not know if the tasks got cancelled or both tasks concluded
                 // there is no solution.
@@ -536,21 +543,12 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
                 // Need to check if any task got cancelled by checking if it got Direction.INCOMPLETE
                 // status
-
-                if ((gTask1WinningDirection == Direction.INCOMPLETE) ||
-                        (gTask2WinningDirection == Direction.INCOMPLETE))
+                if ((gTask1WinningDirection == Direction.NO_WINNING_DIRECTION) ||
+                        (gTask2WinningDirection == Direction.NO_WINNING_DIRECTION))
                 {
-                    _uiSolverState.update { currentState ->
-                        currentState.copy(
-                            _mode = SolverUIState.SolverMode.ReadyToFindSolution
-                        )
-                    }
+                    setMode(SolverUIState.SolverMode.AnnounceNoPossibleSolution)
                 } else {
-                    _uiSolverState.update { currentState ->
-                        currentState.copy(
-                            _mode = SolverUIState.SolverMode.AnnounceNoPossibleSolution
-                        )
-                    }
+                    setMode(SolverUIState.SolverMode.ReadyToFindSolution)
                 }
             }
         }
@@ -598,15 +596,17 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      * Update the [uiState] to latest accurate progress level while it is still searching for
      * winnable move.
      */
-    private suspend fun showProcessingActivity(totalBallCount: Int) {
+    private suspend fun showSearchingProgress(totalBallCount: Int) {
         val currentValue = 0.0F
         _totalProcessCount =
            ((totalBallCount * 4)* ((totalBallCount - 1) * 4)).toFloat()
 
         while (_uiSolverState.value.mode == SolverUIState.SolverMode.Thinking) {
             // We track two level processing = level #1: 4 direction x level 2: 4 directions = 16
-            val newValue: Float =
+            var newValue: Float =
                 (gThinkingProgress.toFloat() / (_totalProcessCount) * 100.0).toFloat()
+
+            if (newValue > 99.9) newValue = 99.9F
 
             if (newValue > currentValue) {
                 setModeThinkingWithUpdatedProgressLevel(newValue)

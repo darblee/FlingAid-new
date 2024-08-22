@@ -224,14 +224,15 @@ internal class FlickerEngine {
                     }
 
                     if ((curSearchLevel == 1) && (flickerGrid[curRow][curCol])) {
-                        Log.i(Global.DEBUG_PREFIX, "gThinkingProgress: $gThinkingProgress")
                         onBallReject.invoke(curRow, curCol)
                         val thinkingRec: SolverUIState.SolverMode.Thinking =
                             SolverUIState.SolverMode.Thinking
                         val rejectBallCount = thinkingRec.rejectedBalls.size
                         Log.i(Global.DEBUG_PREFIX, "# of reject: $rejectBallCount Total count : $totalBallCnt")
 
-                        if (rejectBallCount == totalBallCnt) {
+                        // There is a remote chance that rejectBallCount can exceed the total ball count when the 2 coroutine threads
+                        // process the same rejected ball at the same time. Hence, this rejected ball gets double counted
+                        if (rejectBallCount >= totalBallCnt) {
                             gTask1WinningDirection = Direction.NO_WINNING_DIRECTION
                             gTask2WinningDirection = Direction.NO_WINNING_DIRECTION
                             Log.i(Global.DEBUG_PREFIX, "TERMINATING")
