@@ -2,7 +2,6 @@ package com.darblee.flingaid.ui.screens
 
 import android.graphics.Bitmap
 import android.util.Log
-import android.view.SoundEffectConstants
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.foundation.Canvas
@@ -464,9 +463,7 @@ private fun DrawSolverBoard(
      * Animation control that handle showing a preview (shadow) of winning move
      */
     val animatePreviewWinningMove = remember { Animatable(initialValue = 0f) }
-    if (showPreviewMovementAnimation) {
-        AnimateShadowBallMovementSetup(animatePreviewWinningMove)
-    }
+    if (showPreviewMovementAnimation) { AnimateShadowBallMovementSetup(animatePreviewWinningMove) }
 
     val animateBallMovementChain = mutableListOf<Animatable<Float, AnimationVector1D>>()
 
@@ -560,7 +557,6 @@ private fun DrawSolverBoard(
                             if (currentlyThinking) gSolverViewModel.stopThinking()
 
                             gSolverViewModel.toggleBallPosition(Pos(row, col))
-                            view.playSoundEffect(SoundEffectConstants.CLICK)
 
                         }, // onTap
                     ) // detectTapGestures
@@ -646,7 +642,6 @@ private fun DrawSolverBoard(
                             pos = readyToMoveRec.winingMovingChainPreview[0].pos
                         )
                     }
-
                 }
             }
 

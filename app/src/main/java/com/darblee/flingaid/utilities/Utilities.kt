@@ -3,6 +3,7 @@ package com.darblee.flingaid.utilities
 import android.content.Context
 import android.content.res.Resources
 import android.view.HapticFeedbackConstants
+import android.view.SoundEffectConstants
 import android.view.View
 import android.widget.Toast
 import androidx.compose.ui.unit.Dp
@@ -69,7 +70,10 @@ fun randomBoolean(trueProbabilityPercentage: Int) =
 /**
  * Perform haptic feedback.
  */
-fun View.click() = run { this.let { this.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)} }
+fun View.click() = run {
+    this.let { this.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)}
+    this.playSoundEffect(SoundEffectConstants.CLICK)
+}
 
 /********************************* Singleton helper functions *************************************/
 
