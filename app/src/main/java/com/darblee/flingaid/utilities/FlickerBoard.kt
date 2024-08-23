@@ -72,11 +72,14 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileReader
 import java.io.FileWriter
+import java.io.IOException
 
 /**
  * Position on the game board
@@ -157,18 +160,24 @@ class FlickerBoard {
 
         if (_gameFile == null) return
 
-        val format = Json { prettyPrint = true }
-        val ballList = mutableListOf<Pos>()
-
-        for (currentPos in this.ballList) {
-            ballList += currentPos
-        }
-        val output = format.encodeToString(ballList)
-
         try {
+            val format = Json { prettyPrint = true }
+            val ballList = mutableListOf<Pos>()
+
+            for (currentPos in this.ballList) {
+                ballList += currentPos
+            }
+
+            val output = format.encodeToString(ballList)
             val writer = FileWriter(_gameFile)
             writer.write(output)
             writer.close()
+        } catch (e: SerializationException) {
+            Log.i(Global.DEBUG_PREFIX, "Serialization error. Unable to encode ball list information. Reason: ${e.message}")
+        } catch (e: IllegalArgumentException) {
+            Log.i(Global.DEBUG_PREFIX, "Serialization error Detected non-compliant format. Reason: ${e.message}")
+        } catch (e: IOException) {
+            Log.i(Global.DEBUG_PREFIX, "Unable to write to ball list file. Reason: ${e.message}")
         } catch (e: Exception) {
             Log.i(Global.DEBUG_PREFIX, "Unable to save to game file. Reason: ${e.message}")
         }
@@ -189,11 +198,16 @@ class FlickerBoard {
             val list = Json.decodeFromString<List<Pos>>(data)
 
             ballList.clear()
-            for (pos in list) {
-                ballList.add(pos)
-            }
+            for (pos in list) { ballList.add(pos) }
+
+        } catch (e: FileNotFoundException) {
+            Log.i(Global.DEBUG_PREFIX, "Missing file. Reason: ${e.message}")
+        } catch (e: SerializationException) {
+            Log.i(Global.DEBUG_PREFIX, "Serialization error. Unable to decode. File may have been corrupted. Reason:  ${e.message}")
+        } catch (e: IllegalArgumentException) {
+            Log.i(Global.DEBUG_PREFIX, "Decoded data from file could not be converted to Pos structure. Reason: ${e.message}")
         } catch (e: Exception) {
-            Log.i(Global.DEBUG_PREFIX, "An error occurred while reading the file: ${e.message}")
+            Log.i(Global.DEBUG_PREFIX, "An error occurred while trying to load the ball list file. Reason: ${e.message}")
         }
     }
 
@@ -467,13 +481,18 @@ class FlickerBoard {
     {
         if (_historyFile == null) return
 
-        val format = Json { prettyPrint = true }
-        val output = format.encodeToString(_moveHistory)
-
         try {
+            val format = Json { prettyPrint = true }
+            val output = format.encodeToString(_moveHistory)
             val writer = FileWriter(_historyFile)
             writer.write(output)
             writer.close()
+        } catch (e: SerializationException) {
+            Log.i(Global.DEBUG_PREFIX, "Serialization error. Unable to encode history data. Reason: ${e.message}")
+        } catch (e: IllegalArgumentException) {
+            Log.i(Global.DEBUG_PREFIX, "Serialization error. Detected non-compliant format. Reason: ${e.message}")
+        } catch (e: IOException) {
+            Log.i(Global.DEBUG_PREFIX, "Unable to write to history. Reason: ${e.message}")
         } catch (e: Exception) {
             Log.i(Global.DEBUG_PREFIX, "Unable to save history to file. Reason: ${e.message}")
         }
@@ -494,13 +513,19 @@ class FlickerBoard {
             val historyList = Json.decodeFromString<List<List<Pos>>>(data)
             _moveHistory.clear()
 
-            historyList.forEach{ curSnapshot ->
-                val newSnapshot : boardSnapshot = mutableListOf()
+            historyList.forEach { curSnapshot ->
+                val newSnapshot: boardSnapshot = mutableListOf()
                 curSnapshot.forEach { curPos ->
                     newSnapshot.add(curPos)
                 }
                 _moveHistory.add(newSnapshot)
             }
+        } catch (e: FileNotFoundException) {
+            Log.i(Global.DEBUG_PREFIX, "Missing file. Reason: ${e.message}")
+        } catch (e: SerializationException) {
+            Log.i(Global.DEBUG_PREFIX, "Serialization error. Unable to decode history content. File may have been corrupted. Reason: ${e.message}")
+        } catch (e: IllegalArgumentException) {
+            Log.i(Global.DEBUG_PREFIX, "Serialization error. Decoded data could not be converted to history format. Reason: ${e.message}")
         } catch (e: Exception) {
             Log.i(Global.DEBUG_PREFIX, "Unable to load history from file. Reason: ${e.message}")
         }

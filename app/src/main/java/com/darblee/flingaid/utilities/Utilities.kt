@@ -23,6 +23,9 @@ fun gameToast(context: Context, message: String, displayLonger: Boolean = false)
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
 }
 
+/**
+ * Return a float number within a range of data
+ */
 fun Float.mapInRange(inMin: Float, inMax: Float, outMin: Float, outMax: Float): Float {
     return outMin + (((this - inMin) / (inMax - inMin)) * (outMax - outMin))
 }
@@ -39,6 +42,10 @@ fun Float.dpToPx() = this * Resources.getSystem().displayMetrics.density
 
 
 private val random = Random
+
+/**
+ * Generate a random number
+ */
 fun Float.randomTillZero() = this * random.nextFloat()
 
 /**
@@ -59,13 +66,22 @@ fun randomInRange(min: Float, max: Float) = min + (max - min).randomTillZero()
 fun randomBoolean(trueProbabilityPercentage: Int) =
     random.nextFloat() < trueProbabilityPercentage / 100f
 
+/**
+ * Perform haptic feedback.
+ */
+fun View.click() = run { this.let { this.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)} }
 
+/********************************* Singleton helper functions *************************************/
+
+/**
+ * SingletonHolder - This is used to pass parameter to Singleton class
+ */
 open class SingletonHolder<out T : Any, in A>(creator: (A) -> T) {
+
     private var creator: ((A) -> T)? = creator
 
     @Volatile
     private var instance: T? = null
-
     protected fun getInstanceInternal(arg: A): T {
         val checkInstance = instance
         if (checkInstance != null) return checkInstance
@@ -98,6 +114,7 @@ open class SingleArgSingletonHolder<out T : Any, in A>(creator: (A) -> T) :
     fun getInstance(arg: A): T = getInstanceInternal(arg)
 }
 
+
 /**
  * If you need to pass TWO arguments to the constructor of the singleton class.
  * Extended from [PairArgsSingletonHolder] for best match.
@@ -111,11 +128,6 @@ val appRepository =  AppRepository.getInstance(db, apiService)
  */
 open class PairArgsSingletonHolder<out T : Any, in A, in B>(creator: (A, B) -> T) :
     SingletonHolder<T, Pair<A, B>>(creator = { (a, b) -> creator(a, b) }) {
-
     fun getInstance(arg1: A, arg2: B) = getInstanceInternal(Pair(arg1, arg2))
 }
 
-/**
- * Perform haptic feedback.
- */
-fun View.click() = run { this.let { this.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)} }
