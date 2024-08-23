@@ -10,8 +10,8 @@ import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.utilities.FlickerBoard
+import com.darblee.flingaid.utilities.PairArgsSingletonHolder
 import com.darblee.flingaid.utilities.Pos
-import com.darblee.flingaid.utilities.SingleArgSingletonHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.File
 
 /**
@@ -53,8 +54,8 @@ import java.io.File
  * - [getWinningMoveCount]
  * - [moveBallToWin]
  */
-class SolverViewModel(gGameFile: File) : ViewModel() {
-    companion object : SingleArgSingletonHolder<SolverViewModel, File>(::SolverViewModel)
+class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
+    companion object : PairArgsSingletonHolder<SolverViewModel, File, File>(::SolverViewModel)
 
     /**
      * [_totalProcessCount] is the total amount of thinking process involved in the current move.
@@ -106,13 +107,10 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
     /**
      * Load the game file
-     *
-     * @param file game file
      */
-    private fun loadGameFile(file: File) {
+    private fun loadGameFile() {
         viewModelScope.launch (Dispatchers.IO){
             Log.i(Global.DEBUG_PREFIX, "Solver: Loading Game file")
-            _solverBallPos.setGameFile(file)
             _solverBallPos.loadBallListFromFile()
 
             setModeBaseOnBoard()
@@ -157,7 +155,11 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
         gThinkingProgress = 0
         _solverBallPos.clearGame()
-        loadGameFile(gGameFile)
+
+        _solverBallPos.setGameFile(gGameFile)
+        loadGameFile()
+
+        _solverBallPos.setRejectBallFile(gRejectFile)
     }
 
     /**
@@ -193,6 +195,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
 
         gThinkingProgress = 0
         _solverBallPos.clearGame()
+        _solverBallPos.deleteRejectFile()
         setModeBaseOnBoard()
     }
 
@@ -209,15 +212,16 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             Thread.sleep(500)
         }
 
+        viewModelScope.launch (Dispatchers.IO) { _solverBallPos.deleteRejectFile()  }
+
         if (_solverBallPos.ballList.contains(solverGridPos)) {
             _solverBallPos.ballList.remove(solverGridPos)
         } else {
             _solverBallPos.ballList.add(solverGridPos)
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch (Dispatchers.IO){
             _solverBallPos.saveBallListToFile()
-
             setModeBaseOnBoard()
         }
     }
@@ -226,10 +230,10 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      * New board so we need to set mode accordingly
      */
     private fun setModeBaseOnBoard() {
-        task1WinningRow = -1
-        task1WinningCol = -1
-        task2WinningRow = -1
-        task2WinningCol = -1
+        gTask1WinningRow = -1
+        gTask1WinningCol = -1
+        gTask2WinningRow = -1
+        gTask2WinningCol = -1
         gThinkingProgress = 0
 
         if (ballCount() < 2) {
@@ -367,10 +371,11 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
     @Volatile
     private lateinit var gSearchJob2 : Job
 
-    private var task1WinningRow = -1
-    private var task1WinningCol = -1
-    private var task2WinningRow = -1
-    private var task2WinningCol = -1
+    private var gTask1WinningRow = -1
+    private var gTask1WinningCol = -1
+    private var gTask2WinningRow = -1
+    private var gTask2WinningCol = -1
+
 
     fun findWinningMove()
     {
@@ -381,11 +386,25 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
         _winningDirectionFromTasks = Direction.INCOMPLETE
         gThinkingProgress = 0
 
+        var alreadyRejectedBalls : List<Pos> = listOf()
+
         viewModelScope.launch(Dispatchers.Default) {
+            val getRejectBallsJob = launch (Dispatchers.IO)
+            {
+                alreadyRejectedBalls = _solverBallPos.loadRejectBallsFromFile()
+            }
+            getRejectBallsJob.join()
+
             val gTotalBallCount = ballCount()
 
-            gSearchJob1 = launch (Dispatchers.Default) { searchAgent1(gTotalBallCount) }
-            gSearchJob2 = launch (Dispatchers.Default) { searchAgent2(gTotalBallCount) }
+            gSearchJob1 = launch (Dispatchers.Default) {
+                searchAgent1(gTotalBallCount, alreadyRejectedBalls)
+            }
+
+            gSearchJob2 = launch (Dispatchers.Default) {
+                searchAgent2(gTotalBallCount, alreadyRejectedBalls)
+            }
+
             launch (Dispatchers.Default){ showSearchingProgress(gTotalBallCount) }
             joinAll(gSearchJob1, gSearchJob2)
 
@@ -398,14 +417,15 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      *
      * @param totalBallCnt Total number of balls in the current move
      */
-    private fun searchAgent1(totalBallCnt: Int) {
+    private fun searchAgent1(totalBallCnt: Int, alreadyRejectedBalls: List<Pos>) {
         Log.i("${Global.DEBUG_PREFIX} Agent 1", "Agent 1 has started")
         val game1 = FlickerEngine()
         game1.populateGrid(_solverBallPos.ballList)
 
         val (direction, finalRow, finalCol) = game1.foundWinningMove(
             totalBallCnt, 1, 1,
-            onBallReject =  { row, col -> setModeThinkingWithRejectBallAddition(row, col) }
+            onBallReject =  { row, col -> setModeThinkingWithRejectBallAddition(row, col)},
+            alreadyRejectedBalls
         )
 
         Log.i(
@@ -431,8 +451,8 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             else -> {
                 // Task #1 got winning move
                 gTask1WinningDirection = direction
-                task1WinningRow = finalRow
-                task1WinningCol = finalCol
+                gTask1WinningRow = finalRow
+                gTask1WinningCol = finalCol
             }
         }
     }
@@ -442,15 +462,15 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      *
      * @param totalBallCnt Total number of balls in the current move
      */
-    private fun searchAgent2(totalBallCnt: Int) {
+    private fun searchAgent2(totalBallCnt: Int, alreadyRejectedBalls: List<Pos>) {
         Log.i("${Global.DEBUG_PREFIX} Agent 2", "Agent 2 has started")
         val game2 = FlickerEngine()
         game2.populateGrid(_solverBallPos.ballList)
 
         val (direction, finalRow, finalCol) = game2.foundWinningMove(
             totalBallCnt, 1, -1,
-            onBallReject =  { row, col -> setModeThinkingWithRejectBallAddition(row, col) }
-        )
+            onBallReject =  { row, col -> setModeThinkingWithRejectBallAddition(row, col) },
+            alreadyRejectedBalls)
 
         Log.i(
             "${Global.DEBUG_PREFIX} Finish Task #2",
@@ -475,8 +495,8 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             else -> {
                 // Task #2 got winning move
                 gTask2WinningDirection = direction
-                task2WinningRow = finalRow
-                task2WinningCol = finalCol
+                gTask2WinningRow = finalRow
+                gTask2WinningCol = finalCol
 
             }
         }
@@ -486,15 +506,24 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      * Update the [_uiSolverState] with the result of the thinking task(s).
      */
     private fun recordThinkingResult() {
+        if (uiState.value.mode != SolverUIState.SolverMode.Thinking) return
+
+        val thinkingRec: SolverUIState.SolverMode.Thinking = SolverUIState.SolverMode.Thinking
+
         if ((gTask1WinningDirection != Direction.NO_WINNING_DIRECTION) &&
             (gTask1WinningDirection != Direction.INCOMPLETE)
         ) {
+
+            viewModelScope.launch (Dispatchers.IO) {
+                _solverBallPos.saveRejectBallsToFile(thinkingRec.rejectedBalls)
+            }
+
             // Task1 has the winning move
             Log.i(
                 Global.DEBUG_PREFIX,
                 "Task #1 has winning move with direction : $gTask1WinningDirection"
             )
-            val winningSolverGridPos = Pos(task1WinningRow, task1WinningCol)
+            val winningSolverGridPos = Pos(gTask1WinningRow, gTask1WinningCol)
             val winningDir = gTask1WinningDirection
 
             _winningDirectionFromTasks = gTask1WinningDirection
@@ -518,7 +547,10 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
                     "Task #2 has winning move with direction: $gTask2WinningDirection"
                 )
                 // Task2 has the winning move
-                val winningSolverGridPos = Pos(task2WinningRow, task2WinningCol)
+                viewModelScope.launch (Dispatchers.IO) {
+                    _solverBallPos.saveRejectBallsToFile(thinkingRec.rejectedBalls)
+                }
+                val winningSolverGridPos = Pos(gTask2WinningRow, gTask2WinningCol)
                 val winningDir = gTask2WinningDirection
 
                 _winningDirectionFromTasks = gTask2WinningDirection
@@ -554,10 +586,10 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
         }
 
         gThinkingProgress = 0
-        task1WinningRow = -1
-        task1WinningCol = -1
-        task2WinningRow = -1
-        task2WinningCol = -1
+        gTask1WinningRow = -1
+        gTask1WinningCol = -1
+        gTask2WinningRow = -1
+        gTask2WinningCol = -1
     }
 
     /**
@@ -566,6 +598,22 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      * Make sure all threads has completed before this function exits.
      */
     fun stopThinking() {
+
+        if (uiState.value.mode != SolverUIState.SolverMode.Thinking) {
+            gThinkingProgress = 0
+            gTask1WinningRow = -1
+            gTask1WinningCol = -1
+            gTask2WinningRow = -1
+            gTask2WinningCol = -1
+            return
+        }
+
+        val thinkingRec = SolverUIState.SolverMode.Thinking
+
+        viewModelScope.launch (Dispatchers.IO) {
+            _solverBallPos.saveRejectBallsToFile(thinkingRec.rejectedBalls)
+        }
+
         if (gSearchJob1.isActive) {
             Log.i(
                 Global.DEBUG_PREFIX,
@@ -582,14 +630,15 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             gTask2WinningDirection = Direction.NO_WINNING_DIRECTION
         }
 
+
         while (gSearchJob1.isActive || gSearchJob2.isActive) {
             Thread.sleep(250)
         }
         gThinkingProgress = 0
-        task1WinningRow = -1
-        task1WinningCol = -1
-        task2WinningRow = -1
-        task2WinningCol = -1
+        gTask1WinningRow = -1
+        gTask1WinningCol = -1
+        gTask2WinningRow = -1
+        gTask2WinningCol = -1
     }
 
     /**
@@ -676,6 +725,12 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
      * @param direction Direction of ball movement
      */
     fun moveBallToWin(pos: Pos, direction: Direction) {
+
+        // Now that we move the ball, all the rejected balls no longer applies.
+        val clearPreviousRejectBallsJob = viewModelScope.launch (Dispatchers.IO) {
+            _solverBallPos.deleteRejectFile()
+        }
+
         val game = FlickerEngine()
         game.populateGrid((_solverBallPos.ballList))
 
@@ -710,18 +765,21 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
             _solverBallPos.ballList = game.updateBallList()
         }
 
-        viewModelScope.launch {
-            _solverBallPos.saveBallListToFile()
+        runBlocking {
+            // Do not proceed until we have deleted the rejected ball file list
+            clearPreviousRejectBallsJob.join()
+        }
 
-            // If there is more ball, then automatically look for the next winnable move
-            if (ballCount() > 1) {
-                findWinningMove()
+        _solverBallPos.saveBallListToFile()
+
+        // If there is more ball, then automatically look for the next winnable move
+        if (ballCount() > 1) {
+            findWinningMove()
+        } else {
+            if (ballCount() == 1) {
+                setMode(SolverUIState.SolverMode.AnnounceVictory)
             } else {
-                if (ballCount() == 1) {
-                    setMode(SolverUIState.SolverMode.AnnounceVictory)
-                } else {
-                    assert(true) { "Got unexpected ball count state." }
-                }
+                assert(true) { "Got unexpected ball count state." }
             }
         }
     }

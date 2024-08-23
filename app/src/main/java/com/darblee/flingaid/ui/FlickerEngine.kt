@@ -97,7 +97,8 @@ internal class FlickerEngine {
         totalBallCnt: Int,
         curSearchLevel: Int,
         thinkingDirectionOffset: Int,
-        onBallReject: (Int, Int) -> Unit = { _, _ -> }
+        onBallReject: (Int, Int) -> Unit = { _, _ -> },
+        alreadyRejectedBallList: List<Pos> = listOf()
     ): Triple<Direction, Int, Int> {
         var direction = Direction.NO_WINNING_DIRECTION
         var winningRow = -1
@@ -124,6 +125,8 @@ internal class FlickerEngine {
         var curRow = startRow
         var curCol: Int
 
+        var alreadyRejected = false
+
         run repeatBlock@{
             while (curRow != exceededRow) {
 
@@ -140,7 +143,15 @@ internal class FlickerEngine {
 
                 while (curCol != exceededCol) {
 
-                    if (flickerGrid[curRow][curCol]) {
+                    if (alreadyRejectedBallList.isNotEmpty() && (curSearchLevel == 1)) {
+                        if (alreadyRejectedBallList.contains(Pos(curRow, curCol))) {
+                            Log.i(Global.DEBUG_PREFIX, "Plan to reject ball - $curRow, $curCol")
+                            alreadyRejected = true
+                            gThinkingProgress += ((totalBallCnt * 4) * ((totalBallCnt - 1) * 4)) / totalBallCnt
+                        }
+                    }
+
+                    if ((flickerGrid[curRow][curCol]) && (!alreadyRejected)) {
 
                         if (winnableByMovingUp(totalBallCnt, curSearchLevel, curRow, curCol)) {
                             direction = Direction.UP
@@ -223,7 +234,8 @@ internal class FlickerEngine {
                         }
                     }
 
-                    if ((curSearchLevel == 1) && (flickerGrid[curRow][curCol])) {
+                    if (((curSearchLevel == 1) && (flickerGrid[curRow][curCol])) || (alreadyRejected)){
+                        alreadyRejected = false // For the next ball
                         onBallReject.invoke(curRow, curCol)
                         val thinkingRec: SolverUIState.SolverMode.Thinking =
                             SolverUIState.SolverMode.Thinking
@@ -296,7 +308,11 @@ internal class FlickerEngine {
             return true
         }
 
-        val (direction, _, _) = tempBoard.foundWinningMove(totalBallCnt, (curSearchLevel + 1), 1)
+        val (direction, _, _) = tempBoard.foundWinningMove(
+            totalBallCnt = totalBallCnt,
+            curSearchLevel = (curSearchLevel + 1),
+            thinkingDirectionOffset = 1
+        )
 
         if ((direction == Direction.NO_WINNING_DIRECTION) || (direction == Direction.INCOMPLETE)) {
             return (false)
@@ -344,7 +360,11 @@ internal class FlickerEngine {
             return true
         }
 
-        val (direction, _, _) = tempBoard.foundWinningMove(totalBallCnt, (curSearchLevel + 1), 1)
+        val (direction, _, _) = tempBoard.foundWinningMove(
+            totalBallCnt = totalBallCnt,
+            curSearchLevel = (curSearchLevel + 1),
+            thinkingDirectionOffset = 1
+        )
 
         if ((direction == Direction.NO_WINNING_DIRECTION) || (direction == Direction.INCOMPLETE)) {
             return (false)
@@ -394,7 +414,11 @@ internal class FlickerEngine {
             return true
         }
 
-        val (direction, _, _) = tempBoard.foundWinningMove(totalBallCnt, (curSearchLevel + 1), 1)
+        val (direction, _, _) = tempBoard.foundWinningMove(
+            totalBallCnt = totalBallCnt,
+            curSearchLevel = (curSearchLevel + 1),
+            thinkingDirectionOffset = 1
+        )
 
         if ((direction == Direction.NO_WINNING_DIRECTION) || (direction == Direction.INCOMPLETE)) {
             return (false)
@@ -442,7 +466,11 @@ internal class FlickerEngine {
             return true
         }
 
-        val (direction, _, _) = tempBoard.foundWinningMove(totalBallCnt, (curSearchLevel + 1), 1)
+        val (direction, _, _) = tempBoard.foundWinningMove(
+            totalBallCnt = totalBallCnt,
+            curSearchLevel = (curSearchLevel + 1),
+            thinkingDirectionOffset = 1
+        )
 
         if ((direction == Direction.NO_WINNING_DIRECTION) || (direction == Direction.INCOMPLETE)) {
             return (false)

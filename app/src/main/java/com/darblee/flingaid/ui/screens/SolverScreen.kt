@@ -119,7 +119,9 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var initializing = false
 
     val gameBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
-    gSolverViewModel = SolverViewModel.getInstance(gameBoardFile)
+    val rejectFile = File(LocalContext.current.filesDir, Global.REJECT_BALL_FILENAME)
+
+    gSolverViewModel = SolverViewModel.getInstance(gameBoardFile, rejectFile)
 
     var showNoWinnableMoveDialogBox by remember { mutableStateOf(false) }
 

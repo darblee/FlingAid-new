@@ -39,6 +39,7 @@ internal object Global {
     const val SOLVER_BOARD_FILENAME = "SolverBoard.txt"
     const val GAME_BOARD_FILENAME = "MainBoard.txt"
     const val GAME_HISTORY_FILENAME = "MainHistory.txt"
+    const val REJECT_BALL_FILENAME = "RejectBalls.txt"
     const val MAX_GAME_LEVEL = 15
     val TopAppBarHeight = 48.0.dp
 }

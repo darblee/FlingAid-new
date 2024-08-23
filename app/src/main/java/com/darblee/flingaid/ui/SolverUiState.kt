@@ -62,7 +62,7 @@ data class SolverUIState(
 
         data object ReadyToFindSolution : SolverMode()
         data object HasWinningMoveWaitingToMove : SolverMode() {
-            var winningDirectionPreview: Direction = Direction.NO_WINNING_DIRECTION
+            var winningDirectionPreview: Direction = Direction.INCOMPLETE
             var winingMovingChainPreview: BallMoveSet = emptyList()
         }
 

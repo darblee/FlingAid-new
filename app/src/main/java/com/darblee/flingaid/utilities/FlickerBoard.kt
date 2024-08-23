@@ -63,8 +63,6 @@ import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
-import com.darblee.flingaid.domain.Result
-import com.darblee.flingaid.domain.FindFreeSpaceCountError
 import com.darblee.flingaid.gAudio_swish
 import com.darblee.flingaid.gAudio_victory
 import com.darblee.flingaid.ui.MovingRec
@@ -92,7 +90,6 @@ import java.io.IOException
 data class Pos(
     val row: Int,
     val col: Int,
-    val direction : Direction = Direction.NO_WINNING_DIRECTION
 )
 
 typealias boardSnapshot = MutableList<Pos>
@@ -166,9 +163,7 @@ class FlickerBoard {
             val format = Json { prettyPrint = true }
             val ballList = mutableListOf<Pos>()
 
-            for (currentPos in this.ballList) {
-                ballList += currentPos
-            }
+            for (currentPos in this.ballList) { ballList += currentPos }
 
             val output = format.encodeToString(ballList)
             val writer = FileWriter(_gameFile)
@@ -177,7 +172,7 @@ class FlickerBoard {
         } catch (e: SerializationException) {
             Log.i(Global.DEBUG_PREFIX, "Serialization error. Unable to encode ball list information. Reason: ${e.message}")
         } catch (e: IllegalArgumentException) {
-            Log.i(Global.DEBUG_PREFIX, "Serialization error Detected non-compliant format. Reason: ${e.message}")
+            Log.i(Global.DEBUG_PREFIX, "Serialization error Detected non-compliant format while saving ball list to file. Reason: ${e.message}")
         } catch (e: IOException) {
             Log.i(Global.DEBUG_PREFIX, "Unable to write to ball list file. Reason: ${e.message}")
         } catch (e: Exception) {
@@ -211,6 +206,73 @@ class FlickerBoard {
         } catch (e: Exception) {
             Log.i(Global.DEBUG_PREFIX, "An error occurred while trying to load the ball list file. Reason: ${e.message}")
         }
+    }
+
+    /**
+     * File pointer to reject ball file
+     */
+    private var _rejectBallFile: File? = null
+
+    /**
+     * Set the reject ball file pointer
+     */
+    fun setRejectBallFile(file: File)
+    {
+        _rejectBallFile = file
+    }
+
+    /**
+     * Save the reject balls to file
+     */
+    fun saveRejectBallsToFile(rejectedBalls: List<Pos>)
+    {
+        if (_rejectBallFile == null) return
+
+        try {
+            val format = Json { prettyPrint = true }
+            val output = format.encodeToString(rejectedBalls)
+            val writer = FileWriter(_rejectBallFile)
+            writer.write(output)
+            writer.close()
+        } catch (e: SerializationException) {
+            Log.i(Global.DEBUG_PREFIX, "Serialization error. Unable to encode reject ball list information. Reason: ${e.message}")
+        } catch (e: IllegalArgumentException) {
+            Log.i(Global.DEBUG_PREFIX, "Serialization error Detected non-compliant format while saving rejected balls. Reason: ${e.message}")
+        } catch (e: IOException) {
+            Log.i(Global.DEBUG_PREFIX, "Unable to write to reject list file. Reason: ${e.message}")
+        } catch (e: Exception) {
+            Log.i(Global.DEBUG_PREFIX, "Unable to save to reject ball file. Reason: ${e.message}")
+        }
+    }
+
+    /**
+     * Load the reject balls from file
+     *
+     * @return
+     * - On success: return rejected ball list
+     * - On any failure, return an empty list
+     */
+    fun loadRejectBallsFromFile() : List<Pos>
+    {
+        if (_rejectBallFile == null) return listOf()
+
+        try {
+            val reader = FileReader(_rejectBallFile)
+            val data = reader.readText()
+            reader.close()
+
+            return (Json.decodeFromString<List<Pos>>(data))
+        } catch (e: Exception) {
+            return listOf()
+        }
+    }
+
+    /**
+     * Delete the reject file
+     */
+    fun deleteRejectFile()
+    {
+        _rejectBallFile?.delete()
     }
 
     /**
