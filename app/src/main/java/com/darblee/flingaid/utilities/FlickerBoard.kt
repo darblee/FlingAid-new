@@ -63,6 +63,8 @@ import com.darblee.flingaid.BallMoveSet
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
+import com.darblee.flingaid.domain.Result
+import com.darblee.flingaid.domain.FindFreeSpaceCountError
 import com.darblee.flingaid.gAudio_swish
 import com.darblee.flingaid.gAudio_victory
 import com.darblee.flingaid.ui.MovingRec
@@ -288,8 +290,10 @@ class FlickerBoard {
      *  If this is not the first ball on the chain, then it can fall off the edge
      *
      *  @return Pair<Int, SolverGridPos?> where the first element is the number of free space and
-     *  second element is the position of the next ball. If there is no possible move, it will
-     *  return <0, null>
+     *  second element is the position of the next ball.  If the second element is null, then
+     *  the ball has fallen off the edge.
+     *
+     *  If there is no possible move at all, it will return <0, null>
      *
      *  @see buildMovingChain
      */
@@ -347,8 +351,7 @@ class FlickerBoard {
             if ((newRow == -1) || (newRow == Global.MAX_ROW_SIZE) ||
                 (newCol == -1) || (newCol == Global.MAX_COL_SIZE)
             ) {
-                distance++ // Add two to make it fall off the edge
-                distance++
+                distance += 2  // Add two to make it fall off the edge
                 hitWall = true
             } else {
                 if (ballList.contains(Pos(newRow, newCol))) {

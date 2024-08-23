@@ -622,7 +622,7 @@ class SolverViewModel(gGameFile: File) : ViewModel() {
     }
 
     /**
-     * Calculate number of boxes to move the ball as it go toward a win
+     * Calculate number of spaces to move the ball as it go toward a win
      *
      * @param pos Position to move from
      * @param direction Direction of the ball movement
