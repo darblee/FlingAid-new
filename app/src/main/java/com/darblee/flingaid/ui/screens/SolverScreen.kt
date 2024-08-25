@@ -467,11 +467,6 @@ private fun DrawSolverBoard(
     val animatePreviewWinningMove = remember { Animatable(initialValue = 0f) }
     if (showPreviewMovementAnimation) { AnimateShadowBallMovementSetup(animatePreviewWinningMove) }
 
-    val animateBallMovementChain = mutableListOf<Animatable<Float, AnimationVector1D>>()
-
-    val animateParticleExplosion = remember { Animatable(initialValue = 0f) }
-    var particles = mutableListOf<Particle>()
-
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
@@ -485,6 +480,9 @@ private fun DrawSolverBoard(
         }
     }
 
+    val animateBallMovementChain = mutableListOf<Animatable<Float, AnimationVector1D>>()
+    val animateParticleExplosion = remember { Animatable(initialValue = 0f) }
+    var particles = mutableListOf<Particle>()
     // Ball movement must have at least 2 balls in the movement chain
     if (showBallMovementAnimation) {
 
@@ -511,8 +509,8 @@ private fun DrawSolverBoard(
         )
 
     } else {
-        particles.clear()
         LaunchedEffect(true) {
+            particles.clear()
             animateParticleExplosion.stop()
             animateParticleExplosion.snapTo(0f)
         }

@@ -449,14 +449,18 @@ class FlickerBoard {
         //
         // NOTE: ballPositionList is a SnapshotList type. It is observation system that will trigger a recompose
         // to redraw the grid.
-        ballList.forEach { pos ->
+        ballList.forEach { curBallListPosition ->
             var skipDraw = false
-            eraseAnimatedBallPositions.forEach { eraseRec ->
-                if ((eraseRec.pos.col == pos.col) && (eraseRec.pos.row == pos.row))
-                    skipDraw = true
+            run innerLoop@{
+                eraseAnimatedBallPositions.forEach { eraseRec ->
+                    if (eraseRec.pos == curBallListPosition) {
+                        skipDraw = true
+                        return@innerLoop
+                    }
+                }
             }
 
-            if (!skipDraw) drawBallOnGrid(drawScope, gridSize, pos, displayBallImage)
+            if (!skipDraw) drawBallOnGrid(drawScope, gridSize, curBallListPosition, displayBallImage)
         }
     }
 
@@ -924,9 +928,8 @@ fun AnimateBallMovementsSetup(
                 delay((totalTimeLength * whenBallMakeContactRatio).toLong())
                 gAudio_swish.start()
             }
-
-        }   // coroutine
-    }
+        }   // coroutineScope
+    } // LaunchedEffect
 }
 
 /**

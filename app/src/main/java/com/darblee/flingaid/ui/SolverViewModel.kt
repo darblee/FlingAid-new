@@ -170,6 +170,7 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
      * - false Unable to clean-up or in a middle of doing something. Do not exit the view model
      */
     fun canExitSolverScreen(): Boolean {
+
         when (_uiSolverState.value.mode) {
             SolverUIState.SolverMode.Initialization -> { return false }
             SolverUIState.SolverMode.AnnounceNoPossibleSolution -> { return true }
@@ -179,7 +180,7 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
             SolverUIState.SolverMode.NoMoveAvailable -> { return true }
             SolverUIState.SolverMode.ReadyToFindSolution -> { return true }
             SolverUIState.SolverMode.Thinking -> {
-                stopThinking()
+                    stopThinking()
                 return true
             }
         }
@@ -207,22 +208,22 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
      */
     fun toggleBallPosition(solverGridPos: Pos) {
 
-        if (uiState.value.mode == SolverUIState.SolverMode.Thinking) {
-            stopThinking()
-            Thread.sleep(500)
-        }
+        viewModelScope.launch (Dispatchers.IO) {
 
-        viewModelScope.launch (Dispatchers.IO) { _solverBallPos.deleteRejectFile()  }
+            _solverBallPos.deleteRejectFile()
 
-        if (_solverBallPos.ballList.contains(solverGridPos)) {
-            _solverBallPos.ballList.remove(solverGridPos)
-        } else {
-            _solverBallPos.ballList.add(solverGridPos)
-        }
+            if (_solverBallPos.ballList.contains(solverGridPos)) {
+                _solverBallPos.ballList.remove(solverGridPos)
+            } else {
+                _solverBallPos.ballList.add(solverGridPos)
+            }
 
-        viewModelScope.launch (Dispatchers.IO){
             _solverBallPos.saveBallListToFile()
             setModeBaseOnBoard()
+        }
+
+        if (uiState.value.mode == SolverUIState.SolverMode.Thinking) {
+            stopThinking()
         }
     }
 
@@ -230,11 +231,8 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
      * New board so we need to set mode accordingly
      */
     private fun setModeBaseOnBoard() {
-        gTask1WinningRow = -1
-        gTask1WinningCol = -1
-        gTask2WinningRow = -1
-        gTask2WinningCol = -1
-        gThinkingProgress = 0
+
+        resetThinkingEngineParameters()
 
         if (ballCount() < 2) {
             setModeToNoMoveAvailable()
@@ -363,32 +361,33 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
     /****************************** Thinking routines *********************************************/
 
     /**
-     * First thread to search for solution
+     * First thread to search for solution starting from the top of the grid
      */
-    @Volatile
     private lateinit var gSearchJob1 : Job
 
-    @Volatile
+    /**
+     * Second thread to search for solution starting from the bottom of the grid
+     */
     private lateinit var gSearchJob2 : Job
 
-    private var gTask1WinningRow = -1
-    private var gTask1WinningCol = -1
-    private var gTask2WinningRow = -1
-    private var gTask2WinningCol = -1
+    private var gTask1WinningPos = Pos(-1, -1)
+    private var gTask2WinningPos = Pos(-1, -1)
 
-
+    /**
+     * FInd the winning move. Send out search agents
+     */
     fun findWinningMove()
     {
-        setModeToThinkingInitialState()
-        gTask1WinningDirection = Direction.INCOMPLETE
-        gTask2WinningDirection = Direction.INCOMPLETE
-
-        _winningDirectionFromTasks = Direction.INCOMPLETE
-        gThinkingProgress = 0
-
-        var alreadyRejectedBalls : List<Pos> = listOf()
-
         viewModelScope.launch(Dispatchers.Default) {
+            setModeToThinkingInitialState()
+            gTask1WinningDirection = Direction.INCOMPLETE
+            gTask2WinningDirection = Direction.INCOMPLETE
+
+            _winningDirectionFromTasks = Direction.INCOMPLETE
+            gThinkingProgress = 0
+
+            var alreadyRejectedBalls : List<Pos> = listOf()
+
             val getRejectBallsJob = launch (Dispatchers.IO)
             {
                 alreadyRejectedBalls = _solverBallPos.loadRejectBallsFromFile()
@@ -451,8 +450,7 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
             else -> {
                 // Task #1 got winning move
                 gTask1WinningDirection = direction
-                gTask1WinningRow = finalRow
-                gTask1WinningCol = finalCol
+                gTask1WinningPos = Pos(finalRow, finalCol)
             }
         }
     }
@@ -477,6 +475,7 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
             "Conclusion: Direction = $direction, row=$finalRow, col=$finalCol"
         )
 
+
         gTask2WinningDirection = direction
 
         when (direction) {
@@ -495,9 +494,7 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
             else -> {
                 // Task #2 got winning move
                 gTask2WinningDirection = direction
-                gTask2WinningRow = finalRow
-                gTask2WinningCol = finalCol
-
+                gTask2WinningPos = Pos(finalRow, finalCol)
             }
         }
     }
@@ -523,7 +520,7 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
                 Global.DEBUG_PREFIX,
                 "Task #1 has winning move with direction : $gTask1WinningDirection"
             )
-            val winningSolverGridPos = Pos(gTask1WinningRow, gTask1WinningCol)
+            val winningSolverGridPos = gTask1WinningPos
             val winningDir = gTask1WinningDirection
 
             _winningDirectionFromTasks = gTask1WinningDirection
@@ -550,7 +547,7 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
                 viewModelScope.launch (Dispatchers.IO) {
                     _solverBallPos.saveRejectBallsToFile(thinkingRec.rejectedBalls)
                 }
-                val winningSolverGridPos = Pos(gTask2WinningRow, gTask2WinningCol)
+                val winningSolverGridPos = gTask2WinningPos
                 val winningDir = gTask2WinningDirection
 
                 _winningDirectionFromTasks = gTask2WinningDirection
@@ -585,11 +582,7 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
             }
         }
 
-        gThinkingProgress = 0
-        gTask1WinningRow = -1
-        gTask1WinningCol = -1
-        gTask2WinningRow = -1
-        gTask2WinningCol = -1
+        resetThinkingEngineParameters()
     }
 
     /**
@@ -600,11 +593,7 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
     fun stopThinking() {
 
         if (uiState.value.mode != SolverUIState.SolverMode.Thinking) {
-            gThinkingProgress = 0
-            gTask1WinningRow = -1
-            gTask1WinningCol = -1
-            gTask2WinningRow = -1
-            gTask2WinningCol = -1
+            resetThinkingEngineParameters()
             return
         }
 
@@ -630,15 +619,19 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
             gTask2WinningDirection = Direction.NO_WINNING_DIRECTION
         }
 
-
         while (gSearchJob1.isActive || gSearchJob2.isActive) {
             Thread.sleep(250)
         }
+        resetThinkingEngineParameters()
+    }
+
+    /**
+     * Reset all the global variables involving search engine
+     */
+    private fun resetThinkingEngineParameters() {
         gThinkingProgress = 0
-        gTask1WinningRow = -1
-        gTask1WinningCol = -1
-        gTask2WinningRow = -1
-        gTask2WinningCol = -1
+        gTask1WinningPos = Pos(-1, -1)
+        gTask2WinningPos = Pos(-1, -1)
     }
 
     /**
