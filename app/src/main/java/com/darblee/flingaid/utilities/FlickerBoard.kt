@@ -886,10 +886,11 @@ fun AnimateBallMovementsSetup(
     LaunchedEffect(Unit) {
         // Use coroutine to ensure both launch animation get completed in the same co-routine scope
         coroutineScope {
+            val timeLengthMultiplier = 150
             launch(Dispatchers.Main) { // One or more ball movements in serial fashion
                 movingChain.forEachIndexed { index, currentMovingRec ->
                     if (currentMovingRec.distance > 0) {
-                        val totalTimeLength = (currentMovingRec.distance * 100) + overtime
+                        val totalTimeLength = (currentMovingRec.distance * timeLengthMultiplier) + overtime
                         animateBallMovementCtlList[index].animateTo(
                             targetValue = 1f,
                             animationSpec = ballMovementKeyframeSpec(
@@ -913,7 +914,7 @@ fun AnimateBallMovementsSetup(
             } // Launch
 
             launch(Dispatchers.Main) {  // Animate explosion on the first ball only
-                val totalTimeLength = (movingChain[0].distance * 100) + overtime
+                val totalTimeLength = (movingChain[0].distance * timeLengthMultiplier) + overtime
                 animateParticleExplosionCtl.animateTo(
                     targetValue = 0.5f,
                     animationSpec = particleExplosionAnimatedSpec(
@@ -923,10 +924,21 @@ fun AnimateBallMovementsSetup(
                 )
             } // launch
 
-            launch (Dispatchers.Main){
-                val totalTimeLength = (movingChain[0].distance * 100)
-                delay((totalTimeLength * whenBallMakeContactRatio).toLong())
-                gAudio_swish.start()
+            launch (Dispatchers.Main) {
+                val numMoves = movingChain.size
+                movingChain.forEachIndexed { index, currentMovingRec ->
+                    Log.i(Global.DEBUG_PREFIX, "Checking swish sound at index $index")
+                    if ((currentMovingRec.distance > 0) && (index < (numMoves - 1))) {
+                        val totalTimeLength = (movingChain[index].distance * timeLengthMultiplier + overtime)
+                        delay((totalTimeLength * whenBallMakeContactRatio).toLong())
+                        Log.i(Global.DEBUG_PREFIX, "Distance: ${currentMovingRec.distance}   Play swish sound at index $index")
+                        if (gAudio_swish.isPlaying) {
+                            gAudio_swish.seekTo(0)
+                        } else {
+                            gAudio_swish.start()
+                        }
+                    }
+                }
             }
         }   // coroutineScope
     } // LaunchedEffect
