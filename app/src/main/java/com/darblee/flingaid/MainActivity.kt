@@ -245,24 +245,36 @@ private fun SetUpGameAudioOnAppStart() {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> {
+                    Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event - ON_START")
+
                     if (gSoundOn) {
                         gAudio_gameMusic.start()
+                        Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event - ON_START : Music started")
                     }
                 }
 
                 Lifecycle.Event.ON_RESUME -> {
+                    Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event - ON_RESUME")
+
                     if (gSoundOn) {
                         gAudio_gameMusic.start()
+                        Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event - ON_RESUME : Music started")
+
                     }
                 }
 
                 Lifecycle.Event.ON_STOP -> {
                     gAudio_gameMusic.pause()
-                    Log.i(Global.DEBUG_PREFIX, "Music paused")
+                    Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event - ON_STOP : Music paused")
+                }
+
+                Lifecycle.Event.ON_PAUSE -> {
+                    gAudio_gameMusic.pause()
+                    Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event - ON_PAUSE : Music paused")
                 }
 
                 else -> {
-                    Log.i(Global.DEBUG_PREFIX, "$event event ignored")
+                    Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event $event -  ignored")
                 }
             }
         }
