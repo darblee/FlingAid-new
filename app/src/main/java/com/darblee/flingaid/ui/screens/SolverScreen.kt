@@ -30,12 +30,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -83,8 +83,10 @@ import com.darblee.flingaid.gSolverViewModel
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUIState
 import com.darblee.flingaid.ui.SolverViewModel
+import com.darblee.flingaid.utilities.AnimateBallMovementsReset
 import com.darblee.flingaid.utilities.AnimateBallMovementsSetup
 import com.darblee.flingaid.utilities.AnimateShadowBallMovementSetup
+import com.darblee.flingaid.utilities.AnimateVictoryMessageReset
 import com.darblee.flingaid.utilities.AnimateVictoryMessageSetup
 import com.darblee.flingaid.utilities.NoWinnableMoveDialog
 import com.darblee.flingaid.utilities.Pos
@@ -95,6 +97,7 @@ import com.darblee.flingaid.utilities.click
 import com.darblee.flingaid.utilities.displayLoadingMessage
 import com.darblee.flingaid.utilities.gameToast
 import com.darblee.flingaid.utilities.generateExplosionParticles
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
 import kotlin.math.abs
@@ -345,6 +348,7 @@ private fun SolverActionButtons(
     currentlyThinking: Boolean,
     readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?,
 ) {
+    val scope = rememberCoroutineScope()
     val view = LocalView.current
 
     val readyToMove = (readyToMoveRec != null)
@@ -361,15 +365,18 @@ private fun SolverActionButtons(
                 gStartThinkingTime = timeSource.markNow()
 
                 view.click()
-                if (readyToMove) {
-                    gSolverViewModel.setModeToShowBallMovement(
-                        readyToMoveRec!!.winningDirectionPreview,
-                        readyToMoveRec.winingMovingChainPreview
-                    )
-                }
 
-                if (readyToFindSolution) {
-                    gSolverViewModel.findWinningMove()
+                scope.launch {
+                    // scope.launch side effect is needed as this block of code need to run and has
+                    // nothing to do with composable. This code can not be cancelled prematurely in
+                    // the event the composable function exits or another re-composable get started
+                    if (readyToMove) {
+                        gSolverViewModel.setModeToShowBallMovement(
+                            readyToMoveRec!!.winningDirectionPreview,
+                            readyToMoveRec.winingMovingChainPreview
+                        )
+                    }
+                    if (readyToFindSolution) { gSolverViewModel.findWinningMove() }
                 }
             }, // OnClick
             shape = RoundedCornerShape(5.dp),
@@ -399,10 +406,16 @@ private fun SolverActionButtons(
         Button(
             onClick = {
                 view.click()
-                if (currentlyThinking) gSolverViewModel.stopThinking()
 
-                // Reset the board game and set it back to idle state
-                gSolverViewModel.reset()
+                scope.launch {
+                    // scope.launch side effect is needed as this block of code need to run and has
+                    // nothing to do with composable. This code can not be cancelled prematurely in
+                    // the event the composable function exits or another re-composable get started
+                    if (currentlyThinking) gSolverViewModel.stopThinking()
+
+                    // Reset the board game and set it back to idle state
+                    gSolverViewModel.reset()
+                }
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -474,10 +487,7 @@ private fun DrawSolverBoard(
             animateCtl = animateVictoryMessage,
         )
     } else {
-        LaunchedEffect(true) {
-            animateVictoryMessage.stop()
-            animateVictoryMessage.snapTo(0f)
-        }
+        AnimateVictoryMessageReset(animateCtl = animateVictoryMessage )
     }
 
     val animateBallMovementChain = mutableListOf<Animatable<Float, AnimationVector1D>>()
@@ -507,13 +517,9 @@ private fun DrawSolverBoard(
             animateParticleExplosionCtl = animateParticleExplosion,
             moveBallTask = solverMoveBallTask
         )
-
     } else {
-        LaunchedEffect(true) {
-            particles.clear()
-            animateParticleExplosion.stop()
-            animateParticleExplosion.snapTo(0f)
-        }
+        particles.clear()
+        AnimateBallMovementsReset(animateParticleExplosionCtl = animateParticleExplosion )
     }
 
     Box(

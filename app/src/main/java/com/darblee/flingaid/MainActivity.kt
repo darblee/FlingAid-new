@@ -132,7 +132,7 @@ class MainActivity : ComponentActivity() {
             //
             // "true" in "LaunchEffect(true)" means run this once.
             //
-            LaunchedEffect(true) {
+            LaunchedEffect(Unit) {
                 var keepSplashOnScreen = true
                 splashScreen.setKeepOnScreenCondition { keepSplashOnScreen }
 
@@ -297,7 +297,7 @@ private fun FlingAidTopAppBar(
     val preference = PreferenceStore(context)
 
     if (!loadPlayerNameOnce) {
-        LaunchedEffect(key1 = true) {
+        LaunchedEffect(Unit) {
             currentPlayerName = preference.readPlayerNameFomSetting()
         }
         loadPlayerNameOnce = true

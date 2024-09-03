@@ -705,6 +705,8 @@ fun animateShadowBallMovementsPerform(
  */
 @Composable
 fun AnimateShadowBallMovementSetup(animateCtl: Animatable<Float, AnimationVector1D>) {
+
+    // Run the side effect only once
     LaunchedEffect(Unit) {
         animateCtl.snapTo(0f)
         animateCtl.animateTo(
@@ -883,6 +885,7 @@ fun AnimateBallMovementsSetup(
     val whenBallMakeContactRatio = 0.9f
     val overtime = 200
 
+    // Run the side effect only once
     LaunchedEffect(Unit) {
         // Use coroutine to ensure both launch animation get completed in the same co-routine scope
         coroutineScope {
@@ -942,6 +945,20 @@ fun AnimateBallMovementsSetup(
             }
         }   // coroutineScope
     } // LaunchedEffect
+}
+
+
+/**
+ * Stop and reset the ball movement animation control
+ */
+@Composable
+fun AnimateBallMovementsReset(animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
+)
+{
+    LaunchedEffect(Unit) {
+        animateParticleExplosionCtl.stop()
+        animateParticleExplosionCtl.snapTo(0f)
+    }
 }
 
 /**
@@ -1062,6 +1079,7 @@ fun AnimateVictoryMessageSetup(
     setModeAfterVictoryMsg: () -> Unit,
     animateCtl: Animatable<Float, AnimationVector1D>,
 ) {
+    // Run the side effect only once
     LaunchedEffect(Unit) {
         // Use coroutine to ensure both animation and sound happen in parallel
         coroutineScope {
@@ -1088,6 +1106,21 @@ fun AnimateVictoryMessageSetup(
 
         }  // coroutineScope
     } // LaunchedEffect
+}
+
+/**
+ * Stop and reset the victory message animation control
+ *
+ * @param animateCtl Animate object that control animation state of the victory message
+ */
+@Composable
+fun AnimateVictoryMessageReset(animateCtl: Animatable<Float, AnimationVector1D>)
+{
+    // Run the side effect only once
+    LaunchedEffect(Unit) {
+        animateCtl.stop()
+        animateCtl.snapTo(0F)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

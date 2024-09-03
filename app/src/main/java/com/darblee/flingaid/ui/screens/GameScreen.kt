@@ -40,6 +40,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -79,8 +80,10 @@ import com.darblee.flingaid.gGameViewModel
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.Particle
+import com.darblee.flingaid.utilities.AnimateBallMovementsReset
 import com.darblee.flingaid.utilities.AnimateBallMovementsSetup
 import com.darblee.flingaid.utilities.AnimateShadowBallMovementSetup
+import com.darblee.flingaid.utilities.AnimateVictoryMessageReset
 import com.darblee.flingaid.utilities.AnimateVictoryMessageSetup
 import com.darblee.flingaid.utilities.NoWinnableMoveDialog
 import com.darblee.flingaid.utilities.Pos
@@ -260,6 +263,7 @@ private fun GameActionButtons(
     val logoSize = 125.dp
     var loadGameLevelSetting by remember { mutableStateOf(false) }
 
+    val scope = rememberCoroutineScope()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -326,6 +330,7 @@ private fun GameActionButtons(
                     modifier = Modifier.padding(top = 5.dp, bottom = 0.dp),
                 )
             }
+
             Slider(
                 value = gameLevel,
                 onValueChange =
@@ -337,10 +342,15 @@ private fun GameActionButtons(
                 steps = 13,
                 modifier = Modifier.padding(0.dp),
                 onValueChangeFinished = {
-                    val gameLevelAsInteger = gameLevel.roundToInt()
-                    gGameViewModel.setGameLevel(gameLevelAsInteger)
-                    CoroutineScope(Dispatchers.IO).launch {
-                        preference.saveGameLevelToSetting(gameLevelAsInteger)
+                    scope.launch {
+                        // scope.launch side effect is needed as this block of code need to run and has
+                        // nothing to do with composable. This code can not be cancelled prematurely in
+                        // the event the composable function exits or another re-composable get started
+                        val gameLevelAsInteger = gameLevel.roundToInt()
+                        gGameViewModel.setGameLevel(gameLevelAsInteger)
+                        CoroutineScope(Dispatchers.IO).launch {
+                            preference.saveGameLevelToSetting(gameLevelAsInteger)
+                        }
                     }
                 }
             )
@@ -358,8 +368,14 @@ private fun GameActionButtons(
             onClick =
             {
                 view.click()
-                resetWinnableMove.invoke()
-                gGameViewModel.generateNewGame()
+
+                scope.launch {
+                    // scope.launch side effect is needed as this block of code need to run and has
+                    // nothing to do with composable. This code can not be cancelled prematurely in
+                    // the event the composable function exits or another re-composable get started
+                    resetWinnableMove.invoke()
+                    gGameViewModel.generateNewGame()
+                }
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -377,8 +393,14 @@ private fun GameActionButtons(
         Button(
             onClick = {
                 view.click()
-                gGameViewModel.undo()
-                resetWinnableMove.invoke()
+
+                // scope.launch side effect is needed as this block of code need to run and has
+                // nothing to do with composable. This code can not be cancelled prematurely in
+                // the event the composable function exits or another re-composable get started
+                scope.launch {
+                    gGameViewModel.undo()
+                    resetWinnableMove.invoke()
+                }
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -403,7 +425,10 @@ private fun GameActionButtons(
             onClick =
             {
                 view.click()
-                gGameViewModel.getHint()
+                // scope.launch side effect is needed as this block of code need to run and has
+                // nothing to do with composable. This code can not be cancelled prematurely in
+                // the event the composable function exits or another re-composable get started
+                scope.launch { gGameViewModel.getHint() }
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -464,25 +489,23 @@ private fun DrawGameBoard(
     var particles = mutableListOf<Particle>()
 
     val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
+
+    // If the "announceVictory" is true, then the LaunchedEffect composable inside the
+    // AnimateVictoryMessageSetup will run
     if (announceVictory) {
         AnimateVictoryMessageSetup(
             { gGameViewModel.setModeUpdatedGameBoard() },
             animateCtl = animateVictoryMessage
         )
     } else {
-        LaunchedEffect(true) {
-            animateVictoryMessage.stop()
-            animateVictoryMessage.snapTo(0F)
-        }
+        AnimateVictoryMessageReset(animateVictoryMessage)
     }
 
     /**
      * Animation control that handle showing hint
      */
     val animateHintMove = remember { Animatable(initialValue = 0f) }
-    if (hintBallRec != null) {
-        AnimateShadowBallMovementSetup(animateHintMove)
-    }
+    if (hintBallRec != null) { AnimateShadowBallMovementSetup(animateHintMove) }
 
     if (moveBallRec != null) {
 
@@ -491,11 +514,8 @@ private fun DrawGameBoard(
             generateExplosionParticles(moveBallRec.movingChain, moveBallRec.moveDirection)
         }.toMutableList()
 
-        /**
-         * The following lambda functions are used in [AnimateBallMovementsSetup] routine
-         */
-        val gameMoveBallTask =
-            { pos: Pos, direction: Direction -> gGameViewModel.moveBall(pos, direction) }
+        // The following lambda functions are used in [AnimateBallMovementsSetup] routine
+        val gameMoveBallTask = { pos: Pos, direction: Direction -> gGameViewModel.moveBall(pos, direction) }
 
         AnimateBallMovementsSetup(
             movingChain = moveBallRec.movingChain,
@@ -509,10 +529,7 @@ private fun DrawGameBoard(
         // Else we longer need ball movement animation. So clear animation set-up
         // Make sure we do not show any more particle explosion when ball animation is done
         particles.clear()
-        LaunchedEffect(Unit) {
-            animateParticleExplosion.stop()
-            animateParticleExplosion.snapTo(0f)
-        }
+        AnimateBallMovementsReset(animateParticleExplosionCtl = animateParticleExplosion)
     }
 
     /**
