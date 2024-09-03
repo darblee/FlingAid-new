@@ -41,7 +41,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -450,6 +449,11 @@ private fun GameActionButtons(
 }
 
 /**
+ * [gDisplayBallImage] is stored as a global variable so it can be preserve even after each recompose
+ */
+private lateinit var gDisplayBallImage: ImageBitmap
+
+/**
  *  Draw the Game Board:
  *  - Draw the Grid
  *  - Place all the balls
@@ -550,9 +554,15 @@ private fun DrawGameBoard(
         contentAlignment = Alignment.Center,
     ) {
         val lineColor = MaterialTheme.colorScheme.outline
-        var gridSize by rememberSaveable {
-            mutableFloatStateOf(0f)
-        }
+
+        var gridSize by remember { mutableFloatStateOf(10f) }
+
+        /**
+         * prevGridSize is used to cache bitmap. We need to preserve
+         * this variable after re-compose. The bit is stored in
+         * global variable [gDisplayBallImage]
+         */
+        var prevGridSize by remember { mutableFloatStateOf(gridSize) }
 
         val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
 
@@ -560,8 +570,6 @@ private fun DrawGameBoard(
         var offsetY by remember { mutableFloatStateOf(0f) }
         var dragRow by remember { mutableIntStateOf(-1) }
         var dragCol by remember { mutableIntStateOf(-1) }
-
-        val minSwipeOffset = gridSize
 
         val allowSwipe = (moveBallRec == null)
 
@@ -584,7 +592,7 @@ private fun DrawGameBoard(
                         onDragEnd = {
 
                             when {
-                                (offsetX < 0F && abs(offsetX) > minSwipeOffset) -> {
+                                (offsetX < 0F && abs(offsetX) > (gridSize * 1.2)) -> {
                                     if (allowSwipe)
                                         gGameViewModel.setupNextMove(
                                             dragRow,
@@ -593,7 +601,7 @@ private fun DrawGameBoard(
                                         )
                                 }
 
-                                (offsetX > 0F && abs(offsetX) > minSwipeOffset) -> {
+                                (offsetX > 0F && abs(offsetX) > (gridSize * 1.2)) -> {
                                     if (allowSwipe)
                                         gGameViewModel.setupNextMove(
                                             dragRow,
@@ -602,12 +610,15 @@ private fun DrawGameBoard(
                                         )
                                 }
 
-                                (offsetY < 0F && abs(offsetY) > minSwipeOffset) -> {
+                                (offsetY < 0F && abs(offsetY) > (gridSize * 1.2)) -> {
                                     if (allowSwipe)
-                                        gGameViewModel.setupNextMove(dragRow, dragCol, Direction.UP)
+                                        gGameViewModel.setupNextMove(
+                                            dragRow,
+                                            dragCol,
+                                            Direction.UP)
                                 }
 
-                                (offsetY > 0F && abs(offsetY) > minSwipeOffset) -> {
+                                (offsetY > 0F && abs(offsetY) > (gridSize * 1.2)) -> {
                                     if (allowSwipe)
                                         gGameViewModel.setupNextMove(
                                             dragRow,
@@ -624,6 +635,7 @@ private fun DrawGameBoard(
                     ) // detectDragGestures
                 } // .pointerInput
         ) {
+            val drawScope = this   // DrawScope of this grid
             val canvasWidth = size.width
             val canvasHeight = size.height
 
@@ -632,23 +644,30 @@ private fun DrawGameBoard(
 
             gridSize = if (gridSizeWidth > gridSizeHeight) gridSizeHeight else gridSizeWidth
 
-            val drawScope = this   // DrawScope of this grid
             drawGridForGame(drawScope, gridSize, lineColor)
 
-            val ballSize = (gridSize * 1.2).toInt()
-            val displayBallImage = Bitmap.createScaledBitmap(
-                ballImage.asAndroidBitmap(),
-                ballSize, ballSize, false
-            ).asImageBitmap()
+            // createScaledBitmap is an expensive operation
+            // Call it only when gridSize has changed
+            if (prevGridSize != gridSize) {
+                prevGridSize = gridSize
 
-            displayBallImage.prepareToDraw()   // cache it
+                val ballSize = (gridSize * 1.2).toInt()
+
+                Log.i(Global.DEBUG_PREFIX, "Game: Calling expensive function to create scale bitmap")
+                gDisplayBallImage = Bitmap.createScaledBitmap(
+                    ballImage.asAndroidBitmap(),
+                    ballSize, ballSize, false
+                ).asImageBitmap()
+            }
+
+            gDisplayBallImage.prepareToDraw()   // cache it
 
             if (hintBallRec != null) {
                 animateShadowBallMovementsPerform(
                     drawScope = drawScope,
                     gridSize = gridSize,
                     animateCtl = animateHintMove,
-                    displayBallImage = displayBallImage,
+                    displayBallImage = gDisplayBallImage,
                     distance = hintBallRec.shadowMovingChain[0].distance,
                     direction = hintBallRec.shadowMoveDirection,
                     pos = hintBallRec.shadowMovingChain[0].pos
@@ -661,13 +680,13 @@ private fun DrawGameBoard(
                 gGameViewModel.drawGameBallsOnGrid(
                     drawScope,
                     gridSize,
-                    displayBallImage,
+                    gDisplayBallImage,
                     ballsToErase
                 )
                 animateBallMovementsPerform(
                     drawScope = drawScope,
                     gridSize = gridSize,
-                    displayBallImage = displayBallImage,
+                    displayBallImage = gDisplayBallImage,
                     animateBallMovementChainCtlList = animateBallMovementChain,
                     animateParticleExplosionCtl = animateParticleExplosion,
                     particles = particles,
@@ -675,13 +694,13 @@ private fun DrawGameBoard(
                     movingChain = moveBallRec.movingChain
                 )
             } else {
-                gGameViewModel.drawGameBallsOnGrid(drawScope, gridSize, displayBallImage)
+                gGameViewModel.drawGameBallsOnGrid(drawScope, gridSize, gDisplayBallImage)
 
                 if (shadowBallRec != null) {
                     animateShadowBallMovementsPerform(
                         drawScope = drawScope,
                         gridSize = gridSize,
-                        displayBallImage = displayBallImage,
+                        displayBallImage = gDisplayBallImage,
                         animateCtl = animateShadowMovement,
                         distance = shadowBallRec.shadowMovingChain[0].distance,
                         direction = shadowBallRec.shadowMoveDirection,

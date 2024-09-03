@@ -36,7 +36,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -438,6 +437,11 @@ private fun SolverActionButtons(
 }
 
 /**
+ * [gDisplayBallImage] is stored as a global variable so it can be preserve even after each recompose
+ */
+private lateinit var gDisplayBallImage: ImageBitmap
+
+/**
  *  Draw the Solver Game Board:
  *  - Draw the Grid
  *  - Place all the balls
@@ -533,7 +537,14 @@ private fun DrawSolverBoard(
     ) {
         val view = LocalView.current
         val lineColor = MaterialTheme.colorScheme.outline
-        var gridSize by rememberSaveable { mutableFloatStateOf(0f) }
+        var gridSize by remember { mutableFloatStateOf(10f) }
+
+        /**
+         * prevGridSize is used to cache bitmap. We need to preserve
+         * this variable after re-compose. The bit is stored in
+         * global variable [gDisplayBallImage]
+         */
+        var prevGridSize by remember { mutableFloatStateOf(gridSize) }
 
         val ballImage = ImageBitmap.imageResource(id = R.drawable.ball)
 
@@ -597,6 +608,7 @@ private fun DrawSolverBoard(
                     ) // detectDragGestures
                 } // .pointerInput
         ) {
+
             val drawScope = this
             val canvasWidth = size.width
             val canvasHeight = size.height
@@ -608,12 +620,21 @@ private fun DrawSolverBoard(
 
             drawGrid(drawScope, gridSize, lineColor)
 
-            val ballSize = (gridSize * 1.2).toInt()
-            val displayBallImage = Bitmap.createScaledBitmap(
-                ballImage.asAndroidBitmap(),
-                ballSize, ballSize, false
-            ).asImageBitmap()
-            displayBallImage.prepareToDraw()   // cache it
+            // createScaledBitmap is an expensive operation
+            // Call it only when gridSize has changed
+            if (prevGridSize != gridSize) {
+                prevGridSize = gridSize
+
+                val ballSize = (gridSize * 1.2).toInt()
+
+                Log.i(Global.DEBUG_PREFIX, "Solver: Calling expensive function to create scale bitmap")
+                gDisplayBallImage = Bitmap.createScaledBitmap(
+                    ballImage.asAndroidBitmap(),
+                    ballSize, ballSize, false
+                ).asImageBitmap()
+            }
+
+            gDisplayBallImage.prepareToDraw()   // cache it
 
             if (showBallMovementAnimation) {
                 // The animation routine already show the ball in its starting position. We need
@@ -622,13 +643,13 @@ private fun DrawSolverBoard(
                 gSolverViewModel.drawSolverBallsOnGrid(
                     drawScope,
                     gridSize,
-                    displayBallImage,
+                    gDisplayBallImage,
                     ballsToErase
                 )
             } else {
                 // No need to animate ball movement, but now need to check if we need to show
                 // preview of next winning ball movement
-                gSolverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, displayBallImage)
+                gSolverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, gDisplayBallImage)
 
                 if (showPreviewMovementAnimation) {
 
@@ -642,7 +663,7 @@ private fun DrawSolverBoard(
                             drawScope = drawScope,
                             gridSize = gridSize,
                             animateCtl = animatePreviewWinningMove,
-                            displayBallImage = displayBallImage,
+                            displayBallImage = gDisplayBallImage,
                             distance = moveCount,
                             direction = readyToMoveRec.winningDirectionPreview,
                             pos = readyToMoveRec.winingMovingChainPreview[0].pos
@@ -657,7 +678,7 @@ private fun DrawSolverBoard(
                 animateBallMovementsPerform(
                     drawScope = drawScope,
                     gridSize = gridSize,
-                    displayBallImage = displayBallImage,
+                    displayBallImage = gDisplayBallImage,
                     animateBallMovementChainCtlList = animateBallMovementChain,
                     animateParticleExplosionCtl = animateParticleExplosion,
                     particles = particles,

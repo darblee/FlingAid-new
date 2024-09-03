@@ -1244,6 +1244,3 @@ fun displayLoadingMessage(
         )
     }
 }
-
-
-
