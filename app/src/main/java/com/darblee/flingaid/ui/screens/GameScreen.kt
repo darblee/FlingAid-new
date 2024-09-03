@@ -97,10 +97,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 /**
  *  **The main Game Screen**
@@ -309,22 +307,22 @@ private fun GameActionButtons(
                 style = MaterialTheme.typography.bodySmall
             )
 
-            var gameLevelInt = 1
+            var gameLevel by remember { mutableIntStateOf(1) }
             if (!loadGameLevelSetting) {
                 Log.i(Global.DEBUG_PREFIX, "Load game setting from file")
-                runBlocking {
-                    gameLevelInt = preference.readGameLevelFromSetting()
-                    gGameViewModel.setGameLevel(gameLevelInt)
+                LaunchedEffect(Unit) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        gameLevel = preference.readGameLevelFromSetting()
+                        gGameViewModel.setGameLevel(gameLevel)
+                        loadGameLevelSetting = true
+                    }
                 }
-                loadGameLevelSetting = true
             }
-            var gameLevel by remember { mutableFloatStateOf(gameLevelInt.toFloat()) }
 
-            val levelString = gameLevel.roundToInt().toString()
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center)
             {
                 Text(
-                    text = "Level: $levelString",
+                    text = "Level: $gameLevel",
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 5.dp, bottom = 0.dp),
@@ -332,11 +330,11 @@ private fun GameActionButtons(
             }
 
             Slider(
-                value = gameLevel,
+                value = gameLevel.toFloat(),
                 onValueChange =
                 {
                     view.click()
-                    gameLevel = it
+                    gameLevel = it.toInt()
                 },
                 valueRange = 1f..Global.MAX_GAME_LEVEL.toFloat(),
                 steps = 13,
@@ -346,10 +344,9 @@ private fun GameActionButtons(
                         // scope.launch side effect is needed as this block of code need to run and has
                         // nothing to do with composable. This code can not be cancelled prematurely in
                         // the event the composable function exits or another re-composable get started
-                        val gameLevelAsInteger = gameLevel.roundToInt()
-                        gGameViewModel.setGameLevel(gameLevelAsInteger)
+                        gGameViewModel.setGameLevel(gameLevel)
                         CoroutineScope(Dispatchers.IO).launch {
-                            preference.saveGameLevelToSetting(gameLevelAsInteger)
+                            preference.saveGameLevelToSetting(gameLevel)
                         }
                     }
                 }
