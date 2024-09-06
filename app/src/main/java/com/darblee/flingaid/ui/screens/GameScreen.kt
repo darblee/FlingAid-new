@@ -130,7 +130,7 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
 
         // Because "initial data loading" mode is only set at initialization, this is only called once.
         // WHen singleton object class GameViewModel get instantiated, it will load the game files
-        // AAfter the completion of file loading, it will set to "UpdatedGameBoard" mode.
+        // After the completion of file loading, it will set to "UpdatedGameBoard" mode.
         GameUIState.GameMode.Initialization -> {
             Log.i("Game Recompose: ", "${gameUIState.mode} : Initializing...")
             initializing = true
@@ -789,6 +789,7 @@ private fun drawGridForGame(
 fun GameAnimateShadowBallMovementSetup(
     animateCtl: Animatable<Float, AnimationVector1D>,
 ) {
+    // Run this side effect once
     LaunchedEffect(Unit) {
         // Use coroutineScope to control both animation task and sound task happen in parallel
         coroutineScope {

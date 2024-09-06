@@ -43,6 +43,7 @@ android {
             val buildTime = sdf.format(instant.epochSecond * 1000L)
             buildConfigField("String", "BUILD_TIME", "\"${buildTime}\"")
             resValue("string", "build_time", "\"${buildTime}\"")
+            signingConfig = signingConfigs.getByName("debug")
         }
 
         debug {

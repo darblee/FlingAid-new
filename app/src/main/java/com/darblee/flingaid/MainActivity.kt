@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
             // As soon as data is fetched. then 'currentColorThemeSetting' is updated, it will do
             // a recompose automatically
             //
-            // THis tasks is cancelled automatically when composable is removed from the composition
+            // This tasks is cancelled automatically when composable is removed from the composition
             //
             // "true" in "LaunchEffect(true)" means run this once.
             //
