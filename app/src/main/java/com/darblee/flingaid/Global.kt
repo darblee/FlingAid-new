@@ -1,6 +1,7 @@
 package com.darblee.flingaid
 
 import android.media.MediaPlayer
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.dp
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.MovingRec
@@ -28,6 +29,11 @@ enum class Direction { NO_WINNING_DIRECTION, UP, DOWN, LEFT, RIGHT, INCOMPLETE }
 lateinit var gAudio_doink: MediaPlayer
 lateinit var gAudio_victory: MediaPlayer
 lateinit var gAudio_swish: MediaPlayer
+
+/**
+ * [gDisplayBallImage] is stored as a global variable so it can be preserve even after each recompose
+ */
+lateinit var gDisplayBallImage: ImageBitmap
 
 lateinit var gGameViewModel : GameViewModel
 lateinit var gSolverViewModel : SolverViewModel

@@ -2,7 +2,6 @@ package com.darblee.flingaid.ui
 
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -782,17 +781,15 @@ class SolverViewModel(gGameFile: File, gRejectFile : File) : ViewModel() {
      *
      * @param drawScope The drawing canvas of the grid
      * @param gridSize The grid size
-     * @param displayBallImage Actual image of ball o display
      * @param ballsToErase Used during ball animation. We need to temporarily
      * erase the animation ball as the animation routine will display it
      */
     fun drawSolverBallsOnGrid(
         drawScope: DrawScope,
         gridSize: Float,
-        displayBallImage: ImageBitmap,
         ballsToErase: BallMoveSet = listOf()
     ) {
-        _solverBallPos.drawAllBalls(drawScope, gridSize, displayBallImage, ballsToErase)
+        _solverBallPos.drawAllBalls(drawScope, gridSize, ballsToErase)
     }
 }
 

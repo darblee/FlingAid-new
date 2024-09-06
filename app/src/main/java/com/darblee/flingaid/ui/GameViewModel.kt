@@ -335,10 +335,9 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
     fun drawGameBallsOnGrid(
         drawScope: DrawScope,
         gridSize: Float,
-        displayBallImage: ImageBitmap,
         ballsToErase: BallMoveSet = listOf()
     ) {
-        _gameBallPos.drawAllBalls(drawScope, gridSize, displayBallImage, ballsToErase)
+        _gameBallPos.drawAllBalls(drawScope, gridSize, ballsToErase)
     }
 
     /**

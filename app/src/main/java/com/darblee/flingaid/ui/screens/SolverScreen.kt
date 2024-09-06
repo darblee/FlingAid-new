@@ -78,6 +78,7 @@ import com.darblee.flingaid.BackPressHandler
 import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
+import com.darblee.flingaid.gDisplayBallImage
 import com.darblee.flingaid.gSolverViewModel
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUIState
@@ -436,10 +437,7 @@ private fun SolverActionButtons(
     }
 }
 
-/**
- * [gDisplayBallImage] is stored as a global variable so it can be preserve even after each recompose
- */
-private lateinit var gDisplayBallImage: ImageBitmap
+
 
 /**
  *  Draw the Solver Game Board:
@@ -643,13 +641,12 @@ private fun DrawSolverBoard(
                 gSolverViewModel.drawSolverBallsOnGrid(
                     drawScope,
                     gridSize,
-                    gDisplayBallImage,
                     ballsToErase
                 )
             } else {
                 // No need to animate ball movement, but now need to check if we need to show
                 // preview of next winning ball movement
-                gSolverViewModel.drawSolverBallsOnGrid(drawScope, gridSize, gDisplayBallImage)
+                gSolverViewModel.drawSolverBallsOnGrid(drawScope, gridSize)
 
                 if (showPreviewMovementAnimation) {
 
@@ -663,7 +660,6 @@ private fun DrawSolverBoard(
                             drawScope = drawScope,
                             gridSize = gridSize,
                             animateCtl = animatePreviewWinningMove,
-                            displayBallImage = gDisplayBallImage,
                             distance = moveCount,
                             direction = readyToMoveRec.winningDirectionPreview,
                             pos = readyToMoveRec.winingMovingChainPreview[0].pos
@@ -678,7 +674,6 @@ private fun DrawSolverBoard(
                 animateBallMovementsPerform(
                     drawScope = drawScope,
                     gridSize = gridSize,
-                    displayBallImage = gDisplayBallImage,
                     animateBallMovementChainCtlList = animateBallMovementChain,
                     animateParticleExplosionCtl = animateParticleExplosion,
                     particles = particles,

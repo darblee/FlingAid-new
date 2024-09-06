@@ -65,6 +65,7 @@ import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_swish
 import com.darblee.flingaid.gAudio_victory
+import com.darblee.flingaid.gDisplayBallImage
 import com.darblee.flingaid.ui.MovingRec
 import com.darblee.flingaid.ui.Particle
 import kotlinx.coroutines.Dispatchers
@@ -435,14 +436,12 @@ class FlickerBoard {
      *
      * @param drawScope The drawing canvas of the grid
      * @param gridSize The size of the grid
-     * @param displayBallImage Actual image of ball o display
      * @param eraseAnimatedBallPositions Used during ball animation. We need to temporarily
      * erase the animation ball as the animation routine will display it
      */
     fun drawAllBalls(
         drawScope: DrawScope,
         gridSize: Float,
-        displayBallImage: ImageBitmap,
         eraseAnimatedBallPositions: BallMoveSet = listOf()
     ) {
         // Draw all the balls
@@ -460,7 +459,7 @@ class FlickerBoard {
                 }
             }
 
-            if (!skipDraw) drawBallOnGrid(drawScope, gridSize, curBallListPosition, displayBallImage)
+            if (!skipDraw) drawBallOnGrid(drawScope, gridSize, curBallListPosition)
         }
     }
 
@@ -607,21 +606,19 @@ class FlickerBoard {
  * @param drawScope
  * @param gridSize Size the dimension of the grid
  * @param pos Specific position (row, column)
- * @param displayBallImage Actual image bitmap of the ball
  * @param alpha amount of transparency
  */
 fun drawBallOnGrid(
     drawScope: DrawScope,
     gridSize: Float,
     pos: Pos,
-    displayBallImage: ImageBitmap,
     alpha: Float = 1.0F
 ) {
-    val offsetAdjustment = (gridSize / 2) - (displayBallImage.width / 2)
+    val offsetAdjustment = (gridSize / 2) - (gDisplayBallImage.width / 2)
 
     with(drawScope) {
         drawImage(
-            image = displayBallImage,
+            image = gDisplayBallImage,
             topLeft = Offset(
                 (pos.col * gridSize) + offsetAdjustment,
                 (pos.row * gridSize) + offsetAdjustment
@@ -644,7 +641,6 @@ fun drawBallOnGrid(
  * @param drawScope Scope to do the drawing on
  * @param gridSize width or height of the grid in dp unit
  * @param animateCtl Animate object controller that manage shadow ball movement
- * @param displayBallImage The image of the ball
  * @param distance number of blocks in this ball movement
  * @param direction Direction of the ball movement
  * @param pos Position of the ball to move from
@@ -653,7 +649,6 @@ fun animateShadowBallMovementsPerform(
     drawScope: DrawScope,
     gridSize: Float,
     animateCtl: Animatable<Float, AnimationVector1D>,
-    displayBallImage: ImageBitmap,
     distance: Int,
     direction: Direction,
     pos: Pos
@@ -688,7 +683,7 @@ fun animateShadowBallMovementsPerform(
             (xOffset) * animateCtl.value,
             (yOffset) * animateCtl.value
         ) {
-            drawBallOnGrid(drawScope, gridSize, pos, displayBallImage, alpha = 0.4F)
+            drawBallOnGrid(drawScope, gridSize, pos, alpha = 0.4F)
         }
     }
 }
@@ -967,7 +962,6 @@ fun AnimateBallMovementsReset(animateParticleExplosionCtl: Animatable<Float, Ani
  *
  * @param drawScope Canvas to draw the grid and balls
  * @param gridSize Size of grid. This used to do various computation on animation effect
- * @param displayBallImage The actual ball image to show
  * @param animateBallMovementChainCtlList Chain list of animate objects that control animation
  * state of all the ball movements in this chain
  * @param animateParticleExplosionCtl Animate Object that control animation state of particle explosion effect
@@ -977,7 +971,6 @@ fun AnimateBallMovementsReset(animateParticleExplosionCtl: Animatable<Float, Ani
 fun animateBallMovementsPerform(
     drawScope: DrawScope,
     gridSize: Float,
-    displayBallImage: ImageBitmap,
     animateBallMovementChainCtlList: MutableList<Animatable<Float, AnimationVector1D>>,
     animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
     particles: MutableList<Particle>,
@@ -1008,7 +1001,7 @@ fun animateBallMovementsPerform(
                 (xOffset) * ((animateBallMovementChainCtlList[index]).value),
                 (yOffset) * ((animateBallMovementChainCtlList[index]).value)
             ) {
-                drawBallOnGrid(drawScope, gridSize, movingSourcePos, displayBallImage)
+                drawBallOnGrid(drawScope, gridSize, movingSourcePos)
             } // translate
         }  // for
 

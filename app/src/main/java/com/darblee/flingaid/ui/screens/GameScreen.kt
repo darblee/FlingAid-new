@@ -75,6 +75,7 @@ import com.darblee.flingaid.Global
 import com.darblee.flingaid.PreferenceStore
 import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_doink
+import com.darblee.flingaid.gDisplayBallImage
 import com.darblee.flingaid.gGameViewModel
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
@@ -448,10 +449,6 @@ private fun GameActionButtons(
     }
 }
 
-/**
- * [gDisplayBallImage] is stored as a global variable so it can be preserve even after each recompose
- */
-private lateinit var gDisplayBallImage: ImageBitmap
 
 /**
  *  Draw the Game Board:
@@ -667,7 +664,6 @@ private fun DrawGameBoard(
                     drawScope = drawScope,
                     gridSize = gridSize,
                     animateCtl = animateHintMove,
-                    displayBallImage = gDisplayBallImage,
                     distance = hintBallRec.shadowMovingChain[0].distance,
                     direction = hintBallRec.shadowMoveDirection,
                     pos = hintBallRec.shadowMovingChain[0].pos
@@ -680,13 +676,11 @@ private fun DrawGameBoard(
                 gGameViewModel.drawGameBallsOnGrid(
                     drawScope,
                     gridSize,
-                    gDisplayBallImage,
                     ballsToErase
                 )
                 animateBallMovementsPerform(
                     drawScope = drawScope,
                     gridSize = gridSize,
-                    displayBallImage = gDisplayBallImage,
                     animateBallMovementChainCtlList = animateBallMovementChain,
                     animateParticleExplosionCtl = animateParticleExplosion,
                     particles = particles,
@@ -694,13 +688,12 @@ private fun DrawGameBoard(
                     movingChain = moveBallRec.movingChain
                 )
             } else {
-                gGameViewModel.drawGameBallsOnGrid(drawScope, gridSize, gDisplayBallImage)
+                gGameViewModel.drawGameBallsOnGrid(drawScope, gridSize)
 
                 if (shadowBallRec != null) {
                     animateShadowBallMovementsPerform(
                         drawScope = drawScope,
                         gridSize = gridSize,
-                        displayBallImage = gDisplayBallImage,
                         animateCtl = animateShadowMovement,
                         distance = shadowBallRec.shadowMovingChain[0].distance,
                         direction = shadowBallRec.shadowMoveDirection,
