@@ -30,6 +30,8 @@ lateinit var gAudio_doink: MediaPlayer
 lateinit var gAudio_victory: MediaPlayer
 lateinit var gAudio_swish: MediaPlayer
 
+var gSoundOn = false
+
 /**
  * [gDisplayBallImage] is stored as a global variable so it can be preserve even after each recompose
  */

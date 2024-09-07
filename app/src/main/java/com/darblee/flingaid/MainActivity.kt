@@ -2,9 +2,11 @@ package com.darblee.flingaid
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Context.AUDIO_SERVICE
 import android.content.pm.ActivityInfo
 import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -103,20 +105,63 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
 
-private var gSoundOn = false
+
 private lateinit var gAudio_gameMusic: MediaPlayer
 
 
+lateinit var gAudioManager: AudioManager
+lateinit var gFocusRequest: AudioFocusRequest
+
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        gAudioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        val playbackAttributes = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_GAME)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+
+        // Media player is handled according to the change in the focus which Android system grants for
+        val audioFocusChangeListener =
+            AudioManager.OnAudioFocusChangeListener { focusChange ->
+            when (focusChange) {
+                AudioManager.AUDIOFOCUS_LOSS -> {
+                    // Permanent loss of audio focus
+                    // Pause playback immediately
+                    mediaController.transportControls.pause()
+                    gAudio_gameMusic.release()
+                }
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                    // Pause playback
+                    gAudio_gameMusic.pause()
+                    gAudio_gameMusic.seekTo(0)
+                }
+                AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                    gAudio_gameMusic.pause()
+                    gAudio_gameMusic.seekTo(0)
+                }
+                AudioManager.AUDIOFOCUS_GAIN -> {
+                    // Your app has been granted audio focus again
+                    gAudio_gameMusic.start()
+                }
+            }
+        }
+
+        gFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(playbackAttributes!!)
+            .setAcceptsDelayedFocusGain(true)
+            .setOnAudioFocusChangeListener(audioFocusChangeListener)
+            .build()
 
         setContent {
             ForcePortraitMode()
 
             val splashScreen = installSplashScreen()
 
-            SetUpGameAudioOnAppStart()
+            SetUpGameAudioOnAppStart(playbackAttributes)
 
             var colorTheme by remember {
                 mutableStateOf(ColorThemeOption.System)
@@ -139,12 +184,22 @@ class MainActivity : ComponentActivity() {
                 colorTheme = PreferenceStore(applicationContext).readColorModeFromSetting()
 
                 gSoundOn = PreferenceStore(applicationContext).readGameMusicOnFlagFromSetting()
+                Log.i(Global.DEBUG_PREFIX, "Read sound setting from file: gSoundOn = $gSoundOn")
 
                 keepSplashOnScreen = false // End the splash screen
-            }
 
-            if (gSoundOn) {
-                gAudio_gameMusic.start()
+                if (gSoundOn) {
+                    Log.i(
+                        Global.DEBUG_PREFIX,
+                        "MAIN: Request system to get permission to play music"
+                    )
+                    val res = gAudioManager.requestAudioFocus(gFocusRequest)
+                    if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                        Log.i(Global.DEBUG_PREFIX, "Permission granted")
+
+                        gAudio_gameMusic.start()
+                    }
+                }
             }
 
             SetColorTheme(colorTheme)
@@ -213,26 +268,19 @@ private fun MainViewImplementation(
 }
 
 @Composable
-private fun SetUpGameAudioOnAppStart() {
-
-    // Initiate the media player instance with the media file from the raw folder
-
-    val attributes = AudioAttributes.Builder()
-        .setUsage(AudioAttributes.USAGE_GAME)
-        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-        .build()
+private fun SetUpGameAudioOnAppStart(playbackAttributes: AudioAttributes) {
 
     gAudio_doink = MediaPlayer.create(LocalContext.current, R.raw.doink)
-    gAudio_doink.setAudioAttributes(attributes)
+    gAudio_doink.setAudioAttributes(playbackAttributes)
 
     gAudio_victory = MediaPlayer.create(LocalContext.current, R.raw.victory)
-    gAudio_victory.setAudioAttributes(attributes)
+    gAudio_victory.setAudioAttributes(playbackAttributes)
 
     gAudio_gameMusic = MediaPlayer.create(LocalContext.current, R.raw.music2)
-    gAudio_gameMusic.setAudioAttributes(attributes)
+    gAudio_gameMusic.setAudioAttributes(playbackAttributes)
 
     gAudio_swish = MediaPlayer.create(LocalContext.current, R.raw.swish)
-    gAudio_swish.setAudioAttributes(attributes)
+    gAudio_swish.setAudioAttributes(playbackAttributes)
 
     gAudio_gameMusic.isLooping = true
 
@@ -248,16 +296,27 @@ private fun SetUpGameAudioOnAppStart() {
                     Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event - ON_START")
 
                     if (gSoundOn) {
-                        gAudio_gameMusic.start()
+                        val res = gAudioManager.requestAudioFocus(gFocusRequest)
+                        Log.i(Global.DEBUG_PREFIX, "Request permission to play music")
+                        if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                            Log.i(Global.DEBUG_PREFIX, "Permission granted")
+                            gAudio_gameMusic.start()
+                        }
                         Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event - ON_START : Music started")
                     }
                 }
 
                 Lifecycle.Event.ON_RESUME -> {
-                    Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event - ON_RESUME")
+                    Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event. gSoundOn - $gSoundOn - ON_RESUME")
 
                     if (gSoundOn) {
-                        gAudio_gameMusic.start()
+                        val res = gAudioManager.requestAudioFocus(gFocusRequest)
+                        Log.i(Global.DEBUG_PREFIX, "Request permission to play music")
+                        if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                            Log.i(Global.DEBUG_PREFIX, "Permission granted")
+
+                            gAudio_gameMusic.start()
+                        }
                         Log.i(Global.DEBUG_PREFIX, "Detected Lifecycle Event - ON_RESUME : Music started")
 
                     }
@@ -835,7 +894,12 @@ private fun ColorThemeSetting(
 private fun setGameMusic(on: Boolean) {
     if (on) {
         if (!gAudio_gameMusic.isPlaying) {
-            gAudio_gameMusic.start()
+            val res = gAudioManager.requestAudioFocus(gFocusRequest)
+            Log.i(Global.DEBUG_PREFIX, "SetGameMusic: Request permission to play music")
+            if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                Log.i(Global.DEBUG_PREFIX, "Permission granted")
+                gAudio_gameMusic.start()
+            }
         }
     } else {
         gAudio_gameMusic.pause()
