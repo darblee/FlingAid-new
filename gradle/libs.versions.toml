@@ -1,7 +1,7 @@
 [versions]
-activityCompose = "1.9.1"
-agp = "8.5.2"
-composeBom = "2024.08.00"
+activityCompose = "1.9.2"
+agp = "8.6.1"
+composeBom = "2024.09.02"
 coreKtx = "1.13.1"
 coreSplashscreen = "1.0.1"
 datastorePreferencesRxjava2 = "1.1.1"
@@ -9,13 +9,13 @@ dokka = "1.9.20"
 espressoCore = "3.6.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
-kotlinAndroid = "1.9.22"
+kotlinAndroid = "2.0.0"
 kotlinCompose = "2.0.0"
 kotlinPluginSerialization = "2.0.0"
 kotlinxSerializationJson = "1.7.1"
-lifecycleLivedataKtx = "2.8.4"
+lifecycleLivedataKtx = "2.8.6"
 lottieCompose = "6.4.1"
-navigationCompose = "2.8.0-rc01"
+navigationCompose = "2.8.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }

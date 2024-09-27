@@ -2,7 +2,6 @@ package com.darblee.flingaid.ui
 
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -115,12 +114,12 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
     }
 
     /********************************* GAME MANAGEMENT ********************************************/
-
     /**
      * Contain the UI state of the solver game. This is used by the game screens to display
      * proper UI elements. Various composable will automatically update when that state changes
      *
-     * For reference, see [ https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn ]
+     * For reference, see [https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn]
+     *
      */
     private val _uiGameState = MutableStateFlow(GameUIState())
 
@@ -328,7 +327,6 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
      *
      * @param drawScope The drawing canvas of the grid
      * @param gridSize The grid size
-     * @param displayBallImage Actual image of ball o display
      * @param ballsToErase Used during ball animation. We need to temporarily
      * erase the animation ball as the animation routine will display it
      */

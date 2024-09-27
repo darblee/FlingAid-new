@@ -40,6 +40,9 @@ lateinit var gDisplayBallImage: ImageBitmap
 lateinit var gGameViewModel : GameViewModel
 lateinit var gSolverViewModel : SolverViewModel
 
+/**
+ * Global variables used throughout the entire app
+ */
 internal object Global {
     const val MAX_COL_SIZE = 7
     const val MAX_ROW_SIZE = 8
