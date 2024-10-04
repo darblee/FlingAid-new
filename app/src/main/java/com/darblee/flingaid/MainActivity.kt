@@ -56,7 +56,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedTextField
@@ -69,7 +68,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -516,7 +514,6 @@ private fun FlingAidTopAppBar(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AboutDialogPopup(
     onDismissRequest: () -> Unit,
@@ -583,26 +580,22 @@ private fun AboutDialogPopup(
                         .width(1.dp), color = colorScheme.outline
                 )
                 Row(Modifier.padding(top = 0.dp)) {
-                    CompositionLocalProvider(
-                        LocalMinimumInteractiveComponentEnforcement provides false,
+                    TextButton(
+                        onClick = { onConfirmation() },
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp)
+                            .weight(1F)
+                            .border(0.dp, color = Color.Transparent)
+                            .height(48.dp),
+                        elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
+                        shape = RoundedCornerShape(0.dp),
+                        contentPadding = PaddingValues()
                     ) {
-                        TextButton(
-                            onClick = { onConfirmation() },
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(0.dp)
-                                .weight(1F)
-                                .border(0.dp, color = Color.Transparent)
-                                .height(48.dp),
-                            elevation = ButtonDefaults.elevatedButtonElevation(0.dp, 0.dp),
-                            shape = RoundedCornerShape(0.dp),
-                            contentPadding = PaddingValues()
-                        ) {
-                            Text(
-                                text = stringResource(id = R.string.OK),
-                                color = colorScheme.primary
-                            )
-                        }
+                        Text(
+                            text = stringResource(id = R.string.OK),
+                            color = colorScheme.primary
+                        )
                     }
                 }
             }
