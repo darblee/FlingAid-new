@@ -641,7 +641,7 @@ fun drawBallOnGrid(
  *
  * @param drawScope Scope to do the drawing on
  * @param gridSize width or height of the grid in dp unit
- * @param animateCtl Animate object controller that manage shadow ball movement
+ * @param animateCtl Object controller that manage animation state of shadow ball movement
  * @param distance number of blocks in this ball movement
  * @param direction Direction of the ball movement
  * @param pos Position of the ball to move from
@@ -696,8 +696,7 @@ fun animateShadowBallMovementsPerform(
 /**
  * Animate the shadowed ball movement endlessly in a loop. This is a set-up.
  *
- * @param animateCtl Animate Object that control animation state of shadowed movement, which loop
- *  * forever.
+ * @param animateCtl Object that control animation state of shadowed movement, which loops forever.
  */
 @Composable
 fun AnimateShadowBallMovementSetup(animateCtl: Animatable<Float, AnimationVector1D>) {
@@ -856,9 +855,9 @@ private fun setOffsets(direction: Direction, distance: Int, gridSize: Float): Pa
  *
  * @param movingChain List of ball movements in the chain
  * @param direction Direction of ball movement
- * @param animateBallMovementCtlList Animate Object that control animation state of all the ball
+ * @param animateBallMovementCtlList  Object that control animation state of all the ball
  * movement in this chain
- * @param animateParticleExplosionCtl Animate Object that control animation state of particle
+ * @param animateParticleExplosionCtl Object that control animation state of particle
  * explosion effect
  * @param moveBallTask Lambda function - Move the ball
  */
@@ -946,6 +945,9 @@ fun AnimateBallMovementsSetup(
 
 /**
  * Stop and reset the ball movement animation control
+ *
+ * @param animateParticleExplosionCtl Object controller that manage and define animation state and
+ * specification of the ball movement
  */
 @Composable
 fun AnimateBallMovementsReset(animateParticleExplosionCtl: Animatable<Float, AnimationVector1D>,
@@ -963,9 +965,9 @@ fun AnimateBallMovementsReset(animateParticleExplosionCtl: Animatable<Float, Ani
  *
  * @param drawScope Canvas to draw the grid and balls
  * @param gridSize Size of grid. This used to do various computation on animation effect
- * @param animateBallMovementChainCtlList Chain list of animate objects that control animation
+ * @param animateBallMovementChainCtlList Chain list of objects that control animation
  * state of all the ball movements in this chain
- * @param animateParticleExplosionCtl Animate Object that control animation state of particle explosion effect
+ * @param animateParticleExplosionCtl  Object that control animation state of particle explosion effect
  * @param direction Direction of the ball movement
  * @param movingChain Chain list of ball movements
  */
@@ -1025,7 +1027,7 @@ fun animateBallMovementsPerform(
  * Perform the actual victory message animation
  *
  * @param drawScope Canvas to draw the animation on
- * @param animateCtl Animate object that control animation state of the victory message
+ * @param animateCtl  Object that control animation state of the victory message
  * @param textMeasurer Responsible for measuring a text in its entirety so that it can be drawn
  * on the canvas (drawScope).
  * @param victoryMsgColor Color of the message. Color will differ depending on the current theme
@@ -1066,7 +1068,7 @@ fun animateVictoryMsgPerform(
  * Setup animated victory message. Define animation spec.
  *
  * @param setModeAfterVictoryMsg Lambda function to set UI to "WaitingOnUser" mode after announcing victory message
- * @param animateCtl Animate object that control animation state of the victory message
+ * @param animateCtl  Object that control animation state of the victory message
  */
 @Composable
 fun AnimateVictoryMessageSetup(
@@ -1105,7 +1107,7 @@ fun AnimateVictoryMessageSetup(
 /**
  * Stop and reset the victory message animation control
  *
- * @param animateCtl Animate object that control animation state of the victory message
+ * @param animateCtl  Object that control animation state of the victory message
  */
 @Composable
 fun AnimateVictoryMessageReset(animateCtl: Animatable<Float, AnimationVector1D>)

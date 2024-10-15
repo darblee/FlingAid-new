@@ -481,29 +481,29 @@ private fun DrawGameBoard(
     /**
      * Animation control that handle ball movement
      */
-    val animateBallMovementChain = mutableListOf<Animatable<Float, AnimationVector1D>>()
+    val animateBallMovementChainList = mutableListOf<Animatable<Float, AnimationVector1D>>()
 
-    val animateParticleExplosion = remember { Animatable(initialValue = 0f) }
+    val animateParticleExplosionCtl = remember { Animatable(initialValue = 0f) }
     var particles = mutableListOf<Particle>()
 
-    val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
+    val animateVictoryMessageCtl = remember { Animatable(initialValue = 0f) }
 
     // If the "announceVictory" is true, then the LaunchedEffect composable inside the
     // AnimateVictoryMessageSetup will run
     if (announceVictory) {
         AnimateVictoryMessageSetup(
             { gGameViewModel.setModeUpdatedGameBoard() },
-            animateCtl = animateVictoryMessage
+            animateCtl = animateVictoryMessageCtl
         )
     } else {
-        AnimateVictoryMessageReset(animateVictoryMessage)
+        AnimateVictoryMessageReset(animateVictoryMessageCtl)
     }
 
     /**
      * Animation control that handle showing hint
      */
-    val animateHintMove = remember { Animatable(initialValue = 0f) }
-    if (hintBallRec != null) { AnimateShadowBallMovementSetup(animateHintMove) }
+    val animateHintMoveCtl = remember { Animatable(initialValue = 0f) }
+    if (hintBallRec != null) { AnimateShadowBallMovementSetup(animateHintMoveCtl) }
 
     if (moveBallRec != null) {
 
@@ -518,8 +518,8 @@ private fun DrawGameBoard(
         AnimateBallMovementsSetup(
             movingChain = moveBallRec.movingChain,
             direction = moveBallRec.moveDirection,
-            animateBallMovementCtlList = animateBallMovementChain,
-            animateParticleExplosionCtl = animateParticleExplosion,
+            animateBallMovementCtlList = animateBallMovementChainList,
+            animateParticleExplosionCtl = animateParticleExplosionCtl,
             moveBallTask = gameMoveBallTask
         )
 
@@ -527,16 +527,16 @@ private fun DrawGameBoard(
         // Else we longer need ball movement animation. So clear animation set-up
         // Make sure we do not show any more particle explosion when ball animation is done
         particles.clear()
-        AnimateBallMovementsReset(animateParticleExplosionCtl = animateParticleExplosion)
+        AnimateBallMovementsReset(animateParticleExplosionCtl = animateParticleExplosionCtl)
     }
 
     /**
      * Animation control that handle shadow ball movement. Used to show invalid move to user
      */
-    val animateShadowMovement = remember { Animatable(initialValue = 0f) }
+    val animateShadowMovementCtl = remember { Animatable(initialValue = 0f) }
 
     if (shadowBallRec != null)
-        GameAnimateShadowBallMovementSetup(animateShadowMovement)
+        GameAnimateShadowBallMovementSetup(animateShadowMovementCtl)
 
     Box(
         modifier = Modifier
@@ -663,7 +663,7 @@ private fun DrawGameBoard(
                 animateShadowBallMovementsPerform(
                     drawScope = drawScope,
                     gridSize = gridSize,
-                    animateCtl = animateHintMove,
+                    animateCtl = animateHintMoveCtl,
                     distance = hintBallRec.shadowMovingChain[0].distance,
                     direction = hintBallRec.shadowMoveDirection,
                     pos = hintBallRec.shadowMovingChain[0].pos
@@ -681,8 +681,8 @@ private fun DrawGameBoard(
                 animateBallMovementsPerform(
                     drawScope = drawScope,
                     gridSize = gridSize,
-                    animateBallMovementChainCtlList = animateBallMovementChain,
-                    animateParticleExplosionCtl = animateParticleExplosion,
+                    animateBallMovementChainCtlList = animateBallMovementChainList,
+                    animateParticleExplosionCtl = animateParticleExplosionCtl,
                     particles = particles,
                     direction = moveBallRec.moveDirection,
                     movingChain = moveBallRec.movingChain
@@ -694,7 +694,7 @@ private fun DrawGameBoard(
                     animateShadowBallMovementsPerform(
                         drawScope = drawScope,
                         gridSize = gridSize,
-                        animateCtl = animateShadowMovement,
+                        animateCtl = animateShadowMovementCtl,
                         distance = shadowBallRec.shadowMovingChain[0].distance,
                         direction = shadowBallRec.shadowMoveDirection,
                         pos = shadowBallRec.shadowMovingChain[0].pos
@@ -704,7 +704,7 @@ private fun DrawGameBoard(
 
             if (announceVictory) {
                 animateVictoryMsgPerform(
-                    drawScope, animateVictoryMessage,
+                    drawScope, animateVictoryMessageCtl,
                     textMeasurer, displayMsgColor
                 )
             }

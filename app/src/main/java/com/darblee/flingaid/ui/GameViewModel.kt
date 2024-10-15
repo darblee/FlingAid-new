@@ -42,7 +42,6 @@ import kotlin.random.Random
  * Managing the ball on the game board
  * - [loadGameFiles] : Define the file to store the ball position information
  * - [ballCount]
- * - [ballPositionList]
  * - [printBalls] Print all the ball positions. Used for debugging purposes.
  * *
  * **Game Play Functions**
@@ -55,23 +54,6 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
 
     private var _gameBallPos = FlickerBoard()
     private var _gameLevel = 1
-
-    /**
-     * Get the list of balls and its position.
-     *
-     * @return Balls list in SnapshotList property type.
-     *
-     * _Developer's note_ : SnapshotStateList is chosen instead of MutableStateList<T>. SnapshotStateList
-     * is a type of mutable list that integrates with the state observation system. When the contents of
-     * a SnapshotStateList change, Compose will recreate any composable functions that depends on it,
-     * which updates the UI. Only the respective item in the list will be (re)compose. When a change is
-     * made to a SnapshotStateList, a new snapshot is created instead of directly modifying the original
-     * list. This snapshot is a separate, immutable collection that represents the list's state at a specific
-     * moment. For more info, see [Compose Snapshot System](https://dev.to/zachklipp/introduction-to-the-compose-snapshot-system-19cn)
-     */
-    private fun ballPositionList(): SnapshotStateList<Pos> {
-        return (_gameBallPos.ballList)
-    }
 
     /**
      * Return the number of active ball

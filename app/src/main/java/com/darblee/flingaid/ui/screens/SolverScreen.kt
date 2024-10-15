@@ -479,17 +479,17 @@ private fun DrawSolverBoard(
     /**
      * Animation control that handle showing a preview (shadow) of winning move
      */
-    val animatePreviewWinningMove = remember { Animatable(initialValue = 0f) }
-    if (showPreviewMovementAnimation) { AnimateShadowBallMovementSetup(animatePreviewWinningMove) }
+    val animatePreviewWinningMoveCtl = remember { Animatable(initialValue = 0f) }
+    if (showPreviewMovementAnimation) { AnimateShadowBallMovementSetup(animatePreviewWinningMoveCtl) }
 
-    val animateVictoryMessage = remember { Animatable(initialValue = 0f) }
+    val animateVictoryMessageCtl = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
             { gSolverViewModel.setModeToNoMoveAvailable() },
-            animateCtl = animateVictoryMessage,
+            animateCtl = animateVictoryMessageCtl,
         )
     } else {
-        AnimateVictoryMessageReset(animateCtl = animateVictoryMessage )
+        AnimateVictoryMessageReset(animateCtl = animateVictoryMessageCtl )
     }
 
     val animateBallMovementChain = mutableListOf<Animatable<Float, AnimationVector1D>>()
@@ -659,7 +659,7 @@ private fun DrawSolverBoard(
                         animateShadowBallMovementsPerform(
                             drawScope = drawScope,
                             gridSize = gridSize,
-                            animateCtl = animatePreviewWinningMove,
+                            animateCtl = animatePreviewWinningMoveCtl,
                             distance = moveCount,
                             direction = readyToMoveRec.winningDirectionPreview,
                             pos = readyToMoveRec.winingMovingChainPreview[0].pos
@@ -684,7 +684,7 @@ private fun DrawSolverBoard(
 
             if (announceVictory) {
                 animateVictoryMsgPerform(
-                    drawScope, animateVictoryMessage,
+                    drawScope, animateVictoryMessageCtl,
                     textMeasurer, displayMsgColor
                 )
             }
