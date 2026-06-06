@@ -133,6 +133,4 @@ fun SetColorTheme(
         typography = Typography,
         content = content
     )
-
-
 }

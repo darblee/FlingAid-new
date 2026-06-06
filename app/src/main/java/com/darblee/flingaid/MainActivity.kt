@@ -2,7 +2,6 @@ package com.darblee.flingaid
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Context
 import android.content.Context.AUDIO_SERVICE
 import android.content.pm.ActivityInfo
 import android.media.AudioAttributes
@@ -12,6 +11,7 @@ import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -114,7 +114,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        gAudioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        gAudioManager = getSystemService(AUDIO_SERVICE) as AudioManager
 
         val playbackAttributes = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_GAME)
@@ -236,7 +236,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("SourceLockedOrientationActivity")
     @Composable
     fun ForcePortraitMode() {
-        val activity = LocalContext.current as Activity
+        val activity = LocalActivity.current ?: (LocalContext.current as Activity)
         activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 }
@@ -357,18 +357,14 @@ private fun FlingAidTopAppBar(
     var showAboutDialogBox by remember { mutableStateOf(false) }
     var showSettingDialogBox by remember { mutableStateOf(false) }
     var currentPlayerName by remember { mutableStateOf("") }
-    var loadPlayerNameOnce by remember { mutableStateOf( false) }
 
     val screenTitle = stringResource(id = currentScreen.value.stringTitleResourceID)
 
     val context = LocalContext.current
     val preference = PreferenceStore(context)
 
-    if (!loadPlayerNameOnce) {
-        LaunchedEffect(Unit) {
-            currentPlayerName = preference.readPlayerNameFomSetting()
-        }
-        loadPlayerNameOnce = true
+    LaunchedEffect(Unit) {
+        currentPlayerName = preference.readPlayerNameFomSetting()
     }
 
     CenterAlignedTopAppBar(
