@@ -347,24 +347,27 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
             }
 
             // We have a hint. Now get the distance
-            var distance: Int
-            when (direction) {
+            val distance = when (direction) {
                 Direction.UP -> {
-                    distance = row - game.findTargetRowOnMoveUp(row, col)
+                    row - game.findTargetRowOnMoveUp(row, col)
                 }
 
                 Direction.DOWN -> {
-                    distance = game.findTargetRowOnMoveDown(row, col) - row
+                    game.findTargetRowOnMoveDown(row, col) - row
                 }
 
                 Direction.LEFT -> {
-                    distance = col - game.findTargetColOnMoveLeft(row, col)
+                    col - game.findTargetColOnMoveLeft(row, col)
                 }
 
                 Direction.RIGHT -> {
-                    distance = game.findTargetColOnMoveRight(row, col) - col
+                    game.findTargetColOnMoveRight(row, col) - col
                 }
 
+                Direction.INCOMPLETE, Direction.NO_WINNING_DIRECTION -> {
+                    Log.e(Global.DEBUG_PREFIX, "Unexpected direction in getHint: $direction")
+                    return@launch
+                }
             }
 
             setModeToShowHint(Pos(row, col), direction, distance)
