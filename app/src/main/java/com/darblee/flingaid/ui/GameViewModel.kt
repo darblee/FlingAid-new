@@ -375,9 +375,6 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
                     distance = game.findTargetColOnMoveRight(row, col) - col
                 }
 
-                else -> {
-                    Log.i(Global.DEBUG_PREFIX, "Got unexpected direction value")
-                }
             }
 
             setModeToShowHint(Pos(row, col), direction, distance)

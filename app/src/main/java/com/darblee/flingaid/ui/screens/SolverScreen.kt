@@ -372,7 +372,7 @@ private fun SolverActionButtons(
                     // the event the composable function exits or another re-composable get started
                     if (readyToMove) {
                         gSolverViewModel.setModeToShowBallMovement(
-                            readyToMoveRec!!.winningDirectionPreview,
+                            readyToMoveRec.winningDirectionPreview,
                             readyToMoveRec.winingMovingChainPreview
                         )
                     }
@@ -501,7 +501,7 @@ private fun DrawSolverBoard(
         // Set-up the particles, which is used for the explosion animated effect
         particles = remember {
             generateExplosionParticles(
-                moveBallInfo!!.winingMovingChainMoveBall,
+                moveBallInfo.winingMovingChainMoveBall,
                 moveBallInfo.winningDirMoveBall
             )
         }.toMutableList()
@@ -513,7 +513,7 @@ private fun DrawSolverBoard(
             { pos: Pos, direction: Direction -> gSolverViewModel.moveBallToWin(pos, direction) }
 
         AnimateBallMovementsSetup(
-            movingChain = moveBallInfo!!.winingMovingChainMoveBall,
+            movingChain = moveBallInfo.winingMovingChainMoveBall,
             direction = moveBallInfo.winningDirMoveBall,
             animateBallMovementCtlList = animateBallMovementChain,
             animateParticleExplosionCtl = animateParticleExplosion,
@@ -637,7 +637,7 @@ private fun DrawSolverBoard(
             if (showBallMovementAnimation) {
                 // The animation routine already show the ball in its starting position. We need
                 // to erase it from normal draw ball
-                val ballsToErase = moveBallInfo!!.winingMovingChainMoveBall
+                val ballsToErase = moveBallInfo.winingMovingChainMoveBall
                 gSolverViewModel.drawSolverBallsOnGrid(
                     drawScope,
                     gridSize,
@@ -650,7 +650,7 @@ private fun DrawSolverBoard(
 
                 if (showPreviewMovementAnimation) {
 
-                    if (readyToMoveRec!!.winingMovingChainPreview.isNotEmpty()) {
+                    if (readyToMoveRec.winingMovingChainPreview.isNotEmpty()) {
 
                         val moveCount = gSolverViewModel.getWinningMoveCount(
                             pos = readyToMoveRec.winingMovingChainPreview[0].pos,
@@ -677,7 +677,7 @@ private fun DrawSolverBoard(
                     animateBallMovementChainCtlList = animateBallMovementChain,
                     animateParticleExplosionCtl = animateParticleExplosion,
                     particles = particles,
-                    direction = moveBallInfo!!.winningDirMoveBall,
+                    direction = moveBallInfo.winningDirMoveBall,
                     movingChain = moveBallInfo.winingMovingChainMoveBall
                 )
             }
