@@ -168,9 +168,9 @@ class FlickerBoard {
             for (currentPos in this.ballList) { ballList += currentPos }
 
             val output = format.encodeToString(ballList)
-            val writer = FileWriter(_gameFile)
-            writer.write(output)
-            writer.close()
+            FileWriter(_gameFile).use { writer ->
+                writer.write(output)
+            }
         } catch (e: SerializationException) {
             Log.i(Global.DEBUG_PREFIX, "Serialization error. Unable to encode ball list information. Reason: ${e.message}")
         } catch (e: IllegalArgumentException) {
@@ -190,9 +190,9 @@ class FlickerBoard {
         if (_gameFile == null) return
 
         try {
-            val reader = FileReader(_gameFile)
-            val data = reader.readText()
-            reader.close()
+            val data = FileReader(_gameFile).use { reader ->
+                reader.readText()
+            }
 
             val list = Json.decodeFromString<List<Pos>>(data)
 
@@ -233,9 +233,9 @@ class FlickerBoard {
         try {
             val format = Json { prettyPrint = true }
             val output = format.encodeToString(rejectedBalls)
-            val writer = FileWriter(_rejectBallFile)
-            writer.write(output)
-            writer.close()
+            FileWriter(_rejectBallFile).use { writer ->
+                writer.write(output)
+            }
         } catch (e: SerializationException) {
             Log.i(Global.DEBUG_PREFIX, "Serialization error. Unable to encode reject ball list information. Reason: ${e.message}")
         } catch (e: IllegalArgumentException) {
@@ -259,9 +259,9 @@ class FlickerBoard {
         if (_rejectBallFile == null) return listOf()
 
         try {
-            val reader = FileReader(_rejectBallFile)
-            val data = reader.readText()
-            reader.close()
+            val data = FileReader(_rejectBallFile).use { reader ->
+                reader.readText()
+            }
 
             return (Json.decodeFromString<List<Pos>>(data))
         } catch (e: Exception) {
@@ -553,9 +553,9 @@ class FlickerBoard {
         try {
             val format = Json { prettyPrint = true }
             val output = format.encodeToString(_moveHistory)
-            val writer = FileWriter(_historyFile)
-            writer.write(output)
-            writer.close()
+            FileWriter(_historyFile).use { writer ->
+                writer.write(output)
+            }
         } catch (e: SerializationException) {
             Log.i(Global.DEBUG_PREFIX, "Serialization error. Unable to encode history data. Reason: ${e.message}")
         } catch (e: IllegalArgumentException) {
@@ -575,9 +575,9 @@ class FlickerBoard {
         if (_historyFile == null) return
 
         try {
-            val reader = FileReader(_historyFile)
-            val data = reader.readText()
-            reader.close()
+            val data = FileReader(_historyFile).use { reader ->
+                reader.readText()
+            }
 
             val historyList = Json.decodeFromString<List<List<Pos>>>(data)
             _moveHistory.clear()
