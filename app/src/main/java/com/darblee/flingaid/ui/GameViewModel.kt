@@ -1,7 +1,6 @@
 package com.darblee.flingaid.ui
 
 import android.util.Log
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -319,16 +318,7 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
     ) {
         _gameBallPos.drawAllBalls(drawScope, gridSize, ballsToErase)
     }
-
-    /**
-     * Print all the balls.
-     *
-     * Used primarily for debugging purposes
-     */
-    private fun printBalls() {
-        _gameBallPos.printPositions()
-    }
-
+    
     /**
      * Find hint
      */
@@ -357,7 +347,7 @@ class GameViewModel(gGameFile: File, gHistFile: File) : ViewModel() {
             }
 
             // We have a hint. Now get the distance
-            var distance = 0
+            var distance: Int
             when (direction) {
                 Direction.UP -> {
                     distance = row - game.findTargetRowOnMoveUp(row, col)
