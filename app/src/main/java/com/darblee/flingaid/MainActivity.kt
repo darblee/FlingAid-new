@@ -128,7 +128,7 @@ class MainActivity : ComponentActivity() {
                 AudioManager.AUDIOFOCUS_LOSS -> {
                     // Permanent loss of audio focus
                     // Pause playback immediately
-                    mediaController.transportControls.pause()
+                    gAudio_gameMusic.pause()
                     gAudio_gameMusic.release()
                 }
                 AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
