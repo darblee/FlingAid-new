@@ -76,7 +76,7 @@ import com.darblee.flingaid.PreferenceStore
 import com.darblee.flingaid.R
 import com.darblee.flingaid.gAudio_doink
 import com.darblee.flingaid.gDisplayBallImage
-import com.darblee.flingaid.gGameViewModel
+import com.darblee.flingaid.setGameViewModel
 import com.darblee.flingaid.ui.GameUIState
 import com.darblee.flingaid.ui.GameViewModel
 import com.darblee.flingaid.ui.Particle
@@ -123,9 +123,10 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
     val gameBoardFile = File(LocalContext.current.filesDir, Global.GAME_BOARD_FILENAME)
     val historyFile = File(LocalContext.current.filesDir, Global.GAME_HISTORY_FILENAME)
 
-    gGameViewModel = GameViewModel.getInstance(gameBoardFile, historyFile)
+    val gameViewModel = GameViewModel.getInstance(gameBoardFile, historyFile)
+    setGameViewModel(gameViewModel)
 
-    val gameUIState by gGameViewModel.gameUIState.collectAsStateWithLifecycle()
+    val gameUIState by gameViewModel.gameUIState.collectAsStateWithLifecycle()
 
     when (gameUIState.mode) {
 
@@ -183,14 +184,14 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
         }
     }
 
-    HandleBackPressKeyForGameScreen(navController)
+    HandleBackPressKeyForGameScreen(navController, gameViewModel)
 
     if (showNoWinnableMoveDialogBox) {
         NoWinnableMoveDialog(
             onDismissRequest = { showNoWinnableMoveDialogBox = false },
             onConfirmation = { showNoWinnableMoveDialogBox = false }
         )
-        gGameViewModel.setModeToNoWinnableMove()
+        gameViewModel.setModeToNoWinnableMove()
     }
 
     Column(
@@ -202,7 +203,8 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             moveBallRec = moveBallRec,
             announceVictory = announceVictory,
             resetWinnableMove = { noWinnableMove = false },
-            noWinnableMove
+            noWinnableMove = noWinnableMove,
+            gameViewModel = gameViewModel
         )
 
         DrawGameBoard(
@@ -211,8 +213,8 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
             moveBallRec = moveBallRec,
             shadowBallRec = shadowBallRec,
             hintBallRec = hintBallRec,
-            initializing = initializing
-
+            initializing = initializing,
+            gameViewModel = gameViewModel
         )
     }
 }
@@ -229,13 +231,14 @@ fun GameScreen(modifier: Modifier = Modifier, navController: NavHostController) 
  */
 @Composable
 private fun HandleBackPressKeyForGameScreen(
-    navController: NavHostController
+    navController: NavHostController,
+    gameViewModel: GameViewModel
 ) {
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
         backPressed = false
-        if (gGameViewModel.canExitGameScreen()) {
+        if (gameViewModel.canExitGameScreen()) {
             navController.popBackStack()
         }
         return
@@ -243,8 +246,22 @@ private fun HandleBackPressKeyForGameScreen(
 }
 
 /**
- * Show all the control buttons on top of the screen. These buttons
- * are "find the solution" button and "reset" button
+ * Composable function that displays the control panel at the top of the game screen.
+ *
+ * This component includes:
+ * - The game logo and basic instructional text.
+ * - A level selection slider to adjust game difficulty.
+ * - A "New Game" button to regenerate the board.
+ * - An "Undo" button to revert the last move, enabled only when history exists.
+ * - A "Hint" button to trigger a visual aid for the next move, enabled only when a solution exists
+ *   and no animations are currently running.
+ *
+ * @param hintBallRec Current hint animation data, if active.
+ * @param moveBallRec Current move animation data, if active.
+ * @param announceVictory Flag indicating if the victory message is being displayed.
+ * @param resetWinnableMove Callback to reset the winnable move state in the parent UI.
+ * @param noWinnableMove Flag indicating if the current board state has no known solution.
+ * @param gameViewModel The ViewModel managing game state and logic.
  */
 @Composable
 private fun GameActionButtons(
@@ -252,7 +269,8 @@ private fun GameActionButtons(
     moveBallRec: GameUIState.GameMode.MoveBall?,
     announceVictory: Boolean,
     resetWinnableMove: () -> Unit,
-    noWinnableMove: Boolean
+    noWinnableMove: Boolean,
+    gameViewModel: GameViewModel
 )
 {
     val iconWidth = Icons.Filled.Refresh.defaultWidth
@@ -313,7 +331,7 @@ private fun GameActionButtons(
                 LaunchedEffect(Unit) {
                     CoroutineScope(Dispatchers.IO).launch {
                         gameLevel = preference.readGameLevelFromSetting()
-                        gGameViewModel.setGameLevel(gameLevel)
+                        gameViewModel.setGameLevel(gameLevel)
                         loadGameLevelSetting = true
                     }
                 }
@@ -344,7 +362,7 @@ private fun GameActionButtons(
                         // scope.launch side effect is needed as this block of code need to run and has
                         // nothing to do with composable. This code can not be cancelled prematurely in
                         // the event the composable function exits or another re-composable get started
-                        gGameViewModel.setGameLevel(gameLevel)
+                        gameViewModel.setGameLevel(gameLevel)
                         CoroutineScope(Dispatchers.IO).launch {
                             preference.saveGameLevelToSetting(gameLevel)
                         }
@@ -371,7 +389,7 @@ private fun GameActionButtons(
                     // nothing to do with composable. This code can not be cancelled prematurely in
                     // the event the composable function exits or another re-composable get started
                     resetWinnableMove.invoke()
-                    gGameViewModel.generateNewGame()
+                    gameViewModel.generateNewGame()
                 }
             },
             shape = RoundedCornerShape(5.dp),
@@ -395,7 +413,7 @@ private fun GameActionButtons(
                 // nothing to do with composable. This code can not be cancelled prematurely in
                 // the event the composable function exits or another re-composable get started
                 scope.launch {
-                    gGameViewModel.undo()
+                    gameViewModel.undo()
                     resetWinnableMove.invoke()
                 }
             },
@@ -408,7 +426,7 @@ private fun GameActionButtons(
             modifier = Modifier
                 .weight(5F)
                 .padding(1.dp),
-            enabled = gGameViewModel.canUndo()
+            enabled = gameViewModel.canUndo()
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -425,7 +443,7 @@ private fun GameActionButtons(
                 // scope.launch side effect is needed as this block of code need to run and has
                 // nothing to do with composable. This code can not be cancelled prematurely in
                 // the event the composable function exits or another re-composable get started
-                scope.launch { gGameViewModel.getHint() }
+                scope.launch { gameViewModel.getHint() }
             },
             shape = RoundedCornerShape(5.dp),
             elevation = ButtonDefaults.buttonElevation(5.dp),
@@ -437,7 +455,7 @@ private fun GameActionButtons(
                 .weight(5F)
                 .padding(4.dp),
             enabled = (hintBallRec == null) && (moveBallRec == null ) &&
-                    (!announceVictory) && (gGameViewModel.ballCount() > 1) && (!noWinnableMove)
+                    (!announceVictory) && (gameViewModel.ballCount() > 1) && (!noWinnableMove)
         ) {
             Icon(
                 imageVector = Icons.Filled.Info, contentDescription = "Hint",
@@ -451,15 +469,24 @@ private fun GameActionButtons(
 
 
 /**
- *  Draw the Game Board:
- *  - Draw the Grid
- *  - Place all the balls
- *  - Handle all the input (drag, click on grid to place the ball)
- *  - Handle all the ball animations and dynamic animated messages
+ * Renders the primary game board interface, including the grid, game pieces (balls),
+ * and interactive elements.
  *
- * @param modifier Pass in modifier elements that decorate or add behavior to the compose UI
- *  elements
- * @param announceVictory Indicate whether it need to show animated victory message or not
+ * This function handles:
+ * - Rendering the background grid and the center goal circle.
+ * - Positioning and drawing ball assets based on the current game state.
+ * - Processing user input via drag gestures (swipes) to initiate moves.
+ * - Orchestrating animations for ball movements, hints, invalid move indicators (shadow balls),
+ *   and victory celebrations.
+ * - Displaying loading and status messages on the canvas.
+ *
+ * @param modifier Decorators or behavior to be applied to the board's layout.
+ * @param announceVictory Flag indicating if the win animation should be played.
+ * @param moveBallRec Data for a valid move animation, or null if no move is in progress.
+ * @param shadowBallRec Data for an invalid move animation, or null if not applicable.
+ * @param hintBallRec Data for a hint animation, or null if no hint is active.
+ * @param initializing Flag indicating if the game is currently loading its initial state.
+ * @param gameViewModel The ViewModel managing game logic, state transitions, and board data.
  */
 @Composable
 private fun DrawGameBoard(
@@ -469,6 +496,7 @@ private fun DrawGameBoard(
     shadowBallRec: GameUIState.GameMode.IndicateInvalidMoveByShowingShadowMove?,
     hintBallRec: GameUIState.GameMode.ShowHint?,
     initializing: Boolean,
+    gameViewModel: GameViewModel,
 ) {
     val displayMsgColor = MaterialTheme.colorScheme.onPrimaryContainer
 
@@ -492,7 +520,7 @@ private fun DrawGameBoard(
     // AnimateVictoryMessageSetup will run
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            { gGameViewModel.setModeUpdatedGameBoard() },
+            { gameViewModel.setModeUpdatedGameBoard() },
             animateCtl = animateVictoryMessageCtl
         )
     } else {
@@ -513,7 +541,7 @@ private fun DrawGameBoard(
         }.toMutableList()
 
         // The following lambda functions are used in [AnimateBallMovementsSetup] routine
-        val gameMoveBallTask = { pos: Pos, direction: Direction -> gGameViewModel.moveBall(pos, direction) }
+        val gameMoveBallTask = { pos: Pos, direction: Direction -> gameViewModel.moveBall(pos, direction) }
 
         AnimateBallMovementsSetup(
             movingChain = moveBallRec.movingChain,
@@ -536,7 +564,7 @@ private fun DrawGameBoard(
     val animateShadowMovementCtl = remember { Animatable(initialValue = 0f) }
 
     if (shadowBallRec != null)
-        GameAnimateShadowBallMovementSetup(animateShadowMovementCtl)
+        GameAnimateShadowBallMovementSetup(animateShadowMovementCtl, gameViewModel)
 
     Box(
         modifier = Modifier
@@ -591,7 +619,7 @@ private fun DrawGameBoard(
                             when {
                                 (offsetX < 0F && abs(offsetX) > (gridSize * 1.2)) -> {
                                     if (allowSwipe)
-                                        gGameViewModel.setupNextMove(
+                                        gameViewModel.setupNextMove(
                                             dragRow,
                                             dragCol,
                                             Direction.LEFT
@@ -600,7 +628,7 @@ private fun DrawGameBoard(
 
                                 (offsetX > 0F && abs(offsetX) > (gridSize * 1.2)) -> {
                                     if (allowSwipe)
-                                        gGameViewModel.setupNextMove(
+                                        gameViewModel.setupNextMove(
                                             dragRow,
                                             dragCol,
                                             Direction.RIGHT
@@ -609,7 +637,7 @@ private fun DrawGameBoard(
 
                                 (offsetY < 0F && abs(offsetY) > (gridSize * 1.2)) -> {
                                     if (allowSwipe)
-                                        gGameViewModel.setupNextMove(
+                                        gameViewModel.setupNextMove(
                                             dragRow,
                                             dragCol,
                                             Direction.UP)
@@ -617,7 +645,7 @@ private fun DrawGameBoard(
 
                                 (offsetY > 0F && abs(offsetY) > (gridSize * 1.2)) -> {
                                     if (allowSwipe)
-                                        gGameViewModel.setupNextMove(
+                                        gameViewModel.setupNextMove(
                                             dragRow,
                                             dragCol,
                                             Direction.DOWN
@@ -673,7 +701,7 @@ private fun DrawGameBoard(
             if (moveBallRec != null) {
                 val ballsToErase = moveBallRec.movingChain
 
-                gGameViewModel.drawGameBallsOnGrid(
+                gameViewModel.drawGameBallsOnGrid(
                     drawScope,
                     gridSize,
                     ballsToErase
@@ -688,7 +716,7 @@ private fun DrawGameBoard(
                     movingChain = moveBallRec.movingChain
                 )
             } else {
-                gGameViewModel.drawGameBallsOnGrid(drawScope, gridSize)
+                gameViewModel.drawGameBallsOnGrid(drawScope, gridSize)
 
                 if (shadowBallRec != null) {
                     animateShadowBallMovementsPerform(
@@ -781,6 +809,7 @@ private fun drawGridForGame(
 @Composable
 fun GameAnimateShadowBallMovementSetup(
     animateCtl: Animatable<Float, AnimationVector1D>,
+    gameViewModel: GameViewModel,
 ) {
     // Run this side effect once
     LaunchedEffect(Unit) {
@@ -796,7 +825,7 @@ fun GameAnimateShadowBallMovementSetup(
                 )
                 animateCtl.stop()
                 animateCtl.snapTo(0f)
-                gGameViewModel.setModeUpdatedGameBoard()
+                gameViewModel.setModeUpdatedGameBoard()
             }  // launch
 
             launch (Dispatchers.Main) {

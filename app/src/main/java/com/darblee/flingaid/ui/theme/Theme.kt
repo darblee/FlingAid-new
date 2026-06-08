@@ -81,6 +81,9 @@ private val DarkColorScheme = darkColorScheme(
 
 enum class ColorThemeOption { System, Light, Dark }
 
+/**
+ * Sets the Material 3 color theme for the application based on the provided [
+ */
 @Composable
 fun SetColorTheme(
     currentColorTheme: ColorThemeOption,

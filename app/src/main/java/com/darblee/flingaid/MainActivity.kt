@@ -378,11 +378,13 @@ private fun FlingAidTopAppBar(
                 Screen.Solver -> {
                     IconButton(onClick =
                     {
-                        Log.i(
-                            Global.DEBUG_PREFIX,
-                            "Detect back-press in Solver Screen. Mode is ${gSolverViewModel.uiState.value.mode}"
-                        )
-                        if (gSolverViewModel.canExitSolverScreen()) navController.popBackStack()
+                        getSolverViewModel()?.let { viewModel ->
+                            Log.i(
+                                Global.DEBUG_PREFIX,
+                                "Detect back-press in Solver Screen. Mode is ${viewModel.uiState.value.mode}"
+                            )
+                            if (viewModel.canExitSolverScreen()) navController.popBackStack()
+                        }
                     }
                     ) {
                         Icon(
@@ -395,11 +397,13 @@ private fun FlingAidTopAppBar(
                 Screen.Game -> {
                     IconButton(onClick =
                     {
-                        Log.i(
-                            Global.DEBUG_PREFIX,
-                            "Detect back-press in Game Screen. Mode is ${gGameViewModel.gameUIState.value.mode}"
-                        )
-                        if (gGameViewModel.canExitGameScreen()) navController.popBackStack()
+                        getGameViewModel()?.let { viewModel ->
+                            Log.i(
+                                Global.DEBUG_PREFIX,
+                                "Detect back-press in Game Screen. Mode is ${viewModel.gameUIState.value.mode}"
+                            )
+                            if (viewModel.canExitGameScreen()) navController.popBackStack()
+                        }
                     }
                     ) {
                         Icon(

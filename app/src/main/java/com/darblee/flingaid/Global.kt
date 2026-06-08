@@ -37,8 +37,20 @@ var gSoundOn = false
  */
 lateinit var gDisplayBallImage: ImageBitmap
 
-lateinit var gGameViewModel : GameViewModel
-lateinit var gSolverViewModel : SolverViewModel
+private lateinit var _gGameViewModel : GameViewModel
+private lateinit var _gSolverViewModel : SolverViewModel
+
+fun setGameViewModel(viewModel: GameViewModel) {
+    _gGameViewModel = viewModel
+}
+
+fun getGameViewModel(): GameViewModel? = if (::_gGameViewModel.isInitialized) _gGameViewModel else null
+
+fun setSolverViewModel(viewModel: SolverViewModel) {
+    _gSolverViewModel = viewModel
+}
+
+fun getSolverViewModel(): SolverViewModel? = if (::_gSolverViewModel.isInitialized) _gSolverViewModel else null
 
 /**
  * Global variables used throughout the entire app

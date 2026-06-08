@@ -79,7 +79,8 @@ import com.darblee.flingaid.Direction
 import com.darblee.flingaid.Global
 import com.darblee.flingaid.R
 import com.darblee.flingaid.gDisplayBallImage
-import com.darblee.flingaid.gSolverViewModel
+import com.darblee.flingaid.setSolverViewModel
+import com.darblee.flingaid.getSolverViewModel
 import com.darblee.flingaid.ui.Particle
 import com.darblee.flingaid.ui.SolverUIState
 import com.darblee.flingaid.ui.SolverViewModel
@@ -124,7 +125,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     val gameBoardFile = File(LocalContext.current.filesDir, Global.SOLVER_BOARD_FILENAME)
     val rejectFile = File(LocalContext.current.filesDir, Global.REJECT_BALL_FILENAME)
 
-    gSolverViewModel = SolverViewModel.getInstance(gameBoardFile, rejectFile)
+    val solverViewModel = SolverViewModel.getInstance(gameBoardFile, rejectFile)
+    setSolverViewModel(solverViewModel)
 
     var showNoWinnableMoveDialogBox by remember { mutableStateOf(false) }
 
@@ -134,7 +136,7 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     var readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove? = null
     var rejectedBalls: List<Pos> = emptyList()
 
-    val solverUIState by gSolverViewModel.uiState.collectAsStateWithLifecycle()
+    val solverUIState by getSolverViewModel()!!.uiState.collectAsStateWithLifecycle()
 
     when (solverUIState.mode) {
         SolverUIState.SolverMode.Initialization -> {
@@ -193,14 +195,14 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
     }
 
     // Need special handling of back key press events.
-    HandleBackPressKeyForSolverScreen(navController)
+    HandleBackPressKeyForSolverScreen(navController, solverViewModel)
 
     if (showNoWinnableMoveDialogBox) {
         NoWinnableMoveDialog(
             onDismissRequest = { showNoWinnableMoveDialogBox = false },
             onConfirmation = { showNoWinnableMoveDialogBox = false }
         )
-        gSolverViewModel.setModeToNoMoveAvailable()
+        getSolverViewModel()!!.setModeToNoMoveAvailable()
     }
 
     Column(
@@ -212,7 +214,8 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
         SolverActionButtons(
             readyToFindSolution = readyToFindSolution,
             currentlyThinking = (curThinkingLvl != null),
-            readyToMoveRec = readyToMoveRec
+            readyToMoveRec = readyToMoveRec,
+            solverViewModel = solverViewModel
         )
 
         DrawSolverBoard(
@@ -240,13 +243,14 @@ fun SolverScreen(modifier: Modifier = Modifier, navController: NavHostController
 @Composable
 private fun HandleBackPressKeyForSolverScreen(
     navController: NavHostController,
+    solverViewModel: SolverViewModel,
 ) {
     var backPressed by remember { mutableStateOf(false) }
     BackPressHandler(onBackPressed = { backPressed = true })
     if (backPressed) {
         backPressed = false
 
-        if (gSolverViewModel.canExitSolverScreen()) {
+        if (solverViewModel.canExitSolverScreen()) {
             navController.popBackStack()
         }
     }
@@ -347,6 +351,7 @@ private fun SolverActionButtons(
     readyToFindSolution: Boolean,
     currentlyThinking: Boolean,
     readyToMoveRec: SolverUIState.SolverMode.HasWinningMoveWaitingToMove?,
+    solverViewModel: SolverViewModel,
 ) {
     val scope = rememberCoroutineScope()
     val view = LocalView.current
@@ -371,12 +376,12 @@ private fun SolverActionButtons(
                     // nothing to do with composable. This code can not be cancelled prematurely in
                     // the event the composable function exits or another re-composable get started
                     if (readyToMove) {
-                        gSolverViewModel.setModeToShowBallMovement(
+                        solverViewModel.setModeToShowBallMovement(
                             readyToMoveRec.winningDirectionPreview,
                             readyToMoveRec.winingMovingChainPreview
                         )
                     }
-                    if (readyToFindSolution) { gSolverViewModel.findWinningMove() }
+                    if (readyToFindSolution) { solverViewModel.findWinningMove() }
                 }
             }, // OnClick
             shape = RoundedCornerShape(5.dp),
@@ -411,10 +416,10 @@ private fun SolverActionButtons(
                     // scope.launch side effect is needed as this block of code need to run and has
                     // nothing to do with composable. This code can not be cancelled prematurely in
                     // the event the composable function exits or another re-composable get started
-                    if (currentlyThinking) gSolverViewModel.stopThinking()
+                    if (currentlyThinking) getSolverViewModel()!!.stopThinking()
 
                     // Reset the board game and set it back to idle state
-                    gSolverViewModel.reset()
+                    getSolverViewModel()!!.reset()
                 }
             },
             shape = RoundedCornerShape(5.dp),
@@ -485,7 +490,7 @@ private fun DrawSolverBoard(
     val animateVictoryMessageCtl = remember { Animatable(initialValue = 0f) }
     if (announceVictory) {
         AnimateVictoryMessageSetup(
-            { gSolverViewModel.setModeToNoMoveAvailable() },
+            { getSolverViewModel()!!.setModeToNoMoveAvailable() },
             animateCtl = animateVictoryMessageCtl,
         )
     } else {
@@ -510,7 +515,7 @@ private fun DrawSolverBoard(
          * The following lambda functions are used in [AnimateBallMovementsSetup] routine
          */
         val solverMoveBallTask =
-            { pos: Pos, direction: Direction -> gSolverViewModel.moveBallToWin(pos, direction) }
+            { pos: Pos, direction: Direction -> getSolverViewModel()!!.moveBallToWin(pos, direction) }
 
         AnimateBallMovementsSetup(
             movingChain = moveBallInfo.winingMovingChainMoveBall,
@@ -569,9 +574,9 @@ private fun DrawSolverBoard(
 
                             view.click()
 
-                            if (currentlyThinking) gSolverViewModel.stopThinking()
+                            if (currentlyThinking) getSolverViewModel()!!.stopThinking()
 
-                            gSolverViewModel.toggleBallPosition(Pos(row, col))
+                            getSolverViewModel()!!.toggleBallPosition(Pos(row, col))
 
                         }, // onTap
                     ) // detectTapGestures
@@ -596,7 +601,7 @@ private fun DrawSolverBoard(
                             if ((abs(dragXOffset) > minSwipeOffset) ||
                                 (abs(dragYOffset) > minSwipeOffset)
                             ) {
-                                if (gSolverViewModel.ballCount() > 1) {
+                                if (getSolverViewModel()!!.ballCount() > 1) {
                                     gameToast(context, "Use \"Find next\" button to move the ball")
                                 } else {
                                     gameToast(context, "No need to move the last ball")
@@ -638,7 +643,7 @@ private fun DrawSolverBoard(
                 // The animation routine already show the ball in its starting position. We need
                 // to erase it from normal draw ball
                 val ballsToErase = moveBallInfo.winingMovingChainMoveBall
-                gSolverViewModel.drawSolverBallsOnGrid(
+                getSolverViewModel()!!.drawSolverBallsOnGrid(
                     drawScope,
                     gridSize,
                     ballsToErase
@@ -646,13 +651,13 @@ private fun DrawSolverBoard(
             } else {
                 // No need to animate ball movement, but now need to check if we need to show
                 // preview of next winning ball movement
-                gSolverViewModel.drawSolverBallsOnGrid(drawScope, gridSize)
+                getSolverViewModel()!!.drawSolverBallsOnGrid(drawScope, gridSize)
 
                 if (showPreviewMovementAnimation) {
 
                     if (readyToMoveRec.winingMovingChainPreview.isNotEmpty()) {
 
-                        val moveCount = gSolverViewModel.getWinningMoveCount(
+                        val moveCount = getSolverViewModel()!!.getWinningMoveCount(
                             pos = readyToMoveRec.winingMovingChainPreview[0].pos,
                             direction = readyToMoveRec.winningDirectionPreview,
                         )
